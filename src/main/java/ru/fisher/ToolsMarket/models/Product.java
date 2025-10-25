@@ -32,7 +32,7 @@ public class Product {
     @Column(length = 1024)
     private String shortDescription;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(unique = true, length = 100)
