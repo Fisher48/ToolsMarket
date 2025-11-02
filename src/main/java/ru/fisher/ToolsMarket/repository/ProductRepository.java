@@ -23,6 +23,18 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p " +
             "WHERE p.active = true " +
             "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
-            "OR p.description LIKE CONCAT('%', :q, '%'))")
+            "OR LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', :q, '%')) " +
+            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :q, '%')) " +
+            "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+            "ORDER BY " +
+            "CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT(:q, '%')) THEN 1 " +
+            "     WHEN LOWER(p.sku) = LOWER(:q) THEN 2 " +
+            "     ELSE 3 END, p.name")
     Page<Product> searchActive(@Param("q") String q, Pageable pageable);
+
+//    @Query("SELECT p FROM Product p " +
+//            "WHERE p.active = true " +
+//            "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
+//            "OR p.description LIKE CONCAT('%', :q, '%'))")
+//    Page<Product> searchActive(@Param("q") String q, Pageable pageable);
 }

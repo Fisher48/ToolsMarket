@@ -3,6 +3,8 @@ package ru.fisher.ToolsMarket.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.fisher.ToolsMarket.dto.*;
+import ru.fisher.ToolsMarket.mapper.CategoryMapperService;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 
@@ -15,34 +17,64 @@ import java.util.Optional;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final CategoryMapperService categoryMapperService;
 
-    public List<Category> getRootCategories() {
-        return categoryRepository.findByParentIsNullOrderBySortOrderAsc();
+    public List<CategoryDto> getRootCategories() {
+        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
+                .map(categoryMapperService::toDto) // Используем простой DTO
+                .toList();
     }
 
-    public List<Category> getSubcategories(Long parentId) {
-        return categoryRepository.findByParent_IdOrderBySortOrderAsc(parentId);
+    public List<CategoryWithChildrenDto> getRootCategoriesWithChildren() {
+        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
+                .map(categoryMapperService::toWithChildrenDto)
+                .toList();
     }
 
-    public Optional<Category> findByTitle(String title) {
-        return categoryRepository.findByTitle(title);
+    public List<CategoryTreeDto> getCategoryTree() {
+        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
+                .map(categoryMapperService::toTreeDto)
+                .toList();
+    }
+
+    public Optional<CategoryDto> findByTitle(String title) {
+        return categoryRepository.findByTitle(title)
+                .map(categoryMapperService::toDto);
+    }
+
+    public Optional<CategoryDto> findById(Long id) {
+        return categoryRepository.findById(id)
+                .map(categoryMapperService::toDto);
+    }
+
+    public Optional<CategorySimpleDto> findSimpleById(Long id) {
+        return categoryRepository.findById(id)
+                .map(categoryMapperService::toSimpleDto);
+    }
+
+    public List<CategoryDto> findAll() {
+        return categoryRepository.findAll().stream()
+                .map(categoryMapperService::toDto)
+                .toList();
     }
 
     @Transactional
-    public Category save(Category category) {
-        return categoryRepository.save(category);
+    public CategoryDto save(CategoryCreateDto categoryDto) {
+        Category category = categoryMapperService.toEntity(categoryDto);
+
+        // Установка родительской категории
+        if (categoryDto.getParentId() != null) {
+            Category parent = categoryRepository.findById(categoryDto.getParentId())
+                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
+            category.setParent(parent);
+        }
+
+        Category saved = categoryRepository.save(category);
+        return categoryMapperService.toDto(saved);
     }
 
     @Transactional
     public void delete(Long id) {
         categoryRepository.deleteById(id);
-    }
-
-    public List<Category> findAll() {
-        return categoryRepository.findAll();
-    }
-
-    public Optional<Category> findById(Long id) {
-        return categoryRepository.findById(id);
     }
 }
