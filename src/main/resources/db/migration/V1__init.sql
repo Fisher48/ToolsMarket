@@ -6,7 +6,7 @@ CREATE TABLE category (
                           parent_id BIGINT NULL REFERENCES category(id) ON DELETE SET NULL,
                           description TEXT,
                           sort_order INT DEFAULT 0,
-                          created_at TIMESTAMPTZ DEFAULT now()
+                          created_at TIMESTAMP DEFAULT now()
 );
 
 CREATE INDEX idx_category_parent ON category(parent_id);
@@ -22,8 +22,8 @@ CREATE TABLE product (
                          price NUMERIC(12,2) NOT NULL DEFAULT 0,
                          currency VARCHAR(3) NOT NULL DEFAULT 'RUB',
                          active BOOLEAN NOT NULL DEFAULT TRUE,
-                         created_at TIMESTAMPTZ DEFAULT now(),
-                         updated_at TIMESTAMPTZ DEFAULT now()
+                         created_at TIMESTAMP DEFAULT now(),
+                         updated_at TIMESTAMP DEFAULT now()
 );
 
 CREATE INDEX idx_product_active ON product(active);
