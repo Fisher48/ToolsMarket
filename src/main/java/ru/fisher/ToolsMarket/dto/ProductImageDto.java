@@ -11,9 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ProductImageDto {
     private Long id;
-    private String originalFileName;
     private String url;
     private String alt;
     private Integer sortOrder;
-    private boolean main;
 }

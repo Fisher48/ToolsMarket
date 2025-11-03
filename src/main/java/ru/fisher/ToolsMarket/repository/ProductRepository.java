@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.models.Product;
 
 import java.util.Optional;
@@ -31,6 +32,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "     WHEN LOWER(p.sku) = LOWER(:q) THEN 2 " +
             "     ELSE 3 END, p.name")
     Page<Product> searchActive(@Param("q") String q, Pageable pageable);
+
+    boolean existsByTitle(String title);
+
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.images LEFT JOIN FETCH p.categories WHERE p.id = :id")
+    Optional<Product> findByIdWithImagesAndCategories(@Param("id") Long id);
+
+    boolean existsByCategoriesContaining(Category category);
+
+    Page<Product> findByActiveTrue(Pageable pageable);
 
 //    @Query("SELECT p FROM Product p " +
 //            "WHERE p.active = true " +

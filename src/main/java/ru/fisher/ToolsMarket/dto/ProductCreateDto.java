@@ -1,39 +1,45 @@
 package ru.fisher.ToolsMarket.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
+import ru.fisher.ToolsMarket.models.Product;
 
 import java.math.BigDecimal;
-import java.util.Set;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 @Data
 public class ProductCreateDto {
-    @NotBlank(message = "Название товара обязательно")
-    @Size(max = 512, message = "Название не должно превышать 512 символов")
     private String name;
-
-    @NotBlank(message = "URL-адрес товара обязателен")
-    @Size(max = 512, message = "URL-адрес не должен превышать 512 символов")
     private String title;
-
-    @Size(max = 1024, message = "Краткое описание не должно превышать 1024 символов")
     private String shortDescription;
-
     private String description;
-
-    @Size(max = 100, message = "Артикул не должен превышать 100 символов")
     private String sku;
-
-    @NotNull(message = "Цена обязательна")
-    @Positive(message = "Цена должна быть положительной")
     private BigDecimal price;
-
-    private String currency = "RUB";
-
+    private String currency;
     private boolean active = true;
+    private List<Long> categoryIds;
+    private List<MultipartFile> images;
+    private List<String> imageAlts;
+    private List<Integer> imageSortOrders;
 
-    private Set<Long> categoryIds;
+    // Метод для преобразования в сущность Product
+    public Product toEntity() {
+        return Product.builder()
+                .name(this.name)
+                .title(this.title)
+                .shortDescription(this.shortDescription)
+                .description(this.description)
+                .sku(this.sku)
+                .price(this.price)
+                .currency(this.currency)
+                .active(this.active)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .categories(new HashSet<>())
+                .images(new ArrayList<>())
+                .build();
+    }
 }

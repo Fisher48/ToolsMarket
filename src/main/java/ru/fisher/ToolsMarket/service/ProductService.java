@@ -1,17 +1,17 @@
 package ru.fisher.ToolsMarket.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.fisher.ToolsMarket.dto.ProductCreateDto;
-import ru.fisher.ToolsMarket.dto.ProductDto;
-import ru.fisher.ToolsMarket.dto.ProductListDto;
-import ru.fisher.ToolsMarket.dto.ProductUpdateDto;
+import ru.fisher.ToolsMarket.dto.*;
+import ru.fisher.ToolsMarket.mapper.ProductImageMapperService;
 import ru.fisher.ToolsMarket.mapper.ProductMapperService;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.models.Product;
+import ru.fisher.ToolsMarket.models.ProductImage;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
 
@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProductService {
@@ -28,10 +29,48 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapperService productMapperService;
+    private final ProductImageMapperService productImageMapperService;
+
+    @Transactional(readOnly = true)
+    public List<Product> findAllEntities() {
+        return productRepository.findAll();
+    }
+
+    @Transactional
+    public Product saveEntity(Product product) {
+        return productRepository.save(product);
+    }
+
+    @Transactional
+    public void deleteEntity(Long id) {
+        productRepository.deleteById(id);
+    }
 
     public Optional<ProductDto> findByTitle(String title) {
         return productRepository.findByTitle(title)
                 .map(productMapperService::toDto);
+    }
+
+    public List<ProductDto> findAll() {
+        return productRepository.findAll()
+                .stream()
+                .map(productMapperService::toDto)
+                .toList();
+    }
+
+    public Page<ProductListDto> findAll(Pageable pageable) {
+        return productRepository.findAll(pageable)
+                .map(productMapperService::toListDto);
+    }
+
+    @Transactional
+    public void addImage(Long productId, ProductImageDto imageDto) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        ProductImage image = productImageMapperService.toEntity(imageDto, product);
+        product.getImages().add(image);
+        productRepository.save(product);
     }
 
     public Optional<Product> findEntityById(Long id) {

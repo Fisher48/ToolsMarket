@@ -1,6 +1,7 @@
 package ru.fisher.ToolsMarket.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.Instant;
@@ -21,9 +22,11 @@ public class Category {
     private Long id;
 
     @Column(nullable = false, length = 255, unique = true)
+    @NotBlank(message = "Название обязательно")
     private String title; // Человеко-читаемое название (для URL/SEO)
 
     @Column(nullable = false, length = 255)
+    @NotBlank(message = "Отображаемое имя обязательно")
     private String name;  // Отображаемое имя категории
 
     @ManyToOne(fetch = FetchType.LAZY)
