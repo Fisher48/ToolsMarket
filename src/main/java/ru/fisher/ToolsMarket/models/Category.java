@@ -39,6 +39,13 @@ public class Category {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // ОДНО ОСНОВНОЕ ФОТО ДЛЯ КАТЕГОРИИ
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "thumbnail_url")
+    private String thumbnailUrl;
+
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
 

@@ -41,7 +41,7 @@ public class ImageStorageService {
 
         try {
             // Создаем директорию если не существует
-            Path uploadDir = Paths.get(uploadPath);
+            Path uploadDir = Paths.get(uploadPath, "products");
             Files.createDirectories(uploadDir);
 
             // Генерируем уникальное имя файла
@@ -57,7 +57,7 @@ public class ImageStorageService {
 
             // Создаем и возвращаем сущность ProductImage
             return ProductImage.builder()
-                    .url(baseUrl + "/images/" + fileName) // Полный URL
+                    .url(baseUrl + "/images/products/" + fileName) // Полный URL
                     .alt(productTitle) // Базовое описание
                     .sortOrder(0)
                     .build();
@@ -87,7 +87,7 @@ public class ImageStorageService {
         try {
             // Извлекаем имя файла из URL
             String fileName = extractFileNameFromUrl(imageUrl);
-            Path filePath = Paths.get(uploadPath, fileName);
+            Path filePath = Paths.get(uploadPath,"products", fileName);
 
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
@@ -126,13 +126,109 @@ public class ImageStorageService {
         return imageUrl;
     }
 
+    /**
+     * Сохраняет изображение категории
+     */
+    public String saveCategoryImage(MultipartFile file, String categoryTitle) {
+        log.info("Saving category image: {}, category: {}, size: {}",
+                file.getOriginalFilename(), categoryTitle, file.getSize());
+
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Файл пустой");
+        }
+
+        if (!isImage(file)) {
+            throw new IllegalArgumentException("Файл не является изображением");
+        }
+
+        // Проверяем размер для категорий (максимум 2MB)
+        if (file.getSize() > 2 * 1024 * 1024) {
+            throw new IllegalArgumentException("Размер изображения категории не должен превышать 2MB");
+        }
+
+        try {
+            // Создаем поддиректорию для категорий
+            Path categoryDir = Paths.get(uploadPath, "categories");
+            Files.createDirectories(categoryDir);
+
+            // Генерируем уникальное имя файла
+            String originalFileName = file.getOriginalFilename();
+            String fileExtension = getFileExtension(originalFileName);
+            String fileName = generateCategoryFileName(categoryTitle, fileExtension);
+
+            // Сохраняем файл
+            Path filePath = categoryDir.resolve(fileName);
+            Files.write(filePath, file.getBytes());
+
+            // Формируем URL для доступа к изображению
+            String imageUrl = baseUrl + "/images/categories/" + fileName;
+            log.info("Category image saved: {}", imageUrl);
+
+            return imageUrl;
+
+        } catch (IOException e) {
+            log.error("Failed to save category image: {}", e.getMessage(), e);
+            throw new RuntimeException("Не удалось сохранить изображение категории: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Генерирует миниатюру для категории (пока возвращает тот же URL)
+     */
+    public String generateThumbnail(String originalImageUrl) {
+        log.info("Generating thumbnail for: {}", originalImageUrl);
+        // Пока просто возвращаем тот же URL
+        // В будущем можно реализовать реальную генерацию миниатюр
+        return originalImageUrl;
+    }
+
+    /**
+     * Удаляет изображение категории
+     */
+    public void deleteCategoryImage(String imageUrl) {
+        try {
+            // Извлекаем имя файла из URL
+            String fileName = extractFileNameFromUrl(imageUrl);
+
+            // Учитываем что файл в поддиректории categories
+            Path filePath = Paths.get(uploadPath, "categories", fileName);
+
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+                log.info("Category image deleted: {}", filePath);
+            } else {
+                log.warn("Category image file not found: {}", filePath);
+            }
+        } catch (IOException e) {
+            log.error("Failed to delete category image: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Генерирует имя файла для категории
+     */
+    private String generateCategoryFileName(String categoryTitle, String extension) {
+        String safeTitle = categoryTitle.replaceAll("[^a-zA-Z0-9-]", "_");
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        return "category_" + safeTitle + "_" + uniqueId + "_" + System.currentTimeMillis() + extension;
+    }
+
     @PostConstruct
     public void init() {
         try {
+            // Создаем основную директорию
             Files.createDirectories(Paths.get(uploadPath));
-            log.info("Upload directory created: {}", uploadPath);
+
+            // Создаем поддиректорию для категорий
+            Path categoryDir = Paths.get(uploadPath, "categories");
+            Files.createDirectories(categoryDir);
+
+            log.info("Upload directories created:");
+            log.info(" - Main: {}", uploadPath);
+            log.info(" - Categories: {}", categoryDir);
+
         } catch (IOException e) {
-            log.warn("Could not create upload directory: {}", e.getMessage());
+            log.warn("Could not create upload directories: {}", e.getMessage());
         }
     }
 }

@@ -55,7 +55,8 @@
                     </ol>
                 </nav>
 
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap
+                align-items-center pt-3 pb-2 mb-3 border-bottom">
                     <h1 class="h2">Создание новой категории</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <a th:href="@{/admin/categories}" class="btn btn-outline-secondary">
@@ -73,7 +74,8 @@
                 <!-- Content -->
                 <div class="card">
                     <div class="card-body">
-                        <form th:action="@{/admin/categories}" method="post" th:object="${category}">
+                        <form th:action="@{/admin/categories}" method="post"
+                              th:object="${category}" enctype="multipart/form-data">
 
                             <!-- Validation Errors внутри формы -->
                             <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger">
@@ -120,6 +122,15 @@
                                     </option>
                                 </select>
                                 <div class="form-text">Оставьте пустым для создания корневой категории</div>
+                            </div>
+
+                            <!-- Поле для загрузки изображения -->
+                            <div class="mb-3">
+                                <label for="image" class="form-label">Изображение категории</label>
+                                <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                                <div class="form-text">
+                                    Рекомендуемый размер: 800x600px. Максимальный размер: 2MB.
+                                </div>
                             </div>
 
                             <!-- Описание и порядок -->

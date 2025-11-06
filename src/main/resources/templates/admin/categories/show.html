@@ -73,6 +73,61 @@
                 <!-- Content -->
                 <div class="row">
                     <div class="col-lg-8">
+
+                        <!-- Изображение категории -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Изображение категории</h5>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${category.imageUrl != null}">
+                                    <div class="text-center mb-3">
+                                        <img th:src="${category.imageUrl}"
+                                             th:alt="${category.name}"
+                                             class="category-image rounded shadow-sm"
+                                             onerror="this.style.display='none'; document.getElementById('imageError').style.display='block';">
+                                        <div id="imageError" class="alert alert-warning mt-2" style="display: none;">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Не удалось загрузить изображение
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>Основное изображение:</strong>
+                                            <div class="mt-1">
+                                                <a th:href="${category.imageUrl}"
+                                                   target="_blank"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-external-link-alt me-1"></i> Открыть
+                                                </a>
+                                                <small class="text-muted d-block mt-1" th:text="${category.imageUrl}"></small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Миниатюра:</strong>
+                                            <div class="mt-1">
+                                                <span th:if="${category.thumbnailUrl != null}" class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i> Сгенерирована
+                                                </span>
+                                                <span th:if="${category.thumbnailUrl == null}" class="badge bg-warning">
+                                                    <i class="fas fa-exclamation me-1"></i> Не сгенерирована
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div th:if="${category.imageUrl == null}" class="text-center py-4">
+                                    <div class="image-placeholder">
+                                        <div class="text-center">
+                                            <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                                            <p class="text-muted mb-0">Изображение категории не загружено</p>
+                                            <small class="text-muted">Добавьте изображение при редактировании категории</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">Основная информация</h5>

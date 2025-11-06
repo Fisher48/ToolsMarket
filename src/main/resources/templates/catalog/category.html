@@ -68,31 +68,71 @@
 
     <!-- Category Header -->
     <div class="row mb-4">
-        <div class="col">
+        <!-- Изображение категории -->
+        <div th:if="${category.imageUrl}" class="col-md-3">
+            <div class="text-center">
+                <img th:src="${category.imageUrl}"
+                     th:alt="${category.name}"
+                     class="img-fluid rounded shadow-sm mb-3"
+                     style="max-height: 200px; object-fit: cover;">
+            </div>
+        </div>
+
+        <div th:class="${category.imageUrl} ? 'col-md-9' : 'col-12'">
             <h1 th:text="${category.name}">Название категории</h1>
             <p class="lead text-muted" th:text="${category.description ?: 'Товары в этой категории'}">
                 Описание категории
             </p>
-        </div>
-        <div class="col-auto">
-                <span class="badge bg-primary fs-6"
-                      th:text="'Товаров: ' + ${products.totalElements}">
-                    Товаров: 0
-                </span>
+
+            <!-- Количество товаров -->
+            <div class="mt-3">
+            <span class="badge bg-primary fs-6"
+                  th:text="'Товаров: ' + ${products.totalElements}">
+                Товаров: 0
+            </span>
+            </div>
         </div>
     </div>
 
     <!-- Subcategories (if any) -->
-    <div th:if="${not #lists.isEmpty(category.children)}" class="row mb-4">
-        <div class="col">
-            <h5>Подкатегории:</h5>
-            <div class="d-flex flex-wrap gap-2">
-                <a th:each="subcat : ${category.children}"
-                   th:href="@{/category/{title}(title=${subcat.title})}"
-                   class="btn btn-outline-primary btn-sm"
-                   th:text="${subcat.name}">
-                    Подкатегория
-                </a>
+    <!-- Subcategories - Compact Grid -->
+    <div th:if="${not #lists.isEmpty(category.children)}" class="row mb-5">
+        <div class="col-12">
+            <h5 class="mb-4">Подкатегории:</h5>
+            <div class="row">
+                <div class="col-xl-2 col-lg-3 col-md-4 col-6 mb-3" th:each="subcat : ${category.children}">
+                    <a th:href="@{/category/{title}(title=${subcat.title})}"
+                       class="text-decoration-none">
+                        <div class="card border-0 shadow-sm h-100 text-center"
+                             style="transition: transform 0.2s;"
+                             onmouseover="this.style.transform='translateY(-3px)'"
+                             onmouseout="this.style.transform='translateY(0)'">
+                            <div class="card-body p-3">
+                                <!-- Image/Icon -->
+                                <div class="mb-2">
+                                    <div th:if="${subcat.thumbnailUrl != null}">
+                                        <img th:src="${subcat.thumbnailUrl}"
+                                             th:alt="${subcat.name}"
+                                             class="rounded"
+                                             style="width: 64px; height: 64px; object-fit: cover;">
+                                    </div>
+                                    <div th:if="${subcat.thumbnailUrl == null and subcat.imageUrl != null}">
+                                        <img th:src="${subcat.imageUrl}"
+                                             th:alt="${subcat.name}"
+                                             class="rounded"
+                                             style="width: 64px; height: 64px; object-fit: cover;">
+                                    </div>
+                                    <div th:if="${subcat.thumbnailUrl == null and subcat.imageUrl == null}">
+                                        <i class="bi bi-folder-fill text-primary fs-3"></i>
+                                    </div>
+                                </div>
+
+                                <h6 class="card-title mb-1 text-dark" th:text="${subcat.name}"></h6>
+                                <small class="text-muted">Подкатегория</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

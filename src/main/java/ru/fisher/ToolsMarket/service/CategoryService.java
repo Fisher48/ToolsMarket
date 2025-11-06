@@ -50,21 +50,21 @@ public class CategoryService {
                 .toList();
     }
 
-    public List<Category> getParentCategories() {
-        return categoryRepository.findByParentIsNullOrderBySortOrderAsc();
-    }
+//    public List<Category> getParentCategories() {
+//        return categoryRepository.findByParentIsNullOrderBySortOrderAsc();
+//    }
 
-    public List<CategoryWithChildrenDto> getRootCategoriesWithChildren() {
-        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
-                .map(categoryMapperService::toWithChildrenDto)
-                .toList();
-    }
+//    public List<CategoryWithChildrenDto> getRootCategoriesWithChildren() {
+//        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
+//                .map(categoryMapperService::toWithChildrenDto)
+//                .toList();
+//    }
 
-    public List<CategoryTreeDto> getCategoryTree() {
-        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
-                .map(categoryMapperService::toTreeDto)
-                .toList();
-    }
+//    public List<CategoryTreeDto> getCategoryTree() {
+//        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
+//                .map(categoryMapperService::toTreeDto)
+//                .toList();
+//    }
 
     public Optional<CategoryDto> findByTitle(String title) {
         return categoryRepository.findByTitle(title)
@@ -76,10 +76,10 @@ public class CategoryService {
                 .map(categoryMapperService::toDto);
     }
 
-    public Optional<CategorySimpleDto> findSimpleById(Long id) {
-        return categoryRepository.findById(id)
-                .map(categoryMapperService::toSimpleDto);
-    }
+//    public Optional<CategorySimpleDto> findSimpleById(Long id) {
+//        return categoryRepository.findById(id)
+//                .map(categoryMapperService::toSimpleDto);
+//    }
 
     public List<CategoryDto> findAll() {
         return categoryRepository.findAll().stream()
@@ -91,44 +91,44 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
-    @Transactional
-    public CategoryDto update(Long id, CategoryUpdateDto categoryDto) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+//    @Transactional
+//    public CategoryDto update(Long id, CategoryUpdateDto categoryDto) {
+//        Category category = categoryRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Category not found"));
+//
+//        // Обновляем поля
+//        if (categoryDto.getTitle() != null) category.setTitle(categoryDto.getTitle());
+//        if (categoryDto.getName() != null) category.setName(categoryDto.getName());
+//        if (categoryDto.getDescription() != null) category.setDescription(categoryDto.getDescription());
+//        if (categoryDto.getSortOrder() != null) category.setSortOrder(categoryDto.getSortOrder());
+//
+//        // Обновляем родителя
+//        if (categoryDto.getParentId() != null) {
+//            Category parent = categoryRepository.findById(categoryDto.getParentId())
+//                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
+//            category.setParent(parent);
+//        } else {
+//            category.setParent(null);
+//        }
+//
+//        Category updated = categoryRepository.save(category);
+//        return categoryMapperService.toDto(updated);
+//    }
 
-        // Обновляем поля
-        if (categoryDto.getTitle() != null) category.setTitle(categoryDto.getTitle());
-        if (categoryDto.getName() != null) category.setName(categoryDto.getName());
-        if (categoryDto.getDescription() != null) category.setDescription(categoryDto.getDescription());
-        if (categoryDto.getSortOrder() != null) category.setSortOrder(categoryDto.getSortOrder());
-
-        // Обновляем родителя
-        if (categoryDto.getParentId() != null) {
-            Category parent = categoryRepository.findById(categoryDto.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
-            category.setParent(parent);
-        } else {
-            category.setParent(null);
-        }
-
-        Category updated = categoryRepository.save(category);
-        return categoryMapperService.toDto(updated);
-    }
-
-    @Transactional
-    public CategoryDto save(CategoryCreateDto categoryDto) {
-        Category category = categoryMapperService.toEntity(categoryDto);
-
-        // Установка родительской категории
-        if (categoryDto.getParentId() != null) {
-            Category parent = categoryRepository.findById(categoryDto.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
-            category.setParent(parent);
-        }
-
-        Category saved = categoryRepository.save(category);
-        return categoryMapperService.toDto(saved);
-    }
+//    @Transactional
+//    public CategoryDto save(CategoryCreateDto categoryDto) {
+//        Category category = categoryMapperService.toEntity(categoryDto);
+//
+//        // Установка родительской категории
+//        if (categoryDto.getParentId() != null) {
+//            Category parent = categoryRepository.findById(categoryDto.getParentId())
+//                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
+//            category.setParent(parent);
+//        }
+//
+//        Category saved = categoryRepository.save(category);
+//        return categoryMapperService.toDto(saved);
+//    }
 
     @Transactional
     public void delete(Long id) {

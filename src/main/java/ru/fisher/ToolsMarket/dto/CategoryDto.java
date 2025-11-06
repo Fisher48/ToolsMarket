@@ -18,6 +18,8 @@ public class CategoryDto {
     private String name;
     private String description;
     private Integer sortOrder;
+    private String imageUrl;        // Добавьте это поле
+    private String thumbnailUrl;
     private CategoryDto parent;
     private Set<CategoryDto> children;
     private Instant createdAt;
