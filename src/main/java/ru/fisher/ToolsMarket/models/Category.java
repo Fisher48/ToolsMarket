@@ -51,4 +51,9 @@ public class Category {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private Set<Attribute> attributes = new HashSet<>();
+
 }

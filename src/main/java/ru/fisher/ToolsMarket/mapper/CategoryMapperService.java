@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import ru.fisher.ToolsMarket.dto.*;
 import ru.fisher.ToolsMarket.models.Category;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -17,28 +20,35 @@ public class CategoryMapperService {
     public CategoryDto toDto(Category category) {
         if (category == null) return null;
 
-        CategoryDto dto = modelMapper.map(category, CategoryDto.class);
+        // Создаем DTO вручную, чтобы избежать рекурсии
+        CategoryDto dto = CategoryDto.builder()
+                .id(category.getId())
+                .title(category.getTitle())
+                .name(category.getName())
+                .description(category.getDescription())
+                .sortOrder(category.getSortOrder())
+                .imageUrl(category.getImageUrl())
+                .thumbnailUrl(category.getThumbnailUrl())
+                .createdAt(category.getCreatedAt())
+                .build();
 
-        // Рекурсивно маппим родительскую категорию (только базовые поля)
+        // Родитель - только ID и имя (НЕ объект)
         if (category.getParent() != null) {
-            CategoryDto parentDto = modelMapper.map(category.getParent(), CategoryDto.class);
-            // Чтобы избежать бесконечной рекурсии, не маппим родителя родителя и детей родителя
-            parentDto.setParent(null);
-            parentDto.setChildren(null);
-            dto.setParent(parentDto);
+            dto.setParentId(category.getParent().getId());
+            dto.setParentName(category.getParent().getName());
+            // НЕ создаем объект parentDto!
         }
 
-        // Маппим дочерние категории (только первый уровень)
-        if (category.getChildren() != null) {
+        // Дети - только простой DTO (НЕ полный CategoryDto)
+        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+            dto.setChildrenCount(category.getChildren().size());
             dto.setChildren(category.getChildren().stream()
-                    .map(child -> {
-                        CategoryDto childDto = modelMapper.map(child, CategoryDto.class);
-                        // Чтобы избежать рекурсии, не маппим детей детей
-                        childDto.setChildren(null);
-                        childDto.setParent(null); // Или можно оставить только parent ID
-                        return childDto;
-                    })
-                    .collect(Collectors.toSet()));
+                    .map(this::toSimpleDto) // Используем toSimpleDto а не toDto
+                    .sorted(Comparator.comparing(CategorySimpleDto::getSortOrder))
+                    .collect(Collectors.toList()));
+        } else {
+            dto.setChildrenCount(0);
+            dto.setChildren(Collections.emptyList());
         }
 
         return dto;
@@ -46,7 +56,22 @@ public class CategoryMapperService {
 
     public CategorySimpleDto toSimpleDto(Category category) {
         if (category == null) return null;
+
+        // Для простого DTO можно использовать ModelMapper
         return modelMapper.map(category, CategorySimpleDto.class);
+    }
+
+    // Дополнительные методы для коллекций
+    public List<CategoryDto> toDtoList(List<Category> categories) {
+        return categories.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<CategorySimpleDto> toSimpleDtoList(List<Category> categories) {
+        return categories.stream()
+                .map(this::toSimpleDto)
+                .collect(Collectors.toList());
     }
 
 //    public CategoryWithParentDto toWithParentDto(Category category) {
@@ -100,4 +125,5 @@ public class CategoryMapperService {
 //    public Category toEntity(CategoryCreateDto dto) {
 //        return modelMapper.map(dto, Category.class);
 //    }
+
 }

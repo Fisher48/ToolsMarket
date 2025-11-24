@@ -150,6 +150,23 @@
                                 </div>
                             </div>
 
+                            <!-- Характеристики (появятся после выбора категорий) -->
+                            <div class="mb-4" id="attributes-section" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <label class="form-label fw-bold">Характеристики товара</label>
+                                    <small class="text-muted">Заполняются после сохранения товара</small>
+                                </div>
+
+                                <div id="dynamic-attributes-container">
+                                    <!-- Атрибуты будут подгружаться динамически через JavaScript -->
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Характеристики можно будет настроить после создания товара
+                                </div>
+                            </div>
+
                             <!-- Секция для загрузки изображений -->
                             <div class="mb-3">
                                 <label class="form-label">Изображения товара</label>
@@ -206,5 +223,47 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Динамическая загрузка атрибутов при выборе категорий
+    document.addEventListener('DOMContentLoaded', function() {
+        const categoryCheckboxes = document.querySelectorAll('input[name="categoryIds"]');
+        const attributesSection = document.getElementById('attributes-section');
+        const attributesContainer = document.getElementById('dynamic-attributes-container');
+
+        function updateAttributesVisibility() {
+            const selectedCategories = Array.from(categoryCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            if (selectedCategories.length > 0) {
+                attributesSection.style.display = 'block';
+                // Здесь можно добавить AJAX запрос для загрузки атрибутов
+                // или просто показать информационное сообщение
+            } else {
+                attributesSection.style.display = 'none';
+            }
+        }
+
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateAttributesVisibility);
+        });
+
+        // Инициализация при загрузке
+        updateAttributesVisibility();
+    });
+
+    // Для страницы редактирования - скрываем пустые категории
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.category-section').forEach(section => {
+            const inputs = section.querySelectorAll('input, select');
+            const hasAttributes = Array.from(inputs).some(input => input.type !== 'hidden');
+            if (!hasAttributes) {
+                section.style.display = 'none';
+            }
+        });
+    });
+</script>
+
 </body>
 </html>

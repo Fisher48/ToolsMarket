@@ -3,12 +3,12 @@ package ru.fisher.ToolsMarket.mapper;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-import ru.fisher.ToolsMarket.dto.ProductCreateDto;
-import ru.fisher.ToolsMarket.dto.ProductDto;
-import ru.fisher.ToolsMarket.dto.ProductListDto;
-import ru.fisher.ToolsMarket.dto.ProductUpdateDto;
+import ru.fisher.ToolsMarket.dto.*;
+import ru.fisher.ToolsMarket.models.Attribute;
 import ru.fisher.ToolsMarket.models.Product;
+import ru.fisher.ToolsMarket.service.AttributeService;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,6 +18,7 @@ public class ProductMapperService {
     private final ModelMapper modelMapper;
     private final CategoryMapperService categoryMapperService;
     private final ProductImageMapperService productImageMapperService;
+    private final AttributeService attributeService;
 
     public ProductDto toDto(Product product) {
         if (product == null) return null;
@@ -37,6 +38,19 @@ public class ProductMapperService {
                     .map(productImageMapperService::toDto)
                     .collect(Collectors.toList()));
         }
+
+        // Добавляем характеристики
+        Map<Attribute, String> attributes = attributeService.getProductAttributes(product);
+        dto.setSpecifications(attributes.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().getName(),
+                        Map.Entry::getValue
+                )));
+
+        // Или полную информацию об атрибутах
+        dto.setAttributeValues(attributeService.getProductAttributeValues(product).stream()
+                .map(ProductAttributeValueDto::fromEntity)
+                .collect(Collectors.toList()));
 
         return dto;
     }

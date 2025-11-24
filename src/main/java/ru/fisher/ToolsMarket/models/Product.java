@@ -64,4 +64,18 @@ public class Product {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private List<ProductAttributeValue> attributeValues = new ArrayList<>();
+
+    // Вспомогательный метод для получения значения атрибута
+    public String getAttributeValue(String attributeName) {
+        return attributeValues.stream()
+                .filter(av -> av.getAttribute().getName().equals(attributeName))
+                .map(ProductAttributeValue::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
 }

@@ -124,6 +124,14 @@
                                            class="btn btn-sm btn-outline-secondary" title="Редактировать">
                                             <i class="fas fa-edit"></i>
                                         </a>
+
+                                        <!-- Новая кнопка характеристик -->
+                                        <a th:href="@{/admin/products/{id}/specifications(id=${product.id})}"
+                                           class="btn btn-sm btn-outline-info"
+                                           title="Характеристики">
+                                            <i class="fas fa-list-check"></i>
+                                        </a>
+
                                         <form th:action="@{/admin/products/{id}/delete(id=${product.id})}"
                                               method="post" class="d-inline"
                                               onsubmit="return confirm('Вы уверены, что хотите удалить этот товар?');">

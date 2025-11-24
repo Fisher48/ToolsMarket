@@ -86,6 +86,7 @@
                                     <th>ID</th>
                                     <th>Название</th>
                                     <th>URL</th>
+                                    <th>Характеристики</th>
                                     <th>Родитель</th>
                                     <th>Порядок</th>
                                     <th>Дочерние</th>
@@ -100,6 +101,15 @@
                                         <strong th:text="${category.name}"></strong>
                                     </td>
                                     <td th:text="${category.title}">category-url</td>
+                                    <td>
+                                        <span class="badge bg-info"
+                                              th:text="${category.attributes != null
+                                              ? category.attributes.size() : 0}">0</span>
+                                        <a th:href="@{/admin/categories/{id}/attributes(id=${category.id})}"
+                                           class="btn btn-sm btn-outline-secondary ms-1">
+                                            <i class="fas fa-cog"></i>
+                                        </a>
+                                    </td>
                                     <td>
                                                 <span th:if="${category.parent != null}"
                                                       th:text="${category.parent.name}"
@@ -124,6 +134,12 @@
                                         <a th:href="@{/admin/categories/{id}/edit(id=${category.id})}"
                                            class="btn btn-sm btn-outline-secondary" title="Редактировать">
                                             <i class="fas fa-edit"></i>
+                                        </a>
+                                        <!-- новая кнопка управления атрибутами -->
+                                        <a th:href="@{/admin/categories/{id}/attributes(id=${category.id})}"
+                                           class="btn btn-sm btn-outline-info"
+                                           title="Управление атрибутами">
+                                            <i class="fas fa-list-check"></i>
                                         </a>
                                         <form th:action="@{/admin/categories/{id}/delete(id=${category.id})}"
                                               method="post" class="d-inline"

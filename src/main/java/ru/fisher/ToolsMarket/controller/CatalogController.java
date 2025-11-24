@@ -70,7 +70,7 @@ public class CatalogController {
 
     @GetMapping("/product/{title}")
     public String product(@PathVariable String title, Model model) {
-        ProductDto product = productService.findByTitle(title)
+        ProductDto product = productService.findWithAttributesByTitle(title)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
 
         model.addAttribute("product", product);

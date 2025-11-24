@@ -2,6 +2,7 @@ package ru.fisher.ToolsMarket.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,6 +42,24 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsByCategoriesContaining(Category category);
 
     Page<Product> findByActiveTrue(Pageable pageable);
+
+    // Метод с явной загрузкой всех связей для редактирования
+    @EntityGraph(attributePaths = {
+            "attributeValues",
+            "attributeValues.attribute"
+    })
+    @Query("SELECT p FROM Product p WHERE p.id = :id")
+    Optional<Product> findWithDetailsById(@Param("id") Long id);
+
+    // Метод для страницы характеристик
+    @EntityGraph(attributePaths = {"attributeValues", "attributeValues.attribute"})
+    @Query("SELECT p FROM Product p WHERE p.id = :id")
+    Optional<Product> findWithAttributesById(@Param("id") Long id);
+
+    // ИСПРАВЛЕННЫЙ МЕТОД - загружаем только одну коллекцию
+    @EntityGraph(attributePaths = {"categories", "attributeValues", "attributeValues.attribute"})
+    @Query("SELECT p FROM Product p WHERE p.title = :title")
+    Optional<Product> findByTitleWithAttributes(@Param("title") String title);
 
 //    @Query("SELECT p FROM Product p " +
 //            "WHERE p.active = true " +

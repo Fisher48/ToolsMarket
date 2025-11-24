@@ -121,6 +121,82 @@
                         </div>
                     </div>
 
+                    <!-- Характеристики -->
+                    <div class="card mt-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-list-check me-2"></i>Характеристики
+                                <span th:if="${not #lists.isEmpty(product.attributeValues)}"
+                                      class="badge bg-primary ms-2"
+                                      th:text="${product.attributeValues.size()}"></span>
+                            </h5>
+                            <a th:href="@{/admin/products/{id}/specifications(id=${product.id})}"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-edit me-1"></i>
+                                <span th:if="${#lists.isEmpty(product.attributeValues)}">Добавить</span>
+                                <span th:unless="${#lists.isEmpty(product.attributeValues)}">Редактировать</span>
+                            </a>
+                        </div>
+
+
+
+                        <div class="card-body">
+                            <div th:if="${not #lists.isEmpty(product.attributeValues)}">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                        <tr>
+                                            <th>Характеристика</th>
+                                            <th>Значение</th>
+                                            <th>Тип</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="attrValue : ${product.attributeValues}">
+                                            <td>
+                                                <strong th:text="${attrValue.attribute.name}"></strong>
+                                                <span th:if="${attrValue.attribute.required}" class="text-danger" title="Обязательная">*</span>
+                                                <div class="small text-muted" th:text="${attrValue.attribute.category.name}"></div>
+                                            </td>
+                                            <td>
+                                                <span th:text="${attrValue.value}" class="fw-bold"></span>
+                                                <small th:if="${attrValue.attribute.unit}"
+                                                       class="text-muted ms-1"
+                                                       th:text="${attrValue.attribute.unit}"></small>
+                                            </td>
+                                            <td>
+    <span th:switch="${#strings.toUpperCase(attrValue.attribute.type)}">
+        <span th:case="'STRING'" class="badge bg-secondary">Текст</span>
+        <span th:case="'NUMBER'" class="badge bg-primary">Число</span>
+        <span th:case="'SELECT'" class="badge bg-success">Выбор</span>
+        <span th:case="'BOOLEAN'" class="badge bg-warning">Да/Нет</span>
+        <span th:case="*" class="badge bg-dark" th:text="${attrValue.attribute.type}"></span>
+    </span>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="mt-3 pt-3 border-top text-end">
+                                    <small class="text-muted">
+                                        Заполнено характеристик: <strong th:text="${product.attributeValues.size()}"></strong>
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div th:unless="${not #lists.isEmpty(product.attributeValues)}" class="text-center py-4">
+                                <i class="fas fa-list-check fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">Характеристики не заданы</h5>
+                                <p class="text-muted mb-3">Добавьте характеристики для этого товара</p>
+                                <a th:href="@{/admin/products/{id}/specifications(id=${product.id})}"
+                                   class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i> Добавить характеристики
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-lg-4">
                         <div class="card mb-4">
                             <div class="card-header">

@@ -15,10 +15,7 @@ import ru.fisher.ToolsMarket.models.ProductImage;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -30,6 +27,7 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductMapperService productMapperService;
     private final ProductImageMapperService productImageMapperService;
+    private final AttributeService attributeService;
 
     @Transactional(readOnly = true)
     public List<Product> findAllEntities() {
@@ -136,5 +134,28 @@ public class ProductService {
     @Transactional
     public void delete(Long id) {
         productRepository.deleteById(id);
+    }
+
+    public Product saveWithAttributes(Product product, Map<Long, String> attributeValues) {
+        Product savedProduct = productRepository.save(product);
+        if (attributeValues != null && !attributeValues.isEmpty()) {
+            attributeService.saveProductAttributes(savedProduct, attributeValues);
+        }
+        return savedProduct;
+    }
+
+    // Новый метод для редактирования с полной загрузкой
+    public Optional<Product> findWithDetailsById(Long id) {
+        return productRepository.findWithDetailsById(id);
+    }
+
+    // Метод для страницы характеристик
+    public Optional<Product> findWithAttributesById(Long id) {
+        return productRepository.findWithAttributesById(id);
+    }
+
+    public Optional<ProductDto> findWithAttributesByTitle(String title) {
+        return productRepository.findByTitleWithAttributes(title)
+                .map(productMapperService::toDto);
     }
 }

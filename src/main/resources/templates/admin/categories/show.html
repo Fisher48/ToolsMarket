@@ -189,6 +189,66 @@
                             </div>
                         </div>
 
+                        <!-- Добавляем этот блок после дочерних категорий -->
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Характеристики категории</h5>
+                                <a th:href="@{/admin/categories/{id}/attributes(id=${category.id})}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-cog me-1"></i> Управление атрибутами
+                                </a>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${not #lists.isEmpty(category.attributes)}">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                            <tr>
+                                                <th>Название</th>
+                                                <th>Тип</th>
+                                                <th>Ед. изм.</th>
+                                                <th>Обязательный</th>
+                                                <th>Для фильтров</th>
+                                                <th>Порядок</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="attr : ${category.attributes}">
+                                                <td th:text="${attr.name}"></td>
+                                                <td>
+                                <span th:switch="${#strings.toUpperCase(attr.type)}">
+        <span th:case="'STRING'" class="badge bg-secondary">Текст</span>
+        <span th:case="'NUMBER'" class="badge bg-primary">Число</span>
+        <span th:case="'SELECT'" class="badge bg-success">Выбор</span>
+        <span th:case="'BOOLEAN'" class="badge bg-warning">Да/Нет</span>
+        <span th:case="*" class="badge bg-dark" th:text="${attr.type}"></span>
+    </span>
+                                                </td>
+                                                <td th:text="${attr.unit} ?: '—'"></td>
+                                                <td>
+                                                    <i th:if="${attr.required}" class="fas fa-check text-success"></i>
+                                                    <i th:unless="${attr.required}" class="fas fa-times text-muted"></i>
+                                                </td>
+                                                <td>
+                                                    <i th:if="${attr.filterable}" class="fas fa-check text-success"></i>
+                                                    <i th:unless="${attr.filterable}" class="fas fa-times text-muted"></i>
+                                                </td>
+                                                <td th:text="${attr.sortOrder}"></td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div th:unless="${not #lists.isEmpty(category.attributes)}" class="text-center text-muted py-3">
+                                    <i class="fas fa-list-check fa-2x mb-2"></i>
+                                    <p>Атрибуты не настроены</p>
+                                    <a th:href="@{/admin/categories/{id}/attributes(id=${category.id})}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus me-1"></i> Добавить атрибуты
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">Мета-информация</h5>

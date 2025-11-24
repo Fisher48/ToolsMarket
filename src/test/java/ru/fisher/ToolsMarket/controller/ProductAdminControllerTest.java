@@ -4,23 +4,22 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.fisher.ToolsMarket.models.Category;
-import ru.fisher.ToolsMarket.models.Product;
-import ru.fisher.ToolsMarket.models.ProductImage;
+import ru.fisher.ToolsMarket.models.*;
+import ru.fisher.ToolsMarket.service.AttributeService;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.ImageStorageService;
 import ru.fisher.ToolsMarket.service.ProductService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -38,9 +37,31 @@ class ProductAdminControllerTest {
     private CategoryService categoryService;
     @MockitoBean
     private ImageStorageService imageStorageService;
+    @MockitoBean
+    private AttributeService attributeService;
 
 
-    private Product createTestProduct() {
+    private Product createTestProductWithDetails() {
+        Category category = Category.builder()
+                .id(1L)
+                .name("Электроинструменты")
+                .attributes(new HashSet<>())
+                .build();
+
+        Attribute attribute = Attribute.builder()
+                .id(1L)
+                .name("Мощность")
+                .category(category)
+                .build();
+
+        category.setAttributes(Set.of(attribute));
+
+        ProductAttributeValue attributeValue = ProductAttributeValue.builder()
+                .id(1L)
+                .attribute(attribute)
+                .value("850")
+                .build();
+
         return Product.builder()
                 .id(1L)
                 .name("Test Product")
@@ -51,6 +72,7 @@ class ProductAdminControllerTest {
                 .shortDescription("Short description")
                 .description("Full description")
                 .active(true)
+                .attributeValues(List.of(attributeValue))
                 .categories(new HashSet<>()) // Инициализируем коллекцию
                 .images(new ArrayList<>())   // Инициализируем коллекцию изображений
                 .createdAt(Instant.now())
@@ -70,7 +92,7 @@ class ProductAdminControllerTest {
     @Test
     void create_WithImage_ShouldSaveProductWithImage() throws Exception {
         // Given
-        Product product = createTestProduct();
+        Product product = createTestProductWithDetails();
         ProductImage productImage = createTestProductImage();
 
         when(productService.saveEntity(any(Product.class))).thenReturn(product);
@@ -103,7 +125,7 @@ class ProductAdminControllerTest {
     @Test
     void create_WithMultipleImages_ShouldSaveAllImages() throws Exception {
         // Given
-        Product product = createTestProduct();
+        Product product = createTestProductWithDetails();
         ProductImage image1 = ProductImage.builder().id(1L).url("url1").alt("alt1").build();
         ProductImage image2 = ProductImage.builder().id(2L).url("url2").alt("alt2").build();
 
@@ -141,7 +163,7 @@ class ProductAdminControllerTest {
     @Test
     void create_WithInvalidImage_ShouldSkipInvalidFile() throws Exception {
         // Given
-        Product product = createTestProduct();
+        Product product = createTestProductWithDetails();
 
         when(productService.saveEntity(any(Product.class))).thenReturn(product);
         when(imageStorageService.isImage(any())).thenReturn(false); // Файлы не являются изображениями
@@ -173,7 +195,7 @@ class ProductAdminControllerTest {
     @Test
     void create_WithEmptyImage_ShouldSkipEmptyFile() throws Exception {
         // Given
-        Product product = createTestProduct();
+        Product product = createTestProductWithDetails();
 
         when(productService.saveEntity(any(Product.class))).thenReturn(product);
         // isImage не будет вызываться для пустых файлов
@@ -201,7 +223,7 @@ class ProductAdminControllerTest {
     @Test
     void update_WithNewImage_ShouldAddImageToProduct() throws Exception {
         // Given
-        Product existingProduct = createTestProduct();
+        Product existingProduct = createTestProductWithDetails();
         ProductImage newImage = createTestProductImage();
 
         when(productService.findEntityById(1L)).thenReturn(Optional.of(existingProduct));
@@ -233,7 +255,7 @@ class ProductAdminControllerTest {
     @Test
     void update_WithDeleteImageIds_ShouldRemoveImages() throws Exception {
         // Given
-        Product existingProduct = createTestProduct();
+        Product existingProduct = createTestProductWithDetails();
         ProductImage imageToDelete = createTestProductImage();
         existingProduct.getImages().add(imageToDelete);
 
@@ -258,7 +280,7 @@ class ProductAdminControllerTest {
     @Test
     void update_WithNewImageAndDeleteExisting_ShouldHandleBoth() throws Exception {
         // Given
-        Product existingProduct = createTestProduct();
+        Product existingProduct = createTestProductWithDetails();
         ProductImage existingImage = createTestProductImage();
         ProductImage newImage = ProductImage.builder().id(2L).url("new-url").alt("new").build();
 
@@ -301,7 +323,7 @@ class ProductAdminControllerTest {
     @Test
     void index_ShouldReturnProductsList() throws Exception {
         // Given
-        Product product = createTestProduct();
+        Product product = createTestProductWithDetails();
         when(productService.findAllEntities()).thenReturn(List.of(product));
 
         // When & Then
@@ -315,7 +337,7 @@ class ProductAdminControllerTest {
     @Test
     void show_WhenProductExists_ShouldReturnProductView() throws Exception {
         // Given
-        Product product = createTestProduct();
+        Product product = createTestProductWithDetails();
         when(productService.findEntityById(1L)).thenReturn(Optional.of(product));
 
         // When & Then
@@ -352,7 +374,7 @@ class ProductAdminControllerTest {
     @Test
     void create_ShouldSaveProductAndRedirect() throws Exception {
         // Given
-        Product product = createTestProduct();
+        Product product = createTestProductWithDetails();
         when(productService.saveEntity(any(Product.class))).thenReturn(product);
 
         // When & Then
@@ -375,8 +397,8 @@ class ProductAdminControllerTest {
     @Test
     void edit_WhenProductExists_ShouldReturnEditForm() throws Exception {
         // Given
-        Product product = createTestProduct();
-        when(productService.findEntityById(1L)).thenReturn(Optional.of(product));
+        Product product = createTestProductWithDetails();
+        when(productService.findWithDetailsById(1L)).thenReturn(Optional.of(product));
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));
 
         // When & Then
@@ -390,7 +412,7 @@ class ProductAdminControllerTest {
     @Test
     void update_ShouldUpdateProductAndRedirect() throws Exception {
         // Given
-        Product existingProduct = createTestProduct();
+        Product existingProduct = createTestProductWithDetails();
         when(productService.findEntityById(1L)).thenReturn(Optional.of(existingProduct));
         when(productService.saveEntity(any(Product.class))).thenReturn(existingProduct);
 
@@ -422,6 +444,92 @@ class ProductAdminControllerTest {
                 .andExpect(redirectedUrl("/admin/products"));
 
         verify(productService, times(1)).deleteEntity(1L);
+    }
+
+    @Test
+    void specificationsForm_ShouldReturnSpecificationsView() throws Exception {
+        // Arrange
+        Long productId = 1L;
+
+        // Создаем категорию с инициализированной коллекцией attributes
+        Category category = Category.builder()
+                .id(1L)
+                .name("Электроинструменты")
+                .attributes(new HashSet<>()) // Инициализируем коллекцию
+                .build();
+
+        Product product = Product.builder()
+                .id(productId)
+                .name("Дрель PRO")
+                .categories(Set.of(category))
+                .attributeValues(new ArrayList<>())
+                .build();
+
+        when(productService.findWithDetailsById(productId)).thenReturn(Optional.of(product));
+
+        // Act & Assert
+        mockMvc.perform(get("/admin/products/{id}/specifications", productId))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/products/specifications"))
+                .andExpect(model().attributeExists("product", "attributes", "currentValues"));
+    }
+
+    @Test
+    void saveSpecifications_WithValidData_ShouldSaveAndRedirect() throws Exception {
+        // Arrange
+        Long productId = 1L;
+        Product product = Product.builder().id(productId).name("Дрель PRO").build();
+
+        when(productService.findEntityById(productId)).thenReturn(Optional.of(product));
+
+        // Act & Assert
+        mockMvc.perform(post("/admin/products/{id}/specifications", productId)
+                        .param("attr_1", "850")
+                        .param("attr_2", "Черный")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/products/" + productId));
+
+        verify(attributeService).saveProductAttributes(eq(product), any(Map.class));
+    }
+
+    @Test
+    void editProductForm_ShouldLoadAttributesAndValues() throws Exception {
+        // Arrange
+        Long productId = 1L;
+
+        // Создаем категорию для атрибута
+        Category category = Category.builder()
+                .id(1L)
+                .name("Электроинструменты")
+                .build();
+
+        Attribute attribute = Attribute.builder()
+                .id(1L)
+                .name("Мощность")
+                .category(category)
+                .build();
+
+        ProductAttributeValue attributeValue = ProductAttributeValue.builder()
+                .attribute(attribute)
+                .value("850")
+                .build();
+
+        Product product = Product.builder()
+                .id(productId)
+                .name("Дрель PRO")
+                .attributeValues(List.of(attributeValue))
+                .build();
+
+        when(productService.findWithDetailsById(productId)).thenReturn(Optional.of(product));
+
+        // Act & Assert
+        mockMvc.perform(get("/admin/products/{id}/edit", productId))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/products/edit"))
+                .andExpect(model().attributeExists("product", "currentValues"))
+                .andExpect(model().attribute("currentValues", hasKey(1L)))
+                .andExpect(model().attribute("currentValues", hasEntry(1L, "850")));
     }
 
 }

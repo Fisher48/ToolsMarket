@@ -9,6 +9,7 @@ import ru.fisher.ToolsMarket.util.PriceFormatter;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Data
@@ -29,6 +30,9 @@ public class ProductDto {
     private List<ProductImageDto> images;
     private Instant createdAt;
     private Instant updatedAt;
+    // Новые поля для характеристик
+    private List<ProductAttributeValueDto> attributeValues;
+    private Map<String, String> specifications; // Упрощенная версия для шаблонов
 
     // Дополнительные вычисляемые поля для UI
     public String getFormattedPrice() {
@@ -46,5 +50,23 @@ public class ProductDto {
 
     public String getMainImageUrl() {
         return images != null && !images.isEmpty() ? images.getFirst().getUrl() : "/images/placeholder.jpg";
+    }
+
+    // Метод для получения значения конкретной характеристики
+    public String getAttributeValue(String attributeName) {
+        if (attributeValues != null) {
+            return attributeValues.stream()
+                    .filter(av -> attributeName.equals(av.getAttributeName()))
+                    .map(ProductAttributeValueDto::getValue)
+                    .findFirst()
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    // Метод для проверки наличия характеристик
+    public boolean hasSpecifications() {
+        return (attributeValues != null && !attributeValues.isEmpty()) ||
+                (specifications != null && !specifications.isEmpty());
     }
 }

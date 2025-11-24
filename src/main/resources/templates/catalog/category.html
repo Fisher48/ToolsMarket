@@ -55,10 +55,10 @@
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Главная</a></li>
-            <li th:if="${category.parent}" class="breadcrumb-item">
-                <a th:href="@{/category/{title}(title=${category.parent.title})}"
+            <li th:if="${category.parentId}" class="breadcrumb-item">
+                <a th:href="@{/category/{title}(title=${category.title})}"
                    class="text-decoration-none"
-                   th:text="${category.parent.name}">
+                   th:text="${category.parentName}">
                     Родительская категория
                 </a>
             </li>

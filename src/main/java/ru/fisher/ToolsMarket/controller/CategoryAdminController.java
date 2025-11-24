@@ -1,11 +1,13 @@
 package ru.fisher.ToolsMarket.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -53,22 +55,26 @@ public class CategoryAdminController {
 
     // Создание категории с изображением
     @PostMapping
-    public String create(@RequestParam String name,
-                         @RequestParam String title,
-                         @RequestParam(required = false) String description,
-                         @RequestParam(required = false) Integer sortOrder,
+    public String create(@RequestParam(required = false) MultipartFile image,
+                         @Valid @ModelAttribute Category category,
                          @RequestParam(required = false) Long parentId,
-                         @RequestParam(required = false) MultipartFile image,
+                         BindingResult bindingResult,
                          Model model) {
 
-        log.info("Creating category: {}, title: {}", name, title);
+        log.info("Creating category: {}, title: {}", category.getName(), category.getTitle());
+
+        // Проверьте ошибки валидации
+        if (bindingResult.hasErrors()) {
+            log.warn("Validation errors: {}", bindingResult.getAllErrors());
+            model.addAttribute("allCategories", categoryService.findAllEntities());
+            return "admin/categories/new";  // Верните форму с ошибками
+        }
 
         // Создаем категорию
-        Category category = new Category();
-        category.setName(name);
-        category.setTitle(title);
-        category.setDescription(description);
-        category.setSortOrder(sortOrder != null ? sortOrder : 0);
+//        category.setName(name);
+//        category.setTitle(title);
+//        category.setDescription(description);
+        category.setSortOrder(category.getSortOrder() != null ? category.getSortOrder() : 0);
         category.setCreatedAt(Instant.now());
 
         // Устанавливаем родителя
@@ -76,6 +82,8 @@ public class CategoryAdminController {
             Category parent = categoryService.findEntityById(parentId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parent category not found"));
             category.setParent(parent);
+        } else {
+            category.setParent(null);
         }
 
         // Сохраняем изображение категории
@@ -83,7 +91,7 @@ public class CategoryAdminController {
             log.info("Saving category image: {} ({} bytes)",
                     image.getOriginalFilename(), image.getSize());
             try {
-                String imageUrl = imageStorageService.saveCategoryImage(image, title);
+                String imageUrl = imageStorageService.saveCategoryImage(image, category.getTitle());
                 category.setImageUrl(imageUrl);
 
                 // Генерируем миниатюру

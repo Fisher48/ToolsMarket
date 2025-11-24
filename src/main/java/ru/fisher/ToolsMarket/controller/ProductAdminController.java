@@ -8,9 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import ru.fisher.ToolsMarket.models.Category;
-import ru.fisher.ToolsMarket.models.Product;
-import ru.fisher.ToolsMarket.models.ProductImage;
+import ru.fisher.ToolsMarket.models.*;
+import ru.fisher.ToolsMarket.service.AttributeService;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.ImageStorageService;
 import ru.fisher.ToolsMarket.service.ProductService;
@@ -18,6 +17,7 @@ import ru.fisher.ToolsMarket.service.ProductService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @Slf4j
@@ -28,6 +28,7 @@ public class ProductAdminController {
     private final ProductService productService;
     private final CategoryService categoryService;
     private final ImageStorageService imageStorageService;
+    private final AttributeService attributeService;
 
     // Список
     @GetMapping
@@ -41,7 +42,12 @@ public class ProductAdminController {
     public String show(@PathVariable Long id, Model model) {
         Product product = productService.findEntityById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+
+        // Загружаем значения атрибутов
+        Map<Attribute, String> productAttributes = attributeService.getProductAttributes(product);
         model.addAttribute("product", product);
+        model.addAttribute("productAttributes", productAttributes);
+
         return "admin/products/show";
     }
 
@@ -127,10 +133,32 @@ public class ProductAdminController {
     // Редактирование — форма
     @GetMapping("/{id}/edit")
     public String edit(@PathVariable Long id, Model model) {
-        Product product = productService.findEntityById(id)
+        // Используем метод с полной загрузкой
+        Product product = productService.findWithDetailsById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+
+        // Получаем текущие значения характеристик
+        Map<Long, String> currentValues = product.getAttributeValues().stream()
+                .collect(Collectors.toMap(
+                        av -> av.getAttribute().getId(),
+                        ProductAttributeValue::getValue
+                ));
+
+        // Отладочный вывод
+        System.out.println("=== DEBUG EDIT PRODUCT ===");
+        System.out.println("Product ID: " + product.getId());
+        System.out.println("Attribute values count: " + product.getAttributeValues().size());
+        System.out.println("CurrentValues map: " + currentValues);
+        product.getAttributeValues().forEach(av ->
+                System.out.println("Attr: " + av.getAttribute().getName() + " = " + av.getValue())
+        );
+
         model.addAttribute("product", product);
         model.addAttribute("categories", categoryService.findAllCategories());
+        model.addAttribute("currentValues", currentValues);
+
+//        model.addAttribute("product", product);
+//        model.addAttribute("categories", categoryService.findAllCategories());
         return "admin/products/edit";
     }
 
@@ -175,7 +203,8 @@ public class ProductAdminController {
                          @RequestParam(required = false) List<MultipartFile> newImages,
                          @RequestParam(required = false) List<String> newImageAlts,
                          @RequestParam(required = false) List<Integer> newImageSortOrders,
-                         @RequestParam(required = false) List<Long> deleteImageIds) {
+                         @RequestParam(required = false) List<Long> deleteImageIds,
+                         @RequestParam(required = false) Map<String, String> allParams) {
 
         log.info("=== UPDATE PRODUCT START ===");
         log.info("Product ID: {}", id);
@@ -192,6 +221,20 @@ public class ProductAdminController {
         if (categoryIds != null) {
             Set<Category> categories = new HashSet<>(categoryService.findByIds(categoryIds));
             existing.setCategories(categories);
+        }
+
+        // Обрабатываем характеристики
+        if (allParams != null) {
+            Map<Long, String> attributeValues = allParams.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith("attr_"))
+                    .collect(Collectors.toMap(
+                            entry -> Long.parseLong(entry.getKey().substring(5)),
+                            Map.Entry::getValue
+                    ));
+
+            if (!attributeValues.isEmpty()) {
+                attributeService.saveProductAttributes(existing, attributeValues);
+            }
         }
 
         // Удаляем отмеченные изображения
@@ -278,4 +321,48 @@ public class ProductAdminController {
             product.getImages().remove(image);
         }
     }
+
+    @GetMapping("/{id}/specifications")
+    public String specificationsForm(@PathVariable Long id, Model model) {
+        Product product = productService.findWithDetailsById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        // Получаем атрибуты всех категорий товара
+        Set<Attribute> allAttributes = product.getCategories().stream()
+                .flatMap(category -> category.getAttributes().stream())
+                .collect(Collectors.toSet());
+
+        // Получаем текущие значения как Map<Long, String>
+        Map<Long, String> currentValues = product.getAttributeValues().stream()
+                .collect(Collectors.toMap(
+                        av -> av.getAttribute().getId(),
+                        ProductAttributeValue::getValue
+                ));
+
+        model.addAttribute("product", product);
+        model.addAttribute("attributes", allAttributes);
+        model.addAttribute("currentValues", currentValues); // Это Map<Long, String>
+
+        return "admin/products/specifications";
+    }
+
+    @PostMapping("/{id}/specifications")
+    public String saveSpecifications(@PathVariable Long id,
+                                     @RequestParam Map<String, String> allParams) {
+        Product product = productService.findEntityById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        // Фильтруем только параметры атрибутов
+        Map<Long, String> attributeValues = allParams.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith("attr_"))
+                .collect(Collectors.toMap(
+                        entry -> Long.parseLong(entry.getKey().substring(5)),
+                        Map.Entry::getValue
+                ));
+
+        attributeService.saveProductAttributes(product, attributeValues);
+        return "redirect:/admin/products/" + id;
+    }
+
+
 }

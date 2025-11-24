@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -20,13 +21,18 @@ public class CategoryDto {
     private Integer sortOrder;
     private String imageUrl;        // Добавьте это поле
     private String thumbnailUrl;
-    private CategoryDto parent;
-    private Set<CategoryDto> children;
+//    private CategoryDto parent;
+//    private Set<CategoryDto> children;
+// ПРОСТЫЕ поля вместо рекурсивных объектов
+    private Long parentId;
+    private String parentName;
+    private int childrenCount;
+    private List<CategorySimpleDto> children; // простой DTO без рекурсии
     private Instant createdAt;
 
     // Дополнительные вычисляемые поля
     public boolean hasParent() {
-        return parent != null;
+        return parentId != null;
     }
 
     public boolean hasChildren() {
