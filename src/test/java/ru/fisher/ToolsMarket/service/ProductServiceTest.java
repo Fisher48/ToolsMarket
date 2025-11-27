@@ -5,6 +5,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.ContextConfiguration;
+import ru.fisher.ToolsMarket.PostgresTestConfig;
 import ru.fisher.ToolsMarket.dto.ProductCreateDto;
 import ru.fisher.ToolsMarket.dto.ProductDto;
 import ru.fisher.ToolsMarket.dto.ProductUpdateDto;
@@ -21,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@ContextConfiguration(initializers = PostgresTestConfig.class)
 class ProductServiceTest {
 
     @Mock

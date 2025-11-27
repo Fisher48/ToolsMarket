@@ -6,8 +6,10 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.multipart.MultipartFile;
+import ru.fisher.ToolsMarket.PostgresTestConfig;
 import ru.fisher.ToolsMarket.models.ProductImage;
 
 import java.io.IOException;
@@ -22,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
         "app.upload.path=./test-uploads",
         "app.base.url=http://testlocalhost:8080"
 })
+@ContextConfiguration(initializers = PostgresTestConfig.class)
 class ImageStorageServiceTest {
 
     @Autowired

@@ -6,8 +6,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.fisher.ToolsMarket.PostgresTestConfig;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.AttributeService;
 import ru.fisher.ToolsMarket.service.CategoryService;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ContextConfiguration(initializers = PostgresTestConfig.class)
 class ProductAdminControllerTest {
 
     @Autowired
