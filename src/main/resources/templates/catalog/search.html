@@ -129,11 +129,16 @@
                                    class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-eye"></i> Подробнее
                                 </a>
-                                <button th:if="${product.active}"
-                                        class="btn btn-primary btn-sm"
-                                        onclick="addToCart(this)">
-                                    <i class="bi bi-cart-plus"></i> В корзину
-                                </button>
+                                <!-- В карточке товара в результатах поиска -->
+                                <form th:action="@{/cart/add}" method="post" class="d-inline">
+                                    <input type="hidden" name="productId" th:value="${product.id}">
+                                    <button th:if="${product.active}"
+                                            type="submit"
+                                            class="btn btn-primary btn-sm w-100"
+                                            onclick="showCartSuccess(this)">
+                                        <i class="bi bi-cart-plus"></i> В корзину
+                                    </button>
+                                </form>
                                 <button th:if="${!product.active}"
                                         class="btn btn-secondary btn-sm" disabled>
                                     Недоступен
@@ -231,7 +236,7 @@
 <footer class="bg-dark text-light mt-5">
     <div class="container py-4">
         <div class="text-center">
-            <p class="mb-0">&copy; 2024 ToolStore. Все права защищены.</p>
+            <p class="mb-0">&copy; 2025 ToolMarket. Все права защищены.</p>
         </div>
     </div>
 </footer>
@@ -239,29 +244,46 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    function addToCart(button) {
-        const originalText = button.innerHTML;
+    function changeQuantity(delta) {
+        const input = document.getElementById('quantityInput');
+        let value = parseInt(input.value) + delta;
+        const min = parseInt(input.min) || 1;
 
-        button.innerHTML = '<i class="bi bi-check"></i> Добавлено';
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-success');
-        button.disabled = true;
+        if (value < min) value = min;
+        input.value = value;
 
-        // Здесь будет AJAX запрос для добавления в корзину
-        console.log('Товар добавлен в корзину');
-
-        setTimeout(() => {
-            button.innerHTML = originalText;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-primary');
-            button.disabled = false;
-        }, 2000);
+        // Также обновляем видимое значение если нужно
+        const displayInput = document.getElementById('quantity');
+        if (displayInput) displayInput.value = value;
     }
 
-    function clearSearch() {
-        document.querySelector('input[name="q"]').value = '';
-        document.querySelector('form').submit();
-    }
+    // Убираем старую функцию addToCart и добавляем обработчик для формы
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form[th\\:action="@{/cart/add}"]');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const button = document.getElementById('addToCartBtn');
+                const originalText = button.innerHTML;
+
+                // Визуальный feedback
+                button.innerHTML = '<i class="bi bi-check"></i> Добавлено в корзину';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-success');
+                button.disabled = true;
+
+                // Продолжаем отправку формы
+                // Форма сама отправится, не нужно e.preventDefault()
+
+                // Через 2 секунды возвращаем исходный вид (на случай если страница не перезагрузилась)
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-primary');
+                    button.disabled = false;
+                }, 2000);
+            });
+        }
+    });
 </script>
 </body>
 </html>

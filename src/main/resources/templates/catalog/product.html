@@ -115,17 +115,17 @@
 
             <!-- Add to Cart -->
             <div class="d-grid gap-2 d-md-flex mb-4">
-                <div class="input-group me-3" style="width: 140px;">
-                    <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(-1)">-</button>
-                    <input type="number" class="form-control text-center" value="1" min="1" id="quantity">
-                    <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(1)">+</button>
-                </div>
+                <form th:action="@{/cart/add}" method="post" class="flex-grow-1">
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                    <input type="hidden" name="quantity" id="quantityInput" value="1">
 
-                <button th:if="${product.active}"
-                        class="btn btn-primary btn-lg flex-grow-1"
-                        onclick="addToCart()">
-                    <i class="bi bi-cart-plus"></i> Добавить в корзину
-                </button>
+                    <button th:if="${product.active}"
+                            type="submit"
+                            class="btn btn-primary btn-lg w-100"
+                            id="addToCartBtn">
+                        <i class="bi bi-cart-plus"></i> Добавить в корзину
+                    </button>
+                </form>
 
                 <button th:if="${!product.active}"
                         class="btn btn-secondary btn-lg flex-grow-1" disabled>
@@ -232,33 +232,45 @@
 
 <script>
     function changeQuantity(delta) {
-        const input = document.getElementById('quantity');
+        const input = document.getElementById('quantityInput');
         let value = parseInt(input.value) + delta;
         const min = parseInt(input.min) || 1;
 
         if (value < min) value = min;
         input.value = value;
+
+        // Также обновляем видимое значение если нужно
+        const displayInput = document.getElementById('quantity');
+        if (displayInput) displayInput.value = value;
     }
 
-    function addToCart() {
-        const quantity = document.getElementById('quantity').value;
-        const button = event.target;
-        const originalText = button.innerHTML;
+    // Убираем старую функцию addToCart и добавляем обработчик для формы
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form[th\\:action="@{/cart/add}"]');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const button = document.getElementById('addToCartBtn');
+                const originalText = button.innerHTML;
 
-        button.innerHTML = '<i class="bi bi-check"></i> Добавлено в корзину';
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-success');
-        button.disabled = true;
+                // Визуальный feedback
+                button.innerHTML = '<i class="bi bi-check"></i> Добавлено в корзину';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-success');
+                button.disabled = true;
 
-        console.log('Добавление в корзину:', quantity, 'шт.');
+                // Продолжаем отправку формы
+                // Форма сама отправится, не нужно e.preventDefault()
 
-        setTimeout(() => {
-            button.innerHTML = originalText;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-primary');
-            button.disabled = false;
-        }, 2000);
-    }
+                // Через 2 секунды возвращаем исходный вид (на случай если страница не перезагрузилась)
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-primary');
+                    button.disabled = false;
+                }, 2000);
+            });
+        }
+    });
 </script>
 </body>
 </html>

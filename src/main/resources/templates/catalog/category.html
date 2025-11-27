@@ -56,7 +56,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Главная</a></li>
             <li th:if="${category.parentId}" class="breadcrumb-item">
-                <a th:href="@{/category/{title}(title=${category.title})}"
+                <a th:href="@{/category/{title}(title=${category.parentTitle})}"
                    class="text-decoration-none"
                    th:text="${category.parentName}">
                     Родительская категория
@@ -138,82 +138,90 @@
     </div>
 
     <!-- Products Section -->
-    <div class="row">
-        <div class="col-12">
-            <!-- Products Grid -->
-            <div class="row" th:if="${not #lists.isEmpty(products.content)}">
-                <div class="col-xl-3 col-lg-4 col-md-6 mb-4" th:each="product : ${products.content}">
-                    <div class="card product-card h-100 border-0 shadow-sm">
-                        <!-- Product Image -->
-                        <div class="position-relative">
-                            <img th:if="${not #lists.isEmpty(product.images)}"
-                                 th:src="${product.images[0].url}"
-                                 class="card-img-top product-image"
-                                 th:alt="${product.images[0].alt} ?: ${product.name}">
-                            <img th:if="${#lists.isEmpty(product.images)}"
-                                 src="/images/placeholder.jpg"
-                                 class="card-img-top product-image"
-                                 alt="No image">
+    <div th:if="${#lists.isEmpty(category.children)}">
+        <div class="row">
+            <div class="col-12">
+                <!-- Products Grid -->
+                <div class="row" th:if="${not #lists.isEmpty(products.content)}">
+                    <div class="col-xl-3 col-lg-4 col-md-6 mb-4" th:each="product : ${products.content}">
+                        <div class="card product-card h-100 border-0 shadow-sm">
+                            <!-- Product Image -->
+                            <div class="position-relative">
+                                <img th:if="${not #lists.isEmpty(product.images)}"
+                                     th:src="${product.images[0].url}"
+                                     class="card-img-top product-image"
+                                     th:alt="${product.images[0].alt} ?: ${product.name}">
+                                <img th:if="${#lists.isEmpty(product.images)}"
+                                     src="/images/placeholder.jpg"
+                                     class="card-img-top product-image"
+                                     alt="No image">
 
-                            <!-- Status badge -->
-                            <div class="position-absolute top-0 end-0 m-2">
-                                    <span th:if="${product.active}" class="badge bg-success">
-                                        <i class="bi bi-check-circle"></i> В наличии
-                                    </span>
-                                <span th:if="${!product.active}" class="badge bg-secondary">
-                                        <i class="bi bi-x-circle"></i> Недоступен
-                                    </span>
-                            </div>
-                        </div>
-
-                        <!-- Product Info -->
-                        <div class="card-body d-flex flex-column">
-                            <h6 class="card-title" th:text="${product.name}">Название товара</h6>
-                            <p class="card-text text-muted small flex-grow-1"
-                               th:text="${product.shortDescription ?: 'Описание товара отсутствует'}">
-                                Краткое описание
-                            </p>
-
-                            <!-- Price and SKU -->
-                            <div class="mt-auto">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                       <span class="h5 text-primary mb-0"
-                                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(product.price) + ' ₽'}">0 ₽</span>
-                                    <small class="text-muted" th:if="${product.sku}"
-                                           th:text="${product.sku}">Артикул</small>
+                                <!-- Status badge -->
+                                <div class="position-absolute top-0 end-0 m-2">
+                                <span th:if="${product.active}" class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> В наличии
+                                </span>
+                                    <span th:if="${!product.active}" class="badge bg-secondary">
+                                    <i class="bi bi-x-circle"></i> Недоступен
+                                </span>
                                 </div>
+                            </div>
 
-                                <!-- Actions -->
-                                <div class="d-grid gap-2">
-                                    <a th:href="@{/product/{title}(title=${product.title})}"
-                                       class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-eye"></i> Подробнее
-                                    </a>
-                                    <button th:if="${product.active}"
-                                            class="btn btn-primary btn-sm"
-                                            onclick="addToCart(this)">
-                                        <i class="bi bi-cart-plus"></i> В корзину
-                                    </button>
-                                    <button th:if="${!product.active}"
-                                            class="btn btn-secondary btn-sm" disabled>
-                                        Недоступен
-                                    </button>
+                            <!-- Product Info -->
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title" th:text="${product.name}">Название товара</h6>
+                                <p class="card-text text-muted small flex-grow-1"
+                                   th:text="${product.shortDescription ?: 'Описание товара отсутствует'}">
+                                    Краткое описание
+                                </p>
+
+                                <!-- Price and SKU -->
+                                <div class="mt-auto">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="h5 text-primary mb-0"
+                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(product.price) + ' ₽'}">0 ₽</span>
+                                        <small class="text-muted" th:if="${product.sku}"
+                                               th:text="${product.sku}">Артикул</small>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="d-grid gap-2">
+                                        <a th:href="@{/product/{title}(title=${product.title})}"
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-eye"></i> Подробнее
+                                        </a>
+
+                                        <!-- Форма добавления в корзину -->
+                                        <form th:action="@{/cart/add}" method="post" class="d-inline">
+                                            <input type="hidden" name="productId" th:value="${product.id}">
+                                            <button th:if="${product.active}"
+                                                    type="submit"
+                                                    class="btn btn-primary btn-sm w-100"
+                                                    onclick="showCartSuccess(this)">
+                                                <i class="bi bi-cart-plus"></i> В корзину
+                                            </button>
+                                        </form>
+
+                                        <button th:if="${!product.active}"
+                                                class="btn btn-secondary btn-sm" disabled>
+                                            Недоступен
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- No products message -->
-            <div th:if="${#lists.isEmpty(products.content)}" class="text-center py-5">
-                <i class="bi bi-inbox display-1 text-muted"></i>
-                <h4 class="text-muted mt-3">В этой категории пока нет товаров</h4>
-                <p class="text-muted">Попробуйте посмотреть другие категории</p>
-                <a th:href="@{/}" class="btn btn-primary">
-                    <i class="bi bi-arrow-left"></i> На главную
-                </a>
-            </div>
+                <!-- No products message -->
+                <div th:if="${#lists.isEmpty(products.content)}" class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">В этой категории пока нет товаров</h4>
+                    <p class="text-muted">Попробуйте посмотреть другие категории</p>
+                    <a th:href="@{/}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> На главную
+                    </a>
+                </div>
 
             <!-- Pagination -->
             <div th:if="${products.totalPages > 1}" class="row mt-5">
@@ -279,7 +287,7 @@
 <footer class="bg-dark text-light mt-5">
     <div class="container py-4">
         <div class="text-center">
-            <p class="mb-0">&copy; 2024 ToolsMarket. Все права защищены.</p>
+            <p class="mb-0">&copy; 2025 ToolsMarket. Все права защищены.</p>
         </div>
     </div>
 </footer>
