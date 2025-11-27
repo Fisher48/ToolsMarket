@@ -36,6 +36,7 @@ public class CategoryMapperService {
         if (category.getParent() != null) {
             dto.setParentId(category.getParent().getId());
             dto.setParentName(category.getParent().getName());
+            dto.setParentTitle(category.getParent().getTitle());
             // НЕ создаем объект parentDto!
         }
 

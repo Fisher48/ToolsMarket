@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 
 @Data
 @Builder
@@ -26,6 +25,7 @@ public class CategoryDto {
 // ПРОСТЫЕ поля вместо рекурсивных объектов
     private Long parentId;
     private String parentName;
+    private String parentTitle;
     private int childrenCount;
     private List<CategorySimpleDto> children; // простой DTO без рекурсии
     private Instant createdAt;
