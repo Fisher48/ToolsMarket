@@ -112,4 +112,18 @@ class CartControllerTest {
 
         verify(cartService).addProductWithQuantity(1L, 1L, 1);
     }
+
+    @Test
+    void viewCartCreatesSessionIdWhenNotExists() throws Exception {
+        // Given - нет куки sessionId
+        when(cartService.getOrCreateCart(any(), any())).thenReturn(new Cart());
+        when(cartService.getCartItems(any())).thenReturn(List.of());
+
+        // When & Then
+        mockMvc.perform(get("/cart"))
+                .andExpect(status().isOk())
+                .andExpect(cookie().exists("sessionId"))
+                .andExpect(view().name("cart/index"));
+    }
+
 }

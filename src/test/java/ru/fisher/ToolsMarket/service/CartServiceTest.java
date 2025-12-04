@@ -1,7 +1,6 @@
 package ru.fisher.ToolsMarket.service;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +39,6 @@ class CartServiceTest {
     private JdbcTemplate jdbc;
 
     public Product createAndSaveProduct(String productName, BigDecimal price) {
-        Random random = new Random();
         Product product = Product.builder()
                .name(productName)
                .images(new ArrayList<>())
@@ -51,8 +49,8 @@ class CartServiceTest {
                .active(true)
                .currency("RUB")
                .categories(new HashSet<>())
-               .sku("SKU- " + random.nextInt(100))
-               .title("Title " + random.nextInt(100))
+               .sku("SKU-" + productName)
+               .title("Title-" + productName)
                .shortDescription("short-desc")
                .description("description")
                .build();
@@ -116,15 +114,40 @@ class CartServiceTest {
 
         // then
         List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
-
         assertThat(items).hasSize(1);
-        CartItem item = items.getFirst();
 
+        CartItem item = items.getFirst();
         assertThat(item.getProductId()).isEqualTo(product.getId());
         assertThat(item.getQuantity()).isEqualTo(1);
         assertThat(item.getUnitPrice().doubleValue())
                 .isEqualTo(product.getPrice().doubleValue());
         assertThat(item.getProductName()).isEqualTo("Test-Product");
+        assertThat(item.getProductSku()).isEqualTo("SKU-" + product.getName());
+    }
+
+    @Test
+    void whenProductAddedToEmptyCart_cartContainsOneItemWithSnapshot() {
+        // given
+        String sessionId = UUID.randomUUID().toString();
+        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Product p = createAndSaveProduct("Drill X", BigDecimal.valueOf(10000.00));
+
+        // when — добавляем товар
+        cartService.addProduct(cart.getId(), p.getId());
+
+        // then — проверяем публичный API чтения
+        List<CartItemDto> items = cartService.getCartItems(cart.getId());
+
+        assertThat(items).hasSize(1);
+        CartItemDto item = items.getFirst();
+
+        // — проверяем только публичное поведение
+        assertThat(item.getProductId()).isEqualTo(p.getId());
+        assertThat(item.getQuantity()).isEqualTo(1);
+
+        // snapshot (contract)
+        assertThat(item.getTotalPrice()).isEqualByComparingTo(p.getPrice());
+        assertThat(item.getProductName()).isEqualTo("Drill X");
     }
 
     @Test
