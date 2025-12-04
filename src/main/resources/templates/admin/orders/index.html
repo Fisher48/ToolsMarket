@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Заказы - Админка ToolsMarket</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <style>
+        .order-row:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<!-- Admin Header -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/admin}">
+            <i class="bi bi-tools"></i> ToolsMarket Admin
+        </a>
+        <div class="navbar-nav">
+            <a class="nav-link" th:href="@{/admin/products}">Товары</a>
+            <a class="nav-link" th:href="@{/admin/categories}">Категории</a>
+            <a class="nav-link active" th:href="@{/admin/orders}">Заказы</a>
+            <a class="nav-link" th:href="@{/}">В магазин</a>
+        </div>
+    </div>
+</nav>
+
+<main class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+                    <span>Управление</span>
+                </h6>
+                <ul class="nav flex-column mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/orders}">
+                            <i class="bi bi-list-check"></i> Все заказы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/orders?status=CREATED}">
+                            <i class="bi bi-clock"></i> Новые
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/orders?status=PAID}">
+                            <i class="bi bi-credit-card"></i> Оплаченные
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/orders?status=COMPLETED}">
+                            <i class="bi bi-check-circle"></i> Завершенные
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <!-- Flash сообщения -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mt-3">
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mt-3">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Заголовок и статистика -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Заказы</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <span class="badge bg-primary me-2">Всего: <span th:text="${#lists.size(orders)}"></span></span>
+                        <span class="badge bg-info me-2">Новые: <span th:text="${newOrdersCount}"></span></span>
+                        <span class="badge bg-success me-2">Оплачены: <span th:text="${paidOrdersCount}"></span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Таблица заказов -->
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>№</th>
+                        <th>Номер заказа</th>
+                        <th>Дата</th>
+                        <th>Статус</th>
+                        <th>Сумма</th>
+                        <th>Товаров</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="order, stat : ${orders}"
+                        class="order-row"
+                        th:attr="onclick=|window.location='/admin/orders/' + ${order.id}|">
+                        <td th:text="${stat.count}">1</td>
+                        <td>
+                            <strong th:text="${order.orderNumber}">123456</strong>
+                        </td>
+                        <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2024 12:00</td>
+                        <td>
+                            <span class="ms-3">
+                                <span th:if="${order.status.toString() == 'CREATED'}"
+                                      class="badge bg-primary status-badge">Создан</span>
+                                <span th:if="${order.status.toString() == 'PROCESSING'}"
+                                      class="badge bg-info status-badge">В обработке</span>
+                                <span th:if="${order.status.toString() == 'PAID'}"
+                                      class="badge bg-success status-badge">Оплачен</span>
+                                <span th:if="${order.status.toString() == 'COMPLETED'}"
+                                      class="badge bg-warning status-badge">Завершен</span>
+                                <span th:if="${order.status.toString() == 'CANCELLED'}"
+                                      class="badge bg-danger status-badge">Отменен</span>
+                            </span>
+                        </td>
+                        <td>
+                            <strong th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}">0 ₽</strong>
+                        </td>
+                        <td th:text="${#lists.size(order.orderItems)}">0</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button th:if="${order.status != 'COMPLETED' and order.status != 'CANCELLED'}"
+                                        class="btn btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#cancelModal"
+                                        th:data-order-id="${order.id}"
+                                        th:data-order-number="${order.orderNumber}"
+                                        onclick="event.stopPropagation()">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <div th:if="${#lists.isEmpty(orders)}" class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">Заказов пока нет</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal для отмены заказа -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Отмена заказа</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите отменить заказ <strong id="modalOrderNumber"></strong>?</p>
+                <p class="text-danger"><small>Это действие нельзя отменить.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <form id="cancelForm" method="post">
+                    <button type="submit" class="btn btn-danger">Отменить заказ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Обработка модального окна отмены
+    document.addEventListener('DOMContentLoaded', function() {
+        const cancelModal = document.getElementById('cancelModal');
+        if (cancelModal) {
+            cancelModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const orderId = button.getAttribute('data-order-id');
+                const orderNumber = button.getAttribute('data-order-number');
+
+                document.getElementById('modalOrderNumber').textContent = '#' + orderNumber;
+                document.getElementById('cancelForm').action = '/admin/orders/' + orderId + '/cancel';
+            });
+        }
+    });
+</script>
+</body>
+</html>
