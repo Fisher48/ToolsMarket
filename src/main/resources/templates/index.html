@@ -54,12 +54,16 @@
       <a class="nav-link text-white mx-2" href="#">
         <i class="bi bi-heart fs-5"></i>
       </a>
-      <a class="nav-link text-white mx-2 position-relative" th:href="@{/cart}">
-        <i class="bi bi-cart3 fs-5"></i>
-        <!-- Используем атрибут сессии -->
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-              th:text="${session.size() ?: 0}">0</span>
-      </a>
+      <div class="cart-indicator">
+        <a th:href="@{/cart}" class="btn btn-outline-light position-relative">
+          <i class="bi bi-cart"></i>
+          Корзина
+          <span th:if="${cartItemCount > 0}"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                th:text="${cartItemCount}">
+                    </span>
+        </a>
+      </div>
       <a class="nav-link text-white mx-2" href="#">
         <i class="bi bi-person fs-5"></i>
       </a>

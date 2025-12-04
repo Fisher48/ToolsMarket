@@ -43,6 +43,25 @@
                 </button>
             </div>
         </form>
+        <!-- Действия пользователя -->
+        <div class="navbar-nav flex-row">
+            <a class="nav-link text-white mx-2" href="#">
+                <i class="bi bi-heart fs-5"></i>
+            </a>
+            <div class="cart-indicator">
+                <a th:href="@{/cart}" class="btn btn-outline-light position-relative">
+                    <i class="bi bi-cart"></i>
+                    Корзина
+                    <span th:if="${cartItemCount > 0}"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          th:text="${cartItemCount}">
+                    </span>
+                </a>
+            </div>
+            <a class="nav-link text-white mx-2" href="#">
+                <i class="bi bi-person fs-5"></i>
+            </a>
+        </div>
 
         <a th:href="@{/}" class="btn btn-outline-light btn-sm">
             <i class="bi bi-arrow-left"></i> На главную
