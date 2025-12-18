@@ -82,6 +82,7 @@
                     <div class="card-body">
                         <form th:action="@{/admin/categories}" method="post"
                               th:object="${category}" enctype="multipart/form-data">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
                             <!-- Validation Errors внутри формы -->
                             <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger">

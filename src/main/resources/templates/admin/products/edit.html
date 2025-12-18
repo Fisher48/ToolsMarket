@@ -88,7 +88,7 @@
                 <div class="card">
                     <div class="card-body">
                         <form th:action="@{/admin/products/{id}(id=${product.id})}" method="post" enctype="multipart/form-data">
-
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <!-- Основная информация -->
                             <div class="row mb-3">
                                 <div class="col-md-6">

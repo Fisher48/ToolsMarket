@@ -41,6 +41,7 @@
                     <div class="card-body">
                         <form th:action="@{/admin/categories/{categoryId}/attributes/{id}(categoryId=${category.id}, id=${attribute.id})}"
                               th:object="${attribute}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
                             <!-- Такие же поля как в new.html, но с th:field -->
                             <div class="row mb-3">

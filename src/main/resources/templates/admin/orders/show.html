@@ -57,32 +57,51 @@
                 <div class="card-body p-3">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h5 class="card-title mb-1">
-                                Заказ #<span th:text="${order.orderNumber}"></span>
+                            <h5 class="card-title mb-1">Заказ #
+                                <span th:text="${order.orderNumber}"></span>
                                 <span class="ms-3">
-        <!-- Сравниваем как строки -->
-        <span th:if="${order.status.toString() == 'CREATED'}"
-              class="badge bg-primary py-2 px-3">Создан</span>
-        <span th:if="${order.status.toString() == 'PROCESSING'}"
-              class="badge bg-info py-2 px-3">В обработке</span>
-        <span th:if="${order.status.toString() == 'PAID'}"
-              class="badge bg-success py-2 px-3">Оплачен</span>
-        <span th:if="${order.status.toString() == 'COMPLETED'}"
-              class="badge bg-warning py-2 px-3">Завершен</span>
-        <span th:if="${order.status.toString() == 'CANCELLED'}"
-              class="badge bg-danger py-2 px-3">Отменен</span>
-    </span>
-                            </h5>
-                            <p class="text-muted mb-0">
-                                <i class="bi bi-calendar me-1"></i>
-                                <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
-                                <span th:if="${order.userId}" class="ms-3">
-                                    <i class="bi bi-person me-1"></i>ID пользователя: <span th:text="${order.userId}"></span>
+                                    <!-- Сравниваем как строки -->
+                                    <span th:if="${order.status.toString() == 'CREATED'}"
+                                          class="badge bg-primary py-2 px-3">Создан</span>
+                                    <span th:if="${order.status.toString() == 'PROCESSING'}"
+                                          class="badge bg-info py-2 px-3">В обработке</span>
+                                    <span th:if="${order.status.toString() == 'PAID'}"
+                                          class="badge bg-success py-2 px-3">Оплачен</span>
+                                    <span th:if="${order.status.toString() == 'COMPLETED'}"
+                                          class="badge bg-warning py-2 px-3">Завершен</span>
+                                    <span th:if="${order.status.toString() == 'CANCELLED'}"
+                                          class="badge bg-danger py-2 px-3">Отменен</span>
                                 </span>
-                            </p>
+                            </h5>
+
+                            <br>
+
+                            <div class="d-flex flex-wrap gap-3">
+                                <span th:if="${order.user?.id}" class="d-flex align-items-center">
+                                    <i class="bi bi-person me-1"></i>
+                                    <span class="me-2">ID:</span>
+                                    <span class="fw-semibold" th:text="${order.user?.id}">
+                                        <span th:if="${order.user?.id == null}" class="text-muted">
+                                            Гостевой заказ
+                                        </span>
+                                    </span>
+                                </span>
+                                <span th:if="${order.user?.firstName}" class="d-flex align-items-center">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <span class="me-2">Имя:</span>
+                                    <span class="fw-semibold" th:text="${order.user?.firstName}"></span>
+                                </span>
+
+                                <span th:if="${order.user?.phone}" class="d-flex align-items-center">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    <span class="me-2">Телефон:</span>
+                                    <span class="fw-semibold" th:text="${order.user?.phone}"></span>
+                                </span>
+                            </div>
                         </div>
                         <div class="col-auto">
-                            <div class="h4 mb-0 text-primary" th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}"></div>
+                            <div class="h4 mb-0 text-primary"
+                                 th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}"></div>
                             <small class="text-muted">Сумма заказа</small>
                         </div>
                     </div>
@@ -94,6 +113,7 @@
         <div class="col-md-4">
             <div class="d-grid gap-2">
                 <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="d-flex gap-2 mb-2">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <select name="status" class="form-select" id="statusSelect">
                         <option value="">Изменить статус</option>
                         <option value="PROCESSING">В обработку</option>
@@ -172,6 +192,7 @@
                 <div class="card-body">
                     <h6 class="mb-2"><i class="bi bi-plus-circle text-primary me-2"></i>Добавить примечание</h6>
                     <form th:action="@{/admin/orders/{id}/note(id=${order.id})}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                         <textarea name="note" class="form-control mb-2" rows="2"
                                   placeholder="Введите примечание к заказу..."></textarea>
                         <button type="submit" class="btn btn-outline-primary btn-sm">
@@ -266,6 +287,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
                 <form th:action="@{/admin/orders/{id}/cancel(id=${order.id})}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <button type="submit" class="btn btn-danger">Да, отменить</button>
                 </form>
             </div>

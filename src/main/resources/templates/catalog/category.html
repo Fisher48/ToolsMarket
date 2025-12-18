@@ -58,7 +58,7 @@
                     </span>
                 </a>
             </div>
-            <a class="nav-link text-white mx-2" href="#">
+            <a class="nav-link text-white mx-2" href="/profile">
                 <i class="bi bi-person fs-5"></i>
             </a>
         </div>
@@ -171,7 +171,7 @@
                                      class="card-img-top product-image"
                                      th:alt="${product.images[0].alt} ?: ${product.name}">
                                 <img th:if="${#lists.isEmpty(product.images)}"
-                                     src="/images/placeholder.jpg"
+                                     src="/static/placeholder.jpg"
                                      class="card-img-top product-image"
                                      alt="No image">
 
@@ -198,7 +198,7 @@
                                 <div class="mt-auto">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="h5 text-primary mb-0"
-                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(product.price) + ' ₽'}">0 ₽</span>
+                                          th:text="${#numbers.formatDecimal(product.price, 1, 2) + ' ₽'}">0 ₽</span>
                                         <small class="text-muted" th:if="${product.sku}"
                                                th:text="${product.sku}">Артикул</small>
                                     </div>

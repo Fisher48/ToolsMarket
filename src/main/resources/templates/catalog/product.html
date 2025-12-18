@@ -50,7 +50,7 @@
                     </span>
                 </a>
             </div>
-            <a class="nav-link text-white mx-2" href="#">
+            <a class="nav-link text-white mx-2" href="/profile">
                 <i class="bi bi-person fs-5"></i>
             </a>
         </div>
@@ -84,7 +84,7 @@
                          id="mainImage"
                          th:alt="${product.images[0].alt} ?: ${product.name}">
                     <img th:if="${#lists.isEmpty(product.images)}"
-                         src="/images/placeholder.jpg"
+                         src="/static/placeholder.jpg"
                          class="img-fluid rounded border"
                          alt="No image">
                 </div>
@@ -108,7 +108,7 @@
             <!-- Price and SKU -->
             <div class="mb-3">
                     <span class="h2 text-primary"
-                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(product.price) + ' ₽'}">0 ₽</span>
+                          th:text="${#numbers.formatDecimal(product.price, 1, 2) + ' ₽'}">0 ₽</span>
                 <span th:if="${product.sku}" class="text-muted ms-3"
                       th:text="'Артикул: ' + ${product.sku}">
                         Артикул: 000000

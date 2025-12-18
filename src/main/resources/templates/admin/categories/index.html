@@ -150,6 +150,7 @@
                                         <form th:action="@{/admin/categories/{id}/delete(id=${category.id})}"
                                               method="post" class="d-inline"
                                               onsubmit="return confirm('Вы уверены, что хотите удалить эту категорию?');">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
                                                 <i class="fas fa-trash"></i>
                                             </button>

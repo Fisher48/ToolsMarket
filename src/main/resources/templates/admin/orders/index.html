@@ -97,6 +97,8 @@
                     <tr>
                         <th>№</th>
                         <th>Номер заказа</th>
+                        <th>Фамилия</th>
+                        <th>Телефон</th>
                         <th>Дата</th>
                         <th>Статус</th>
                         <th>Сумма</th>
@@ -109,9 +111,9 @@
                         class="order-row"
                         th:attr="onclick=|window.location='/admin/orders/' + ${order.id}|">
                         <td th:text="${stat.count}">1</td>
-                        <td>
-                            <strong th:text="${order.orderNumber}">123456</strong>
-                        </td>
+                        <td><strong th:text="${order.orderNumber}">123456</strong></td>
+                        <td><strong th:text="${order.user?.lastName}">-</strong></td>
+                        <td><strong th:text="${order.user?.phone}">не указан</strong></td>
                         <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2024 12:00</td>
                         <td>
                             <span class="ms-3">
