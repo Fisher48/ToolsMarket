@@ -4,12 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.fisher.ToolsMarket.PostgresTestConfig;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.service.CategoryService;
+import ru.fisher.ToolsMarket.service.UserService;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -32,7 +34,11 @@ class CategoryAdminControllerTest {
     @MockitoBean
     private CategoryService categoryService;
 
+    @MockitoBean
+    private UserService userService;
+
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void index_ShouldReturnCategoriesList() throws Exception {
         // Given
         Category category = createTestCategory();
@@ -47,6 +53,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void show_WhenCategoryExists_ShouldReturnCategoryView() throws Exception {
         // Given
         Category category = createTestCategory();
@@ -61,6 +68,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void show_WhenCategoryNotExists_ShouldReturnNotFound() throws Exception {
         // Given
         when(categoryService.findEntityById(1L)).thenReturn(Optional.empty());
@@ -71,6 +79,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void newCategory_ShouldReturnNewCategoryForm() throws Exception {
         // Given
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));
@@ -84,6 +93,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void create_ShouldSaveCategoryWithoutParentAndRedirect() throws Exception {
         // Given
         Category category = createTestCategory();
@@ -104,6 +114,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void create_ShouldSaveCategoryWithParentAndRedirect() throws Exception {
         // Given
         Category parentCategory = createTestCategory();
@@ -127,6 +138,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void edit_WhenCategoryExists_ShouldReturnEditForm() throws Exception {
         // Given
         Category category = createTestCategory();
@@ -142,6 +154,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void update_ShouldUpdateCategoryAndRedirect() throws Exception {
         // Given
         Category existingCategory = createTestCategory();
@@ -161,6 +174,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void delete_ShouldDeleteCategoryAndRedirect() throws Exception {
         // Given: Создайте mock-объект категории
         Category mockCategory = new Category();
@@ -184,6 +198,7 @@ class CategoryAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void create_WithInvalidData_ShouldReturnFormWithErrors() throws Exception {
         // Given
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));

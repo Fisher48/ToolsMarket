@@ -6,6 +6,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -93,6 +94,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void create_WithImage_ShouldSaveProductWithImage() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
@@ -126,6 +128,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void create_WithMultipleImages_ShouldSaveAllImages() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
@@ -164,6 +167,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void create_WithInvalidImage_ShouldSkipInvalidFile() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
@@ -196,6 +200,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void create_WithEmptyImage_ShouldSkipEmptyFile() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
@@ -224,6 +229,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void update_WithNewImage_ShouldAddImageToProduct() throws Exception {
         // Given
         Product existingProduct = createTestProductWithDetails();
@@ -256,6 +262,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void update_WithDeleteImageIds_ShouldRemoveImages() throws Exception {
         // Given
         Product existingProduct = createTestProductWithDetails();
@@ -281,6 +288,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void update_WithNewImageAndDeleteExisting_ShouldHandleBoth() throws Exception {
         // Given
         Product existingProduct = createTestProductWithDetails();
@@ -324,6 +332,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void index_ShouldReturnProductsList() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
@@ -338,6 +347,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void show_WhenProductExists_ShouldReturnProductView() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
@@ -352,6 +362,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void show_WhenProductNotExists_ShouldReturnNotFound() throws Exception {
         // Given
         when(productService.findEntityById(1L)).thenReturn(Optional.empty());
@@ -362,6 +373,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void newProduct_ShouldReturnNewProductForm() throws Exception {
         // Given
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));
@@ -375,6 +387,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void create_ShouldSaveProductAndRedirect() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
@@ -398,6 +411,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void edit_WhenProductExists_ShouldReturnEditForm() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
@@ -413,6 +427,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void update_ShouldUpdateProductAndRedirect() throws Exception {
         // Given
         Product existingProduct = createTestProductWithDetails();
@@ -437,6 +452,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void delete_ShouldDeleteProductAndRedirect() throws Exception {
         // Given
         doNothing().when(productService).deleteEntity(1L);
@@ -450,6 +466,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void specificationsForm_ShouldReturnSpecificationsView() throws Exception {
         // Arrange
         Long productId = 1L;
@@ -478,6 +495,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void saveSpecifications_WithValidData_ShouldSaveAndRedirect() throws Exception {
         // Arrange
         Long productId = 1L;
@@ -497,6 +515,7 @@ class ProductAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void editProductForm_ShouldLoadAttributesAndValues() throws Exception {
         // Arrange
         Long productId = 1L;

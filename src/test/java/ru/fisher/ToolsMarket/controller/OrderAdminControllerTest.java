@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -16,7 +17,9 @@ import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderItem;
 import ru.fisher.ToolsMarket.models.OrderStatus;
+import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.service.OrderService;
+import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -39,9 +42,13 @@ class OrderAdminControllerTest {
     @MockitoBean
     private OrderService orderService;
 
+    @MockitoBean
+    private UserService userService;
+
     // =========== Тесты для списка заказов ===========
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminOrderListReturnsAllOrders() throws Exception {
         List<Order> orders = List.of(
                 createOrder(1L, "CREATED"),
@@ -64,6 +71,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminOrderListWithStatusFilterReturnsFilteredOrders() throws Exception {
         List<Order> paidOrders = List.of(createOrder(2L, "PAID"));
 
@@ -79,6 +87,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminOrderListWithSearchByOrderNumber() throws Exception {
         Long orderNumber = 123456L;
         Order foundOrder = createOrder(1L, "CREATED");
@@ -94,6 +103,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminOrderListWithSearchByProductSku() throws Exception {
         String sku = "TOOL-123";
         List<Order> foundOrders = List.of(createOrder(1L, "CREATED"));
@@ -108,6 +118,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminOrderListEmptyReturnsEmptyList() throws Exception {
         when(orderService.getAllOrders()).thenReturn(List.of());
         when(orderService.countOrdersByStatus(any(OrderStatus.class))).thenReturn(0L);
@@ -120,6 +131,7 @@ class OrderAdminControllerTest {
     // =========== Тесты для деталей заказа ===========
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminOrderDetailReturnsOrderWithItems() throws Exception {
         Long orderId = 1L;
         Order order = createOrder(orderId, "CREATED");
@@ -135,6 +147,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminOrderDetailWithNonExistentOrderShowsError() throws Exception {
         Long nonExistentId = 999L;
 
@@ -148,6 +161,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminOrderDetailWithServerErrorShowsError() throws Exception {
         Long orderId = 1L;
 
@@ -163,6 +177,7 @@ class OrderAdminControllerTest {
     // =========== Тесты для изменения статуса ===========
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminUpdateStatusChangesOrderStatus() throws Exception {
         Long orderId = 1L;
         String newStatus = "PAID";
@@ -179,6 +194,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminUpdateStatusWithInvalidStatusShowsError() throws Exception {
         Long orderId = 1L;
         String invalidStatus = "INVALID_STATUS";
@@ -191,6 +207,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminUpdateStatusWithEmptyStatusShowsError() throws Exception {
         Long orderId = 1L;
 
@@ -202,6 +219,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminUpdateStatusWithOrderNotFoundShowsError() throws Exception {
         Long orderId = 999L;
         String status = "PAID";
@@ -218,6 +236,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminUpdateStatusWithInvalidTransitionShowsError() throws Exception {
         Long orderId = 1L;
         String status = "COMPLETED";
@@ -234,6 +253,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminUpdateStatusOfFinalizedOrderShowsError() throws Exception {
         Long orderId = 1L;
         String status = "PAID";
@@ -252,6 +272,7 @@ class OrderAdminControllerTest {
     // =========== Тесты для отмены заказа ===========
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminCancelOrderSuccessfully() throws Exception {
         Long orderId = 1L;
         Order cancelled = createOrder(orderId, "CANCELLED");
@@ -266,6 +287,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminCancelNonExistentOrderShowsError() throws Exception {
         Long orderId = 999L;
 
@@ -281,6 +303,7 @@ class OrderAdminControllerTest {
     // =========== Тесты для добавления примечаний ===========
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminAddNoteToOrderSuccessfully() throws Exception {
         Long orderId = 1L;
         String note = "Позвонить клиенту завтра";
@@ -295,6 +318,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminAddEmptyNoteShowsError() throws Exception {
         Long orderId = 1L;
         String emptyNote = "   ";
@@ -311,6 +335,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminAddTooLongNoteShowsError() throws Exception {
         Long orderId = 1L;
         String longNote = "a".repeat(1001);
@@ -327,6 +352,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser", roles = "ADMIN")
     void adminAddNoteToNonExistentOrderShowsError() throws Exception {
         Long orderId = 999L;
         String note = "Тестовое примечание";
@@ -351,6 +377,14 @@ class OrderAdminControllerTest {
         order.setTotalPrice(BigDecimal.valueOf(1000));
         order.setCreatedAt(Instant.now());
         order.setUpdatedAt(Instant.now());
+
+        // Создаем пользователя
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@example.com");
+        user.setFirstName("John");
+        user.setLastName("Doe");
+        order.setUser(user);
         return order;
     }
 

@@ -5,10 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.fisher.ToolsMarket.PostgresTestConfig;
+import ru.fisher.ToolsMarket.dto.CartItemDto;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.models.Cart;
@@ -42,6 +44,7 @@ class OrderControllerTest {
     private CartService cartService;
 
     @Test
+    @WithMockUser(username = "testuser")
     void viewOrderReturnsOrderPage() throws Exception {
         Order order = new Order();
         order.setId(1L);
@@ -59,6 +62,7 @@ class OrderControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void viewNonExistentOrderReturns404() throws Exception {
         Long nonExistentOrderId = 999L;
 
@@ -66,12 +70,14 @@ class OrderControllerTest {
                 .thenThrow(new OrderNotFoundException(nonExistentOrderId));
 
         mockMvc.perform(get("/order/{id}", nonExistentOrderId))
-                .andExpect(status().isNotFound())
-                .andExpect(status().reason("Заказ не найден"));
+                .andExpect(jsonPath("$.error").value("Заказ не найден"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.path").value("/order/999"));
     }
 
     @Test
-    void checkoutLoadsCartAndShowsPage() throws Exception {
+    @WithMockUser(username = "testuser")
+    void checkoutWithEmptyCartRedirectsToCart() throws Exception {
         String sessionId = "abc";
 
         Cart cart = new Cart();
@@ -82,13 +88,40 @@ class OrderControllerTest {
 
         mockMvc.perform(get("/order/checkout")
                         .cookie(new Cookie("sessionId", sessionId)))
-                .andExpect(status().isOk())
-                .andExpect(view().name("order/checkout"))
-                .andExpect(model().attribute("cart", cart))
-                .andExpect(model().attribute("items", List.of()));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/cart?error=empty"));
     }
 
     @Test
+    @WithMockUser(username = "testuser")
+    void checkoutWithNonEmptyCartShowsCheckoutPage() throws Exception {
+        String sessionId = "abc";
+
+        Cart cart = new Cart();
+        cart.setId(10L);
+
+        // Создаем элементы корзины
+        CartItemDto item = new CartItemDto();
+        item.setProductId(1L);
+        item.setProductName("Тестовый товар");
+        item.setQuantity(1);
+        item.setUnitPrice(new BigDecimal("100.00"));
+
+        List<CartItemDto> items = List.of(item);
+
+        when(cartService.getOrCreateCart(null, sessionId)).thenReturn(cart);
+        when(cartService.getCartItems(10L)).thenReturn(items);
+
+        mockMvc.perform(get("/order/checkout")
+                        .cookie(new Cookie("sessionId", sessionId)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("order/checkout"))
+                .andExpect(model().attribute("cart", cart))
+                .andExpect(model().attribute("items", items));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
     void createOrderCreatesOrderAndRedirects() throws Exception {
         String sessionId = "abc";
 
@@ -100,6 +133,7 @@ class OrderControllerTest {
         order.setOrderNumber(12345L);
 
         when(cartService.getOrCreateCart(null, sessionId)).thenReturn(cart);
+        when(cartService.getCartItems(10L)).thenReturn(List.of(new CartItemDto()));
         when(orderService.createOrder(10L)).thenReturn(order);
 
         mockMvc.perform(post("/order/create")
@@ -111,6 +145,26 @@ class OrderControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
+    void createOrderWithEmptyCartRedirectsToCartWithError() throws Exception {
+        String sessionId = "abc";
+
+        Cart cart = new Cart();
+        cart.setId(10L);
+
+        when(cartService.getOrCreateCart(null, sessionId)).thenReturn(cart);
+        when(cartService.getCartItems(10L)).thenReturn(List.of()); // Пустая корзина
+
+        mockMvc.perform(post("/order/create")
+                        .cookie(new Cookie("sessionId", sessionId)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/cart"))
+                .andExpect(flash().attribute("errorMessage",
+                        "Невозможно создать заказ из пустой корзины"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
     void createOrderFromEmptyCartShowsErrorMessage() throws Exception {
         String sessionId = "test-session";
         Long cartId = 1L;
@@ -131,6 +185,7 @@ class OrderControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void createOrderWithNotFoundCartShowsErrorMessage() throws Exception {
         String sessionId = "test-session";
 
@@ -146,6 +201,7 @@ class OrderControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void cancelOrderSuccessfully() throws Exception {
         Long orderId = 100L;
         Order cancelledOrder = new Order();
@@ -165,6 +221,7 @@ class OrderControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void cancelNonExistentOrderShowsError() throws Exception {
         Long orderId = 999L;
 
@@ -179,6 +236,7 @@ class OrderControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void cancelAlreadyCompletedOrderShowsError() throws Exception {
         Long orderId = 100L;
 
@@ -193,24 +251,27 @@ class OrderControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void checkoutWithoutSessionCookieReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/order/checkout"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void createOrderWithoutSessionCookieReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/order/create"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @WithMockUser(username = "testuser")
     void userCannotUpdateStatusThroughAdminEndpoint() throws Exception {
         // Даже если попробовать обратиться к админскому эндпоинту
         // (должна быть проверка авторизации в AdminOrderController)
         mockMvc.perform(post("/admin/orders/1/status")
                         .param("status", "PAID"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isForbidden());
     }
 
 }
