@@ -2,10 +2,21 @@ package ru.fisher.ToolsMarket.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @ControllerAdvice
 @Slf4j
@@ -89,5 +100,70 @@ public class GlobalExceptionHandler {
     private String getRedirectUrl(HttpServletRequest request, String defaultUrl) {
         String referer = request.getHeader("Referer");
         return "redirect:" + (referer != null ? referer : defaultUrl);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public String handleAllExceptions(Exception ex, Model model, HttpServletRequest request) {
+        log.error("Необработанное исключение: ", ex);
+
+        model.addAttribute("error", ex.getMessage());
+        model.addAttribute("status", 500);
+        model.addAttribute("path", request.getRequestURI());
+
+        return "error/error"; // Указываем правильный путь к шаблону
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public String handleResourceNotFound(ResourceNotFoundException ex, Model model) {
+        model.addAttribute("error", ex.getMessage());
+        model.addAttribute("status", 404);
+        return "error/error";
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Map<String, Object> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
+
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            errors.put(error.getField(), error.getDefaultMessage());
+        });
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("errors", errors);
+        response.put("message", "Ошибка валидации");
+
+        return response;
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> handleResponseStatusException(
+            ResponseStatusException ex,
+            HttpServletRequest request) {
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", ex.getStatusCode().value());
+        body.put("error", ex.getReason());
+        body.put("path", request.getRequestURI());
+
+        return new ResponseEntity<>(body, ex.getStatusCode());
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public Map<String, Object> handleMissingCookie(MissingRequestCookieException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Bad Request");
+        response.put("message", String.format("Required cookie '%s' is not present",
+                ex.getCookieName()));
+        response.put("timestamp", LocalDateTime.now());
+        return response;
     }
 }

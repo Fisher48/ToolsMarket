@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка - ToolsMarket</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .error-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .error-box {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-icon {
+            font-size: 5rem;
+            margin-bottom: 2rem;
+        }
+
+        .error-404 .error-icon {
+            color: #4e73df;
+        }
+
+        .error-500 .error-icon {
+            color: #e74a3b;
+        }
+
+        .error-other .error-icon {
+            color: #f6c23e;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: #5a5c69;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #5a5c69;
+        }
+
+        p {
+            color: #858796;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .error-code {
+            display: inline-block;
+            background: #f8f9fc;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-family: monospace;
+            color: #5a5c69;
+            margin-bottom: 2rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4e73df 0%, #2e59d9 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1);
+            color: white;
+        }
+
+        .btn-outline {
+            border: 2px solid #4e73df;
+            color: #4e73df;
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background-color: #4e73df;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .error-wrapper {
+                padding: 1rem;
+            }
+
+            .error-box {
+                padding: 2rem;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="error-wrapper">
+    <div class="error-box" th:classappend="'error-' + ${errorCode}">
+
+        <!-- Динамическая иконка в зависимости от типа ошибки -->
+        <div class="error-icon">
+            <th:block th:switch="${errorCode}">
+                <i th:case="'404'" class="bi bi-exclamation-octagon"></i>
+                <i th:case="'500'" class="bi bi-bug"></i>
+                <i th:default class="bi bi-exclamation-triangle"></i>
+            </th:block>
+        </div>
+
+        <!-- Динамический заголовок -->
+        <h1 th:text="${errorCode} ?: 'Ошибка'">Ошибка</h1>
+
+        <!-- Динамическое сообщение -->
+        <h2 th:text="${errorMessage} ?: 'Что-то пошло не так'">
+            Что-то пошло не так
+        </h2>
+
+        <!-- Подробности -->
+        <p th:if="${errorDetails}" th:text="${errorDetails}">
+            Произошла непредвиденная ошибка. Пожалуйста, попробуйте позже.
+        </p>
+
+        <p th:unless="${errorDetails}">
+            Произошла непредвиденная ошибка. Наша команда уже работает над ее устранением.
+        </p>
+
+        <!-- Код ошибки (если есть) -->
+        <div th:if="${errorTrace}" class="error-code">
+            <small>ID ошибки: <span th:text="${#strings.substring(errorTrace, 0, 8)}"></span></small>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="btn-group">
+            <a th:href="@{/}" class="btn btn-primary">
+                <i class="bi bi-house"></i> На главную
+            </a>
+
+            <a href="javascript:history.back()" class="btn btn-outline">
+                <i class="bi bi-arrow-left"></i> Назад
+            </a>
+
+            <a th:href="@{/contact}" th:if="${errorCode == '500' or errorCode == '404'}" class="btn btn-outline">
+                <i class="bi bi-envelope"></i> Сообщить об ошибке
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
