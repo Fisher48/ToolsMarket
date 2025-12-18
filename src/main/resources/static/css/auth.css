@@ -1,0 +1,75 @@
+/* auth.css */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+    background-color: #4e73df;
+    color: white;
+    border-radius: 15px 15px 0 0 !important;
+    padding: 1.5rem;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: #4e73df;
+    border-color: #4e73df;
+    padding: 0.75rem;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background-color: #2e59d9;
+    border-color: #2e59d9;
+}
+
+.form-control {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #e3e6f0;
+}
+
+.form-control:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #5a5c69;
+}
+
+.invalid-feedback {
+    display: block;
+}
+
+a {
+    color: #4e73df;
+    font-weight: 500;
+}
+
+a:hover {
+    color: #2e59d9;
+}
+
+hr {
+    margin: 1.5rem 0;
+}
+
+.form-text {
+    font-size: 0.85rem;
+    color: #858796;
+}

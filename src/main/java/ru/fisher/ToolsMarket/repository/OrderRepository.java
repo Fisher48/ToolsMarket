@@ -1,5 +1,6 @@
 package ru.fisher.ToolsMarket.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -48,5 +49,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Статистика по статусам
     @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
     List<Object[]> countByStatusGroup();
+
+
+
+    // Поиск заказов пользователя
+    List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    Optional<Order> findByIdAndUserId(Long id, Long userId);
+
+    List<Order> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, OrderStatus status);
 
 }

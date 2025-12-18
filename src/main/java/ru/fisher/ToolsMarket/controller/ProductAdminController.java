@@ -198,7 +198,7 @@ public class ProductAdminController {
                          @RequestParam(required = false) String sku,
                          @RequestParam BigDecimal price,
                          @RequestParam String currency,
-                         @RequestParam boolean active,
+                         @RequestParam(required = false) boolean active,
                          @RequestParam(required = false) List<Long> categoryIds,
                          @RequestParam(required = false) List<MultipartFile> newImages,
                          @RequestParam(required = false) List<String> newImageAlts,

@@ -2,6 +2,8 @@ package ru.fisher.ToolsMarket.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -13,11 +15,17 @@ import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.repository.CartItemRepository;
 import ru.fisher.ToolsMarket.repository.CartRepository;
 import ru.fisher.ToolsMarket.repository.OrderRepository;
+import ru.fisher.ToolsMarket.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -29,58 +37,112 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final UserRepository userRepository;
 
     /**
-     * Создаёт заказ на основе корзины:
-     *  - копирует cart_items -> order_item (snapshot)
-     *  - считает subtotal для каждого item и total для заказа
-     *  - очищает корзину
+     * Создание заказа из корзины пользователя
      */
     @Transactional
+    public Order createOrderFromUserCart(Long userId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+
+        return createOrder(cart.getId());
+    }
+
+    /**
+     * Получение заказов пользователя
+     */
+    @Transactional(readOnly = true)
+    public List<Order> getUserOrders(Long userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    /**
+     * Получение конкретного заказа пользователя
+     */
+    @Transactional(readOnly = true)
+    public Order getUserOrder(Long orderId, Long userId) {
+        return orderRepository.findByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+    }
+
+    /**
+     * Получение заказов пользователя по статусу
+     */
+    @Transactional(readOnly = true)
+    public List<Order> getUserOrdersByStatus(Long userId, OrderStatus status) {
+        return orderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, status);
+    }
+
+    // Обновляем существующий метод createOrder для работы с User
+    @Transactional
     public Order createOrder(Long cartId) {
-        // проверяем корзину
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
-        List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
+        // Проверяем, что корзина принадлежит пользователю
+        if (cart.getUser() == null) {
+            throw new IllegalStateException("Cannot create order from anonymous cart");
+        }
+
+        List<CartItem> cartItems = cart.getItems();
         if (cartItems.isEmpty()) {
             throw new IllegalStateException("Cart is empty");
         }
 
-        // создаём заказ
-        Order order = new Order();
-        order.setOrderNumber(generateOrderNumber());
-        order.setStatus(OrderStatus.CREATED);
-        order.setCreatedAt(Instant.now());
-        order.setUpdatedAt(Instant.now());
+        // Создаём заказ
+        Order order = Order.builder()
+                .orderNumber(generateOrderNumber(cart.getUser().getId()))
+                .user(cart.getUser()) // Устанавливаем пользователя
+                .status(OrderStatus.CREATED)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .orderItems(new ArrayList<>())
+                .build();
 
         BigDecimal total = BigDecimal.ZERO;
 
         for (CartItem ci : cartItems) {
-            OrderItem oi = new OrderItem();
-            oi.setOrder(order);
-            oi.setProductId(ci.getProductId());
-            oi.setProductName(ci.getProductName());
-            oi.setProductSku(ci.getProductSku());
-            oi.setUnitPrice(ci.getUnitPrice());
-            oi.setQuantity(ci.getQuantity());
+            OrderItem oi = OrderItem.builder()
+                    .order(order)
+                    .productId(ci.getProductId())
+                    .productName(ci.getProductName())
+                    .productSku(ci.getProductSku())
+                    .unitPrice(ci.getUnitPrice())
+                    .quantity(ci.getQuantity())
+                    .createdAt(Instant.now())
+                    .subtotal(ci.getUnitPrice().multiply(BigDecimal.valueOf(ci.getQuantity())))
+                    .build();
 
-            BigDecimal sub = ci.getUnitPrice().multiply(BigDecimal.valueOf(ci.getQuantity()));
-            oi.setSubtotal(sub);
-
-            order.getOrderItems().add(oi);
-            total = total.add(sub);
+            order.addOrderItem(oi);
+            total = total.add(oi.getSubtotal());
         }
 
         order.setTotalPrice(total);
 
-        // сохраняем заказ (c cascade сохранит order_items)
+        // Сохраняем заказ
         Order saved = orderRepository.save(order);
 
-        // очищаем корзину — удаляем items
-        cartItemRepository.deleteAll(cartItems);
-
+        // Очищаем корзину
+        cart.clear();
+        cartRepository.save(cart);
+        log.info("Заказ создан: id={}, номер={}, статус={}, цена={}",
+                order.getId(), order.getOrderNumber(), order.getStatus(), order.getTotalPrice());
         return saved;
+    }
+
+    public void cancelOrder(Long orderId, Long userId) {
+        Order order = getUserOrder(orderId, userId);
+
+        // Проверяем, можно ли отменить заказ
+        if (order.getStatus() != OrderStatus.CREATED && order.getStatus() != OrderStatus.PROCESSING) {
+            throw new IllegalArgumentException("Невозможно отменить заказ в текущем статусе");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setUpdatedAt(Instant.now());
+        orderRepository.save(order);
     }
 
     @Transactional
@@ -165,17 +227,17 @@ public class OrderService {
     private boolean isValidTransition(OrderStatus from, OrderStatus to) {
         return switch (from) {
             case CREATED ->
-                    to == OrderStatus.PAID
-                            || to == OrderStatus.PROCESSING
-                            || to == OrderStatus.COMPLETED
-                            || to == OrderStatus.CANCELLED;
-
-            case PAID ->
                     to == OrderStatus.PROCESSING
+                            || to == OrderStatus.PAID
                             || to == OrderStatus.COMPLETED
                             || to == OrderStatus.CANCELLED;
 
             case PROCESSING ->
+                    to == OrderStatus.PAID
+                            || to == OrderStatus.COMPLETED
+                            || to == OrderStatus.CANCELLED;
+
+            case PAID ->
                     to == OrderStatus.COMPLETED
                             || to == OrderStatus.CANCELLED;
 
@@ -214,10 +276,25 @@ public class OrderService {
         }
     }
 
-    private Long generateOrderNumber() {
-        // Минимальная реализация: millis + random tail (уникальность в DB обеспечена constraint'ом)
-        long millis = Instant.now().toEpochMilli();
-        long rnd = ThreadLocalRandom.current().nextLong(10_000, 99_999);
-        return Long.parseLong(String.valueOf(millis).concat(String.valueOf(rnd)));
+    private Long generateOrderNumber(Long userId) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. Дата и время (10 цифр): YYMMDDHHmm
+        String dateTimePart = DateTimeFormatter.ofPattern("yyMMddHHmm").format(now);
+
+        // 2. ID пользователя (до 4 цифр)
+        String userIdPart = String.format("%04d", userId % 10000);
+
+        // 3. Рандом (2 цифры) для уникальности
+        String randomPart = String.format("%02d", ThreadLocalRandom.current().nextInt(100));
+
+        // Объединяем
+        String numberStr = dateTimePart + userIdPart + randomPart;
+
+        return Long.parseLong(numberStr); // Пример: 2412151830123456
+    }
+
+    public List<Order> findOrdersByUserId(Long userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }

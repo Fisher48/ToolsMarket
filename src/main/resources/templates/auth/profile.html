@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - ToolsMarket</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --primary-dark: #2e59d9;
+            --secondary-color: #858796;
+            --success-color: #1cc88a;
+            --warning-color: #f6c23e;
+            --danger-color: #e74a3b;
+            --light-color: #f8f9fc;
+            --border-color: #e3e6f0;
+        }
+
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border-radius: 15px;
+            color: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(30deg);
+        }
+
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+
+        .user-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-email {
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .user-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .profile-content {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+        }
+
+        .profile-sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            height: fit-content;
+        }
+
+        .nav-pills .nav-link {
+            color: var(--secondary-color);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .nav-pills .nav-link:hover {
+            background-color: var(--light-color);
+            color: var(--primary-color);
+        }
+
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .nav-pills .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .profile-main {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+
+        .tab-pane {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .info-card {
+            background: var(--light-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: #5a5c69;
+        }
+
+        .form-control {
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 1rem;
+        }
+
+        .order-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+
+        .order-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-new {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-processing {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-completed {
+            background-color: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .status-cancelled {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+
+        @media (max-width: 768px) {
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-header {
+                text-align: center;
+            }
+
+            .user-stats {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Навигация -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/}">
+            <i class="bi bi-tools text-primary"></i> ToolsMarket
+        </a>
+
+        <div class="d-flex align-items-center">
+            <a th:href="@{/cart}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-cart"></i> Корзина
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i>
+                    <span th:text="${user.firstName}"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item active" th:href="@{/profile}">
+                        <i class="bi bi-person"></i> Личный кабинет
+                    </a></li>
+                    <li><a class="dropdown-item" th:href="@{/profile/orders}">
+                        <i class="bi bi-cart"></i> Мои заказы
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" th:href="@{/logout}">
+                        <i class="bi bi-box-arrow-right"></i> Выйти
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="profile-container">
+    <!-- Заголовок профиля -->
+    <div class="profile-header">
+        <div class="user-avatar">
+                <span th:text="${#strings.substring(user.firstName, 0, 1) + #strings.substring(user.lastName, 0, 1)}">
+                    ИИ
+                </span>
+        </div>
+
+        <div class="user-name">
+            <span th:text="${user.firstName}"></span>
+            <span th:text="${user.lastName}"></span>
+        </div>
+
+        <div class="user-email" th:text="${user.email}">
+            user@example.com
+        </div>
+
+        <div class="user-stats">
+            <div class="stat-item">
+                <div class="stat-value" th:text="${totalOrders}">0</div>
+                <div class="stat-label">Всего заказов</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" th:text="${activeOrders}">0</div>
+                <div class="stat-label">Активные</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" th:text="${completedOrders}">0</div>
+                <div class="stat-label">Завершенные</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="profile-content">
+        <!-- Боковое меню -->
+        <div class="profile-sidebar">
+            <ul class="nav nav-pills flex-column" id="profileTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="info-tab" data-bs-toggle="tab"
+                            data-bs-target="#info" type="button" role="tab">
+                        <i class="bi bi-person"></i> Личная информация
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="password-tab" data-bs-toggle="tab"
+                            data-bs-target="#password" type="button" role="tab">
+                        <i class="bi bi-key"></i> Смена пароля
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" th:href="@{/profile/orders}">
+                        <i class="bi bi-cart"></i> Мои заказы
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="settings-tab" data-bs-toggle="tab"
+                            data-bs-target="#settings" type="button" role="tab">
+                        <i class="bi bi-gear"></i> Настройки
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Контент вкладок -->
+        <div class="profile-main">
+            <div class="tab-content" id="profileTabsContent">
+                <!-- Вкладка: Личная информация -->
+                <div class="tab-pane fade show active" id="info" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0">
+                            <i class="bi bi-person text-primary me-2"></i>Личная информация
+                        </h4>
+                        <a th:href="@{/profile/edit}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Редактировать
+                        </a>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-label">Имя пользователя</div>
+                                <div class="info-value" th:text="${user.username}">
+                                    username
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-label">Email</div>
+                                <div class="info-value" th:text="${user.email}">
+                                    user@example.com
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-label">Имя</div>
+                                <div class="info-value" th:text="${user.firstName}">
+                                    Иван
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-label">Фамилия</div>
+                                <div class="info-value" th:text="${user.lastName}">
+                                    Иванов
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-label">Телефон</div>
+                                <div class="info-value" th:text="${user.phone} ?: 'Не указан'">
+                                    +7 (999) 123-45-67
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-label">Дата регистрации</div>
+                                <div class="info-value" th:text="${user.createdAt}">
+                                    01.01.2024
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="info-card">
+                                <div class="info-label">Роли</div>
+                                <div class="info-value" th:text="${user.roles} ?: 'Пользователь'">
+                                    Пользователь
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="info-card">
+                                <div class="info-label">Статус аккаунта</div>
+                                <div class="info-value">
+                                        <span th:if="${user.enabled}" class="text-success">
+                                            <i class="bi bi-check-circle"></i> Активен
+                                        </span>
+                                    <span th:unless="${user.enabled}" class="text-danger">
+                                            <i class="bi bi-x-circle"></i> Неактивен
+                                        </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Смена пароля -->
+                <div class="tab-pane fade" id="password" role="tabpanel">
+                    <h4 class="mb-4">
+                        <i class="bi bi-key text-primary me-2"></i>Смена пароля
+                    </h4>
+
+                    <form th:action="@{/profile/change-password}" th:object="${changePasswordDto}"
+                          method="post" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="oldPassword" class="form-label">Текущий пароль *</label>
+                            <input type="password" class="form-control" id="oldPassword"
+                                   th:field="*{oldPassword}"
+                                   th:classappend="${#fields.hasErrors('oldPassword')} ? 'is-invalid' : ''"
+                                   required>
+                            <div th:if="${#fields.hasErrors('oldPassword')}" class="invalid-feedback">
+                                <span th:errors="*{oldPassword}"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="newPassword" class="form-label">Новый пароль *</label>
+                            <input type="password" class="form-control" id="newPassword"
+                                   th:field="*{newPassword}"
+                                   th:classappend="${#fields.hasErrors('newPassword')} ? 'is-invalid' : ''"
+                                   required minlength="6">
+                            <div class="form-text">Минимум 6 символов</div>
+                            <div th:if="${#fields.hasErrors('newPassword')}" class="invalid-feedback">
+                                <span th:errors="*{newPassword}"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="confirmPassword" class="form-label">Подтверждение пароля *</label>
+                            <input type="password" class="form-control" id="confirmPassword"
+                                   th:field="*{confirmPassword}"
+                                   th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid' : ''"
+                                   required minlength="6">
+                            <div th:if="${#fields.hasErrors('confirmPassword')}" class="invalid-feedback">
+                                <span th:errors="*{confirmPassword}"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div th:if="${#fields.hasErrors('passwordsMatch')}" class="alert alert-danger">
+                                <span th:errors="*{passwordsMatch}"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-key-fill"></i> Изменить пароль
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="alert alert-info mt-4">
+                        <h6><i class="bi bi-info-circle"></i> Рекомендации по паролю:</h6>
+                        <ul class="mb-0">
+                            <li>Используйте не менее 6 символов</li>
+                            <li>Сочетайте буквы, цифры и специальные символы</li>
+                            <li>Не используйте пароли от других сайтов</li>
+                            <li>Регулярно меняйте пароль</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Настройки -->
+                <div class="tab-pane fade" id="settings" role="tabpanel">
+                    <h4 class="mb-4">
+                        <i class="bi bi-gear text-primary me-2"></i>Настройки аккаунта
+                    </h4>
+
+                    <div class="info-card mb-4">
+                        <h5 class="mb-3"><i class="bi bi-bell"></i> Уведомления</h5>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                            <label class="form-check-label" for="emailNotifications">
+                                Email уведомления о заказах
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="promoEmails" checked>
+                            <label class="form-check-label" for="promoEmails">
+                                Рекламные рассылки и акции
+                            </label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="smsNotifications">
+                            <label class="form-check-label" for="smsNotifications">
+                                SMS уведомления
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h5 class="mb-3"><i class="bi bi-shield"></i> Безопасность</h5>
+                        <div class="mb-3">
+                            <p class="mb-2">Последний вход: <strong>Сегодня, 14:30</strong></p>
+                            <p class="mb-2">IP адрес: <strong>192.168.1.1</strong></p>
+                            <p class="mb-3">Устройство: <strong>Chrome на Windows</strong></p>
+                        </div>
+                        <button class="btn btn-outline-danger">
+                            <i class="bi bi-door-closed"></i> Завершить все сеансы
+                        </button>
+                    </div>
+
+                    <div class="alert alert-warning mt-4">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Опасная зона</h6>
+                        <p class="mb-2">Удаление аккаунта является необратимым действием.</p>
+                        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                            <i class="bi bi-trash"></i> Удалить аккаунт
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно удаления аккаунта -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-danger"></i> Удаление аккаунта</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить.</p>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmDelete">
+                    <label class="form-check-label" for="confirmDelete">
+                        Я понимаю, что все мои данные будут удалены без возможности восстановления
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" disabled id="deleteAccountBtn">
+                    Удалить аккаунт
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Активация вкладки из URL hash
+    document.addEventListener('DOMContentLoaded', function() {
+        const hash = window.location.hash;
+        if (hash) {
+            const tab = new bootstrap.Tab(document.querySelector(`[data-bs-target="${hash}"]`));
+            tab.show();
+        }
+
+        // Подтверждение удаления аккаунта
+        const confirmCheckbox = document.getElementById('confirmDelete');
+        const deleteBtn = document.getElementById('deleteAccountBtn');
+
+        if (confirmCheckbox && deleteBtn) {
+            confirmCheckbox.addEventListener('change', function() {
+                deleteBtn.disabled = !this.checked;
+            });
+        }
+
+        // Валидация формы смены пароля
+        const passwordForm = document.querySelector('form[th\\:action="@{/profile/change-password}"]');
+        if (passwordForm) {
+            passwordForm.addEventListener('submit', function(e) {
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (newPassword !== confirmPassword) {
+                    e.preventDefault();
+                    alert('Пароли не совпадают!');
+                }
+            });
+        }
+    });
+
+    // Анимация при переключении вкладок
+    const tabTriggers = document.querySelectorAll('#profileTabs button[data-bs-toggle="tab"]');
+    tabTriggers.forEach(trigger => {
+        trigger.addEventListener('shown.bs.tab', function(e) {
+            window.location.hash = e.target.getAttribute('data-bs-target');
+        });
+    });
+</script>
+</body>
+</html>

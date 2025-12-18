@@ -14,6 +14,7 @@ import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderStatus;
 import ru.fisher.ToolsMarket.service.OrderService;
+import ru.fisher.ToolsMarket.service.UserService;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -28,27 +29,41 @@ import java.util.stream.Collectors;
 public class AdminOrderController {
 
     private final OrderService orderService;
+    private final UserService userService;
 
     private static final String SUCCESS_MSG = "successMessage";
     private static final String ERROR_MSG = "errorMessage";
     private static final String REDIRECT_ORDER_DETAILS = "redirect:/admin/orders/";
     private static final String REDIRECT_ORDERS_LIST = "redirect:/admin/orders";
 
+
     @GetMapping
     public String listOrders(@RequestParam(required = false) String status,
                              @RequestParam(required = false) String search,
+                             @RequestParam(required = false) Long userId, // Добавил параметр userId
                              Model model) {
         try {
-            List<Order> orders = getFilteredOrders(status, search);
+            List<Order> orders = getFilteredOrders(status, search, userId); // Добавил userId
             addOrderStatisticsToModel(model);
 
+            // Добавляем список пользователей для фильтрации
+            model.addAttribute("users", userService.findAll());
             model.addAttribute("orders", orders);
             model.addAttribute("searchQuery", search);
+            model.addAttribute("selectedUserId", userId); // Добавил для сохранения выбора в форме
+
+            // Если фильтруем по пользователю, добавляем информацию о нем
+            if (userId != null) {
+                userService.findById(userId).ifPresent(user -> {
+                    model.addAttribute("selectedUser", user);
+                });
+            }
 
             return "admin/orders/index";
 
         } catch (Exception e) {
-            log.error("Ошибка при получении списка заказов: статус={}, поиск={}", status, search, e);
+            log.error("Ошибка при получении списка заказов: статус={}, поиск={}, userId={}",
+                    status, search, userId, e);
             model.addAttribute(ERROR_MSG, "Ошибка при загрузке списка заказов");
             return "admin/orders/index";
         }
@@ -71,6 +86,8 @@ public class AdminOrderController {
             return "redirect:/admin/orders";
         }
     }
+
+    // Все остальные методы остаются БЕЗ изменений...
 
     @PostMapping("/{id}/status")
     public String updateOrderStatus(@PathVariable Long id,
@@ -179,8 +196,12 @@ public class AdminOrderController {
 
     // =========== Вспомогательные приватные методы ===========
 
-    private List<Order> getFilteredOrders(String status, String search) {
-        if (StringUtils.hasText(search)) {
+    private List<Order> getFilteredOrders(String status, String search, Long userId) {
+        // Добавил userId параметр
+        if (userId != null) {
+            // Фильтруем по пользователю
+            return orderService.getUserOrders(userId);
+        } else if (StringUtils.hasText(search)) {
             return searchOrders(search.trim());
         } else if (StringUtils.hasText(status)) {
             OrderStatus orderStatus = OrderStatus.valueOf(status);

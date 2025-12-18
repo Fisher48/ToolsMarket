@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - ToolsMarket</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Иконки Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+
+    <!-- Кастомные стили -->
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --primary-dark: #2e59d9;
+            --secondary-color: #858796;
+            --light-color: #f8f9fc;
+            --border-color: #e3e6f0;
+            --error-color: #e74a3b;
+            --success-color: #1cc88a;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .auth-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .auth-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(50, 50, 93, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07);
+            background-color: white;
+            overflow: hidden;
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 0;
+        }
+
+        .auth-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .auth-header p {
+            opacity: 0.9;
+            margin: 0.5rem 0 0;
+        }
+
+        .auth-body {
+            padding: 2rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+        }
+
+        .form-control.is-invalid {
+            border-color: var(--error-color);
+        }
+
+        .form-control.is-invalid:focus {
+            box-shadow: 0 0 0 0.25rem rgba(231, 74, 59, 0.25);
+        }
+
+        .form-text {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-top: 0.25rem;
+        }
+
+        .invalid-feedback {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--error-color);
+            margin-top: 0.25rem;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.65;
+        }
+
+        .auth-footer {
+            text-align: center;
+            padding: 1.5rem 2rem;
+            background-color: var(--light-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .auth-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-footer a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .password-requirements {
+            background-color: var(--light-color);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .requirement i {
+            margin-right: 0.5rem;
+        }
+
+        .requirement.met {
+            color: var(--success-color);
+        }
+
+        .requirement.not-met {
+            color: var(--error-color);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Заголовок -->
+            <div class="auth-header">
+                <h1><i class="bi bi-person-plus"></i> Создание аккаунта</h1>
+                <p>Присоединяйтесь к ToolsMarket</p>
+            </div>
+
+            <!-- Сообщения -->
+            <div class="auth-body">
+                <!-- Уведомления -->
+                <div th:if="${successMessage}" class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                </div>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                </div>
+
+                <!-- Форма регистрации -->
+                <form th:action="@{/auth/register}" th:object="${userDto}"
+                      method="post" id="registerForm" novalidate>
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                    <!-- Имя пользователя -->
+                    <div class="mb-4">
+                        <label for="username" class="form-label">
+                            <i class="bi bi-person"></i> Имя пользователя *
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="username"
+                               th:field="*{username}"
+                               th:classappend="${#fields.hasErrors('username') ? 'is-invalid' : ''}"
+                               placeholder="Придумайте уникальное имя"
+                               required
+                               minlength="3"
+                               maxlength="50">
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}">
+                            <span th:errors="*{username}"></span>
+                        </div>
+                        <div class="form-text">От 3 до 50 символов. Буквы, цифры и подчеркивания.</div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-4">
+                        <label for="email" class="form-label">
+                            <i class="bi bi-envelope"></i> Email адрес *
+                        </label>
+                        <input type="email"
+                               class="form-control"
+                               id="email"
+                               th:field="*{email}"
+                               th:classappend="${#fields.hasErrors('email') ? 'is-invalid' : ''}"
+                               placeholder="your@email.com"
+                               required>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}">
+                            <span th:errors="*{email}"></span>
+                        </div>
+                        <div class="form-text">На этот email будут приходить уведомления.</div>
+                    </div>
+
+                    <!-- Имя и Фамилия -->
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label for="firstName" class="form-label">
+                                <i class="bi bi-person-vcard"></i> Имя *
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="firstName"
+                                   th:field="*{firstName}"
+                                   th:classappend="${#fields.hasErrors('firstName') ? 'is-invalid' : ''}"
+                                   placeholder="Иван"
+                                   required
+                                   minlength="2"
+                                   maxlength="50">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('firstName')}">
+                                <span th:errors="*{firstName}"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <label for="lastName" class="form-label">
+                                <i class="bi bi-person-vcard"></i> Фамилия *
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="lastName"
+                                   th:field="*{lastName}"
+                                   th:classappend="${#fields.hasErrors('lastName') ? 'is-invalid' : ''}"
+                                   placeholder="Иванов"
+                                   required
+                                   minlength="2"
+                                   maxlength="50">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('lastName')}">
+                                <span th:errors="*{lastName}"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Пароль -->
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="bi bi-lock"></i> Пароль *
+                        </label>
+                        <input type="password"
+                               class="form-control"
+                               id="password"
+                               th:field="*{password}"
+                               th:classappend="${#fields.hasErrors('password') ? 'is-invalid' : ''}"
+                               placeholder="Минимум 6 символов"
+                               required
+                               minlength="6">
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}">
+                            <span th:errors="*{password}"></span>
+                        </div>
+
+                        <!-- Подсказки для пароля -->
+                        <div class="password-requirements">
+                            <div class="requirement" id="req-length">
+                                <i class="bi bi-circle"></i>
+                                <span>Минимум 6 символов</span>
+                            </div>
+                            <div class="form-text">Придумайте надежный пароль, который вы не используете на других сайтах.</div>
+                        </div>
+                    </div>
+
+                    <!-- Подтверждение пароля -->
+                    <div class="mb-4">
+                        <label for="confirmPassword" class="form-label">
+                            <i class="bi bi-lock-fill"></i> Подтверждение пароля *
+                        </label>
+                        <input type="password"
+                               class="form-control"
+                               id="confirmPassword"
+                               th:field="*{confirmPassword}"
+                               th:classappend="${#fields.hasErrors('confirmPassword') or #fields.hasErrors('passwordsMatch') ? 'is-invalid' : ''}"
+                               placeholder="Повторите пароль"
+                               required
+                               minlength="6">
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}">
+                            <span th:errors="*{confirmPassword}"></span>
+                        </div>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('passwordsMatch')}">
+                            <span th:errors="*{passwordsMatch}"></span>
+                        </div>
+                        <div class="form-text">Пароли должны совпадать</div>
+                    </div>
+
+                    <!-- Кнопка регистрации -->
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-person-plus"></i> Зарегистрироваться
+                        </button>
+                    </div>
+
+                    <!-- Условия использования -->
+                    <div class="form-text text-center mb-4">
+                        Нажимая кнопку "Зарегистрироваться", вы соглашаетесь с нашими
+                        <a href="#">Условиями использования</a> и
+                        <a href="#">Политикой конфиденциальности</a>.
+                    </div>
+
+                    <!-- Ссылка на вход -->
+                    <div class="login-link">
+                        <p class="mb-0">
+                            Уже есть аккаунт?
+                            <a th:href="@{/auth/login}" class="fw-bold">Войти в систему</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Футер -->
+            <div class="auth-footer">
+                <p class="mb-0">
+                    <a th:href="@{/}">
+                        <i class="bi bi-arrow-left"></i> Вернуться на главную
+                    </a>
+                    <span class="mx-2">•</span>
+                    © 2025 ToolsMarket
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

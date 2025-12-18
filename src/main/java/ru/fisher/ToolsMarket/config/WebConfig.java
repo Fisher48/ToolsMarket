@@ -9,7 +9,6 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@EnableWebMvc
 @Slf4j
 public class WebConfig implements WebMvcConfigurer {
 
@@ -36,6 +35,19 @@ public class WebConfig implements WebMvcConfigurer {
                 )
                 .setCachePeriod(3600)
                 .resourceChain(true);
+
+        // Обработчик для стандартных статических ресурсов (CSS, JS, etc.)
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/")
+                .setCachePeriod(3600);
+
+        // WebJars
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/")
+                .setCachePeriod(3600);
+
+        log.info("Configured static resource handlers");
+        log.info("Upload path: {}", uploadPath);
 
         log.info("Configured static resource handlers for images");
     }

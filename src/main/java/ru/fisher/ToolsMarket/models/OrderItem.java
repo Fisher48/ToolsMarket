@@ -1,8 +1,7 @@
 package ru.fisher.ToolsMarket.models;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -11,6 +10,9 @@ import java.time.Instant;
 @Getter
 @Setter
 @Table(name = "order_item")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class OrderItem {
 
     @Id
@@ -36,7 +38,8 @@ public class OrderItem {
     @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal subtotal;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
+    @Builder.Default
     private Instant createdAt = Instant.now();
 
     // связь с заказом

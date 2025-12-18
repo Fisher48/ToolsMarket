@@ -7,11 +7,14 @@ import ru.fisher.ToolsMarket.dto.CartItemDto;
 import ru.fisher.ToolsMarket.models.Cart;
 import ru.fisher.ToolsMarket.models.CartItem;
 import ru.fisher.ToolsMarket.models.Product;
+import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.repository.CartItemRepository;
 import ru.fisher.ToolsMarket.repository.CartRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
+import ru.fisher.ToolsMarket.repository.UserRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,31 +23,128 @@ public class CartService {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final CartItemRepository cartItemRepository;
+    private final UserRepository userRepository;
 
+    /**
+     * Получение или создание корзины с учетом пользователя
+     */
     @Transactional
     public Cart getOrCreateCart(Long userId, String sessionId) {
         if (userId != null) {
             return cartRepository.findByUserId(userId)
-                    .orElseGet(() -> {
-                        Cart c = new Cart();
-                        c.setUserId(userId);
-                        return cartRepository.save(c);
-                    });
+                    .orElseGet(() -> createCartForUser(userId));
         }
 
+        // Анонимная корзина
         return cartRepository.findBySessionId(sessionId)
                 .orElseGet(() -> {
-                    Cart c = new Cart();
-                    c.setSessionId(sessionId);
-                    return cartRepository.save(c);
+                    Cart cart = Cart.builder()
+                            .sessionId(sessionId)
+                            .build();
+                    return cartRepository.save(cart);
                 });
+    }
+
+    /**
+     * Создание корзины для зарегистрированного пользователя
+     */
+    @Transactional
+    public Cart createCartForUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Проверяем, нет ли уже корзины у пользователя
+        if (cartRepository.existsByUserId(userId)) {
+            throw new IllegalStateException("User already has a cart");
+        }
+
+        Cart cart = Cart.builder()
+                .user(user)
+                .build();
+
+        return cartRepository.save(cart);
+    }
+
+    /**
+     * Привязка анонимной корзины к пользователю
+     */
+    @Transactional
+    public Cart mergeCartToUser(String sessionId, Long userId) {
+        Cart anonymousCart = cartRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Проверяем, есть ли у пользователя уже корзина
+        Optional<Cart> existingUserCart = cartRepository.findByUserId(userId);
+
+        if (existingUserCart.isPresent()) {
+            // Объединяем корзины
+            return mergeCarts(anonymousCart, existingUserCart.get(), user);
+        } else {
+            // Привязываем анонимную корзину к пользователю
+            anonymousCart.setUser(user);
+            anonymousCart.setSessionId(null); // Очищаем sessionId
+            return cartRepository.save(anonymousCart);
+        }
+    }
+
+    /**
+     * Объединение двух корзин
+     */
+    private Cart mergeCarts(Cart sourceCart, Cart targetCart, User user) {
+        List<CartItem> sourceItems = sourceCart.getItems();
+        List<CartItem> targetItems = targetCart.getItems();
+
+        // Объединяем товары
+        for (CartItem sourceItem : sourceItems) {
+            Optional<CartItem> existingItem = targetItems.stream()
+                    .filter(item -> item.getProductId().equals(sourceItem.getProductId()))
+                    .findFirst();
+
+            if (existingItem.isPresent()) {
+                // Увеличиваем количество
+                CartItem item = existingItem.get();
+                item.setQuantity(item.getQuantity() + sourceItem.getQuantity());
+                cartItemRepository.save(item);
+            } else {
+                // Добавляем новый товар
+                sourceItem.setCart(targetCart);
+                targetItems.add(sourceItem);
+                cartItemRepository.save(sourceItem);
+            }
+        }
+
+        // Удаляем старую корзину
+        cartRepository.delete(sourceCart);
+
+        // Обновляем пользователя
+        targetCart.setUser(user);
+        return cartRepository.save(targetCart);
+    }
+
+    /**
+     * Получение корзины пользователя с предзагрузкой товаров
+     */
+    @Transactional(readOnly = true)
+    public Cart getCartWithItems(Long userId) {
+        return cartRepository.findWithItemsByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found for user"));
+    }
+
+    // Остальные методы обновляем для работы с userId
+
+    @Transactional
+    public void addProductToUserCart(Long userId, Long productId) {
+        Cart cart = getOrCreateCart(userId, null);
+        addProduct(cart.getId(), productId);
     }
 
     @Transactional
     public void addProduct(Long cartId, Long productId) {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
-
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
@@ -54,8 +154,7 @@ public class CartService {
 
         if (existing != null) {
             existing.setQuantity(existing.getQuantity() + 1);
-            cartItemRepository.save(existing);
-            return;
+            cartItemRepository.save(existing); return;
         }
 
         // Товара не было — создаём новый CartItem
@@ -66,33 +165,14 @@ public class CartService {
         item.setProductSku(product.getSku());
         item.setUnitPrice(product.getPrice());
         item.setQuantity(1);
-
         cartItemRepository.save(item);
     }
 
-    @Transactional
-    public void removeProduct(Long cartId, Long productId) {
-        cartItemRepository.findByCartIdAndProductId(cartId, productId)
-                .ifPresent(cartItemRepository::delete);
-    }
-
-    public void decreaseProductQuantity(Long cartId, Long productId) {
-        // Ищем существующий элемент корзины
-        CartItem item = cartItemRepository
-                .findByCartIdAndProductId(cartId, productId)
-                .orElse(null);
-
-        if (item == null) return; // ничего не делаем
-
-        // Если количество больше 1 → уменьшаем
-        if (item.getQuantity() > 1) {
-            item.setQuantity(item.getQuantity() - 1);
-            cartItemRepository.save(item);
-            return;
-        }
-
-        // Если был один → удаляем CartItem
-        cartItemRepository.delete(item);
+    @Transactional(readOnly = true)
+    public List<CartItemDto> getUserCartItems(Long userId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found for user"));
+        return getCartItems(cart.getId());
     }
 
     @Transactional(readOnly = true)
@@ -120,6 +200,31 @@ public class CartService {
                 item.getUnitPrice(),
                 item.getQuantity()
         );
+    }
+
+    @Transactional
+    public void removeProduct(Long cartId, Long productId) {
+        cartItemRepository.findByCartIdAndProductId(cartId, productId)
+                .ifPresent(cartItemRepository::delete);
+    }
+
+    public void decreaseProductQuantity(Long cartId, Long productId) {
+        // Ищем существующий элемент корзины
+        CartItem item = cartItemRepository
+                .findByCartIdAndProductId(cartId, productId)
+                .orElse(null);
+
+        if (item == null) return; // ничего не делаем
+
+        // Если количество больше 1 → уменьшаем
+        if (item.getQuantity() > 1) {
+            item.setQuantity(item.getQuantity() - 1);
+            cartItemRepository.save(item);
+            return;
+        }
+
+        // Если был один → удаляем CartItem
+        cartItemRepository.delete(item);
     }
 
     @Transactional
@@ -153,5 +258,11 @@ public class CartService {
         item.setQuantity(quantity);
 
         cartItemRepository.save(item);
+    }
+
+    @Transactional
+    public void clearCart(Long cartId) {
+        // Удаляем все товары из корзины одним запросом
+        cartItemRepository.deleteByCartId(cartId);
     }
 }

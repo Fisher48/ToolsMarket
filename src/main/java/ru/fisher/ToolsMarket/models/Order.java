@@ -1,8 +1,7 @@
 package ru.fisher.ToolsMarket.models;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,6 +12,9 @@ import java.util.List;
 @Getter
 @Setter
 @Table(name = "\"order\"")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +23,9 @@ public class Order {
     @Column(name = "order_number", nullable = false, unique = true)
     private Long orderNumber;
 
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -38,5 +42,35 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL,
             orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();
+
+    // Helper методы с проверкой на null
+    public void addOrderItem(OrderItem item) {
+        if (orderItems == null) {
+            orderItems = new ArrayList<>();
+        }
+        orderItems.add(item);
+        item.setOrder(this);
+    }
+
+    public void removeOrderItem(OrderItem item) {
+        if (orderItems != null) {
+            orderItems.remove(item);
+            item.setOrder(null);
+        }
+    }
+
+    public int getTotalItemsCount() {
+        if (orderItems == null || orderItems.isEmpty()) {
+            return 0;
+        }
+        return orderItems.stream()
+                .mapToInt(OrderItem::getQuantity)
+                .sum();
+    }
+
+    public boolean belongsToUser(Long userId) {
+        return user != null && user.getId().equals(userId);
+    }
 }
