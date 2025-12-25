@@ -52,10 +52,9 @@
                 <a th:href="@{/cart}" class="btn btn-outline-light position-relative">
                     <i class="bi bi-cart"></i>
                     Корзина
-                    <span th:if="${cartItemCount > 0}"
+                    <span th:if="${session.cartItemCount != null and session.cartItemCount > 0}"
                           class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                          th:text="${cartItemCount}">
-                    </span>
+                          th:text="${session.cartItemCount}">0</span>
                 </a>
             </div>
             <a class="nav-link text-white mx-2" href="/profile">
