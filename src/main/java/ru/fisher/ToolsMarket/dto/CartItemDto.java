@@ -11,16 +11,23 @@ public class CartItemDto {
     private Long productId;
     private String productName;
     private String productSku;
+    private String productTitle; // для URL страницы товара
+    private String productImageUrl; // ← URL основного изображения
+    private String productImageAlt; // ← alt текст изображения (опционально)
     private BigDecimal unitPrice;
     private Integer quantity;
     private BigDecimal totalPrice;
 
     // Конструктор с вычислением totalPrice
     public CartItemDto(Long productId, String productName, String productSku,
+                       String productTitle, String productImageUrl, String productImageAlt,
                        BigDecimal unitPrice, Integer quantity) {
         this.productId = productId;
         this.productName = productName;
         this.productSku = productSku;
+        this.productTitle = productTitle;
+        this.productImageUrl = productImageUrl;
+        this.productImageAlt = productImageAlt;
         this.unitPrice = unitPrice;
         this.quantity = quantity;
         // Гарантируем, что totalPrice не будет null

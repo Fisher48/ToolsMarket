@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -25,6 +26,7 @@ import java.util.UUID;
 @Controller
 @RequestMapping("/cart")
 @RequiredArgsConstructor
+@Slf4j
 public class CartController {
 
     private final CartService cartService;
@@ -42,6 +44,13 @@ public class CartController {
         // Получаем корзину с учетом пользователя
         Cart cart = cartService.getOrCreateCart(userId, finalSessionId);
         List<CartItemDto> items = cartService.getCartItems(cart.getId());
+
+        // Логирование
+        log.debug("Cart items with titles:");
+        items.forEach(item ->
+                log.debug("Product: '{}', Title (URL): '{}'",
+                        item.getProductName(), item.getProductTitle())
+        );
 
         // Обновляем счетчик в сессии
         updateCartItemCountInSession(session, cart);

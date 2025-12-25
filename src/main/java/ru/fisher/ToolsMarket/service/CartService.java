@@ -1,23 +1,19 @@
 package ru.fisher.ToolsMarket.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fisher.ToolsMarket.dto.CartItemDto;
-import ru.fisher.ToolsMarket.models.Cart;
-import ru.fisher.ToolsMarket.models.CartItem;
-import ru.fisher.ToolsMarket.models.Product;
-import ru.fisher.ToolsMarket.models.User;
-import ru.fisher.ToolsMarket.repository.CartItemRepository;
-import ru.fisher.ToolsMarket.repository.CartRepository;
-import ru.fisher.ToolsMarket.repository.ProductRepository;
-import ru.fisher.ToolsMarket.repository.UserRepository;
+import ru.fisher.ToolsMarket.models.*;
+import ru.fisher.ToolsMarket.repository.*;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CartService {
 
     private final CartRepository cartRepository;
@@ -187,18 +183,62 @@ public class CartService {
 
         // Преобразуем в DTO
         return items.stream()
-                .map(this::convertToDto)
+                .map(this::convertToDtoSimple)
                 .toList();
     }
 
 
-    private CartItemDto convertToDto(CartItem item) {
+//    private CartItemDto convertToDto(CartItem item) {
+//        return new CartItemDto(
+//                item.getProductId(),
+//                item.getProductName(),
+//                item.getProductSku(),
+//                item.setProductSlug(item.getProductSlug()),
+//                item.getUnitPrice(),
+//                item.getQuantity())
+//        );
+//    }
+
+//    public CartItemDto convertToDto(CartItem cartItem) {
+//        CartItemDto dto = new CartItemDto();
+//        dto.setProductId(cartItem.getProductId());
+//        dto.setProductName(cartItem.getProductName());
+//        dto.setProductSku(cartItem.getProductSku());
+//        dto.setUnitPrice(cartItem.getUnitPrice());
+//        dto.setQuantity(cartItem.getQuantity());
+//
+//        // Получаем slug отдельным запросом
+//        String slug = getProductTitle(cartItem.getProductId());
+//        dto.setProductSlug(slug);
+//
+//        return dto;
+//    }
+
+    private CartItemDto convertToDtoSimple(CartItem cartItem) {
+        // Получаем товар с изображениями
+        Product product = productRepository.findById(cartItem.getProductId())
+                .orElse(null);
+
+        String title = product != null ? product.getTitle() : null;
+        String imageUrl = null;
+        String imageAlt = null;
+
+        if (product != null && !product.getImages().isEmpty()) {
+            // Берем первое изображение (отсортированное по sortOrder)
+            ProductImage mainImage = product.getImages().getFirst();
+            imageUrl = mainImage.getUrl();
+            imageAlt = mainImage.getAlt();
+        }
+
         return new CartItemDto(
-                item.getProductId(),
-                item.getProductName(),
-                item.getProductSku(),
-                item.getUnitPrice(),
-                item.getQuantity()
+                cartItem.getProductId(),
+                cartItem.getProductName(),
+                cartItem.getProductSku(),
+                title,
+                imageUrl,
+                imageAlt,
+                cartItem.getUnitPrice(),
+                cartItem.getQuantity()
         );
     }
 
