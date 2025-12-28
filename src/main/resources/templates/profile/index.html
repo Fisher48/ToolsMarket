@@ -169,7 +169,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="order : ${recentOrders}">
+                            <tr th:each="order : ${orders}">
                                 <td th:text="${order.orderNumber}">#12345</td>
                                 <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy')}">01.01.2025</td>
                                 <td>

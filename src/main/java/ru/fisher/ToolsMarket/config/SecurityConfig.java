@@ -45,8 +45,8 @@ public class SecurityConfig {
 
                         // Точки входа для пользователя
                         .requestMatchers(
-                                "/orders/**", "/cart/**",
-                                "/profile", "/api/user/**"
+                                "/order/**", "/cart/**",
+                                "/profile/**", "/api/user/**"
                         ).authenticated()
 
                         // Все остальное требует аутентификации
@@ -70,7 +70,11 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .sessionFixation().migrateSession()
                         .maximumSessions(1)
-                ).userDetailsService(userDetailsService);
+                )
+                .exceptionHandling(exception -> exception
+                        .accessDeniedPage("/error/403")
+                )
+                .userDetailsService(userDetailsService);
 
         return http.build();
 
