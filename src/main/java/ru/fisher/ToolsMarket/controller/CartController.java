@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,6 +22,7 @@ import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Controller
@@ -35,9 +37,10 @@ public class CartController {
 
     @GetMapping
     public String viewCart(@CookieValue(value = "sessionId", required = false) String sessionId,
-                           HttpServletResponse response, HttpSession session,
-                           Model model, Authentication authentication) {
+                           HttpServletResponse response,
+                           HttpSession session, Model model) {
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String finalSessionId = getOrCreateSessionId(sessionId, response);
         Long userId = getCurrentUserId(authentication);
 
@@ -79,9 +82,9 @@ public class CartController {
     public String addToCart(@RequestParam Long productId,
                             @RequestParam(defaultValue = "1") Integer quantity,
                             @CookieValue(value = "sessionId", required = false) String sessionId,
-                            HttpServletResponse response, HttpSession session,
-                            Authentication authentication) {
+                            HttpServletResponse response, HttpSession session) {
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String finalSessionId = getOrCreateSessionId(sessionId, response);
         Long userId = getCurrentUserId(authentication);
 
@@ -97,9 +100,9 @@ public class CartController {
     @PostMapping("/remove")
     public String removeFromCart(@RequestParam Long productId,
                                  @CookieValue("sessionId") String sessionId,
-                                 HttpSession session,
-                                 Authentication authentication) {
+                                 HttpSession session) {
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(authentication);
         Cart cart = cartService.getOrCreateCart(userId, sessionId);
         cartService.removeProduct(cart.getId(), productId);
@@ -113,9 +116,9 @@ public class CartController {
     @PostMapping("/decrease")
     public String decreaseQuantity(@RequestParam Long productId,
                                    @CookieValue("sessionId") String sessionId,
-                                   HttpSession session,
-                                   Authentication authentication) {
+                                   HttpSession session) {
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(authentication);
         Cart cart = cartService.getOrCreateCart(userId, sessionId);
         cartService.decreaseProductQuantity(cart.getId(), productId);
@@ -131,9 +134,10 @@ public class CartController {
      */
     @PostMapping("/merge")
     public String mergeCart(@CookieValue("sessionId") String sessionId,
-                            Authentication authentication,
                             RedirectAttributes redirectAttributes) {
 
+        // Получаем Authentication напрямую из SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(authentication);
         if (userId == null) {
             redirectAttributes.addFlashAttribute("error", "Пользователь не авторизован");
@@ -156,10 +160,9 @@ public class CartController {
      * Очистка корзины
      */
     @PostMapping("/clear")
-    public String clearCart(@CookieValue("sessionId") String sessionId,
-                            Authentication authentication,
-                            HttpSession session) {
+    public String clearCart(@CookieValue("sessionId") String sessionId, HttpSession session) {
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(authentication);
         Cart cart = cartService.getOrCreateCart(userId, sessionId);
 
