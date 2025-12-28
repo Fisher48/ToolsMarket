@@ -5,8 +5,8 @@ import lombok.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "cart")
@@ -37,7 +37,7 @@ public class Cart implements Serializable {
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL,
             orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<CartItem> items = new ArrayList<>();
+    private Set<CartItem> items = new LinkedHashSet<>();
 
     @PrePersist
     protected void onCreate() {

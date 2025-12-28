@@ -19,7 +19,9 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY)  // Должно быть LAZY
+    @JoinColumn(name = "product_id")
+    private Product product;
 
     @Column(name = "product_name", nullable = false, length = 512)
     private String productName;

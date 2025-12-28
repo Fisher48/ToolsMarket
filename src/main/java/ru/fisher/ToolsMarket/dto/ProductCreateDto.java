@@ -6,7 +6,6 @@ import ru.fisher.ToolsMarket.models.Product;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -39,7 +38,7 @@ public class ProductCreateDto {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .categories(new HashSet<>())
-                .images(new ArrayList<>())
+                .images(new HashSet<>())
                 .build();
     }
 }

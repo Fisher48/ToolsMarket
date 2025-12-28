@@ -5,8 +5,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -43,12 +43,12 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL,
             orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<OrderItem> orderItems = new ArrayList<>();
+    private Set<OrderItem> orderItems = new LinkedHashSet<>();
 
     // Helper методы с проверкой на null
     public void addOrderItem(OrderItem item) {
         if (orderItems == null) {
-            orderItems = new ArrayList<>();
+            orderItems = new LinkedHashSet<>();
         }
         orderItems.add(item);
         item.setOrder(this);

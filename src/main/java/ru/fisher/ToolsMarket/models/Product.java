@@ -5,10 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "product")
@@ -57,7 +54,7 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
-    private List<ProductImage> images = new ArrayList<>();
+    private Set<ProductImage> images = new LinkedHashSet<>();
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
@@ -67,7 +64,7 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
-    private List<ProductAttributeValue> attributeValues = new ArrayList<>();
+    private Set<ProductAttributeValue> attributeValues = new LinkedHashSet<>();
 
     // Вспомогательный метод для получения значения атрибута
     public String getAttributeValue(String attributeName) {
