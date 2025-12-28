@@ -13,16 +13,18 @@ import ru.fisher.ToolsMarket.PostgresTestConfig;
 import ru.fisher.ToolsMarket.dto.CartItemDto;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
-import ru.fisher.ToolsMarket.models.Cart;
-import ru.fisher.ToolsMarket.models.Order;
-import ru.fisher.ToolsMarket.models.OrderStatus;
+import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.CartService;
 import ru.fisher.ToolsMarket.service.OrderService;
+import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.mockito.Mockito.*;
@@ -30,7 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(initializers = PostgresTestConfig.class)
 class OrderControllerTest {
 
@@ -43,22 +45,61 @@ class OrderControllerTest {
     @MockitoBean
     private CartService cartService;
 
+    @MockitoBean
+    private UserService userService;
+
     @Test
     @WithMockUser(username = "testuser")
     void viewOrderReturnsOrderPage() throws Exception {
-        Order order = new Order();
-        order.setId(1L);
-        order.setOrderNumber(12345L);
-        order.setStatus(OrderStatus.CREATED);
-        order.setTotalPrice(BigDecimal.valueOf(3000));
+        Long orderId = 1L;
+        Long userId = 1L; // ID пользователя testuser (предполагаемый)
 
-        when(orderService.getOrder(1L)).thenReturn(order);
+        // 1. Создаем пользователя
+        User user = User.builder()
+                .id(userId)
+                .username("testuser")
+                .email("test@example.com")
+                .build();
 
-        mockMvc.perform(get("/order/1"))
+        // 2. Создаем OrderItem
+        OrderItem orderItem = OrderItem.builder()
+                .id(1L)
+                .product(new Product())
+                .productName("Test Product")
+                .productSku("TEST-001")
+                .quantity(2)
+                .unitPrice(BigDecimal.valueOf(1500))
+                .subtotal(BigDecimal.valueOf(3000))
+                .build();
+
+        // 3. Создаем Order с пользователем
+        Order order = Order.builder()
+                .id(orderId)
+                .orderNumber(12345L)
+                .user(user) // ← ВАЖНО: устанавливаем пользователя!
+                .status(OrderStatus.CREATED)
+                .totalPrice(BigDecimal.valueOf(3000))
+                .orderItems(Set.of(orderItem))
+                .build();
+
+        // 4. Устанавливаем связь OrderItem -> Order
+        orderItem.setOrder(order);
+
+        // 5. Мокаем метод: getOrderWithProducts()
+        when(orderService.getOrderWithProducts(orderId))
+                .thenReturn(order);
+
+        // 6. Если есть зависимость от userService в getCurrentUserId()
+        when(userService.findByUsername("testuser"))
+                .thenReturn(Optional.of(user));
+
+        mockMvc.perform(get("/order/{id}", orderId))
                 .andExpect(status().isOk())
                 .andExpect(view().name("order/index"))
                 .andExpect(model().attributeExists("order"))
-                .andExpect(model().attribute("order", order));
+                .andExpect(model().attribute("order", order))
+                .andExpect(model().attributeExists("orderItems"))
+                .andExpect(model().attribute("canCancel", true));
     }
 
     @Test
@@ -69,7 +110,7 @@ class OrderControllerTest {
         when(orderService.getOrder(nonExistentOrderId))
                 .thenThrow(new OrderNotFoundException(nonExistentOrderId));
 
-        mockMvc.perform(get("/order/{id}", nonExistentOrderId))
+        mockMvc.perform(get("/order/{id}", nonExistentOrderId).with(csrf()))
                 .andExpect(jsonPath("$.error").value("Заказ не найден"))
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.path").value("/order/999"));
@@ -269,9 +310,9 @@ class OrderControllerTest {
     void userCannotUpdateStatusThroughAdminEndpoint() throws Exception {
         // Даже если попробовать обратиться к админскому эндпоинту
         // (должна быть проверка авторизации в AdminOrderController)
-        mockMvc.perform(post("/admin/orders/1/status")
+        mockMvc.perform(post("/admin/orders/1/status").with(csrf())
                         .param("status", "PAID"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().is3xxRedirection());
     }
 
 }

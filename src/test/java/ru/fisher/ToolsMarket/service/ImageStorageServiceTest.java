@@ -1,6 +1,5 @@
 package ru.fisher.ToolsMarket.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,13 +7,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.web.multipart.MultipartFile;
 import ru.fisher.ToolsMarket.PostgresTestConfig;
 import ru.fisher.ToolsMarket.models.ProductImage;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

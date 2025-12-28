@@ -41,11 +41,11 @@ class CartServiceTest {
     public Product createAndSaveProduct(String productName, BigDecimal price) {
         Product product = Product.builder()
                .name(productName)
-               .images(new ArrayList<>())
+               .images(new LinkedHashSet<>())
                .createdAt(Instant.now())
                .updatedAt(Instant.now())
                .price(price)
-               .attributeValues(new ArrayList<>())
+               .attributeValues(new LinkedHashSet<>())
                .active(true)
                .currency("RUB")
                .categories(new HashSet<>())
@@ -117,7 +117,7 @@ class CartServiceTest {
         assertThat(items).hasSize(1);
 
         CartItem item = items.getFirst();
-        assertThat(item.getProductId()).isEqualTo(product.getId());
+        assertThat(item.getProduct().getId()).isEqualTo(product.getId());
         assertThat(item.getQuantity()).isEqualTo(1);
         assertThat(item.getUnitPrice().doubleValue())
                 .isEqualTo(product.getPrice().doubleValue());
@@ -169,7 +169,7 @@ class CartServiceTest {
 
         CartItem item = items.getFirst();
 
-        assertThat(item.getProductId()).isEqualTo(product.getId());
+        assertThat(item.getProduct().getId()).isEqualTo(product.getId());
         assertThat(item.getQuantity()).isEqualTo(2);
     }
 
@@ -315,7 +315,7 @@ class CartServiceTest {
         assertThat(items).hasSize(1);
 
         CartItem item = items.getFirst();
-        assertThat(item.getProductId()).isEqualTo(product.getId());
+        assertThat(item.getProduct().getId()).isEqualTo(product.getId());
         assertThat(item.getQuantity()).isEqualTo(quantity); // Проверяем что quantity = 3
         assertThat(item.getUnitPrice()).isEqualByComparingTo(product.getPrice());
     }

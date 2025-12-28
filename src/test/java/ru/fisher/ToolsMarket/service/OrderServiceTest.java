@@ -91,11 +91,11 @@ class OrderServiceTest {
     public Product createAndSaveProduct(String productName, BigDecimal price) {
         Product product = Product.builder()
                 .name(productName)
-                .images(new ArrayList<>())
+                .images(new LinkedHashSet<>())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .price(price)
-                .attributeValues(new ArrayList<>())
+                .attributeValues(new LinkedHashSet<>())
                 .active(true)
                 .currency("RUB")
                 .categories(new HashSet<>())
@@ -135,8 +135,8 @@ class OrderServiceTest {
         assertThat(order.getUser()).isNotNull();
         assertThat(order.getUser().getId()).isEqualTo(testUser.getId());
 
-        OrderItem item1 = find(order.getOrderItems(), p1.getId());
-        assertThat(item1.getProductId()).isEqualTo(p1.getId());
+        OrderItem item1 = find(order.getOrderItems().stream().toList(), p1.getId());
+        assertThat(item1.getProduct().getId()).isEqualTo(p1.getId());
         assertThat(item1.getProductName()).isEqualTo("p1");
         assertThat(item1.getProductSku()).isEqualTo(p1.getSku());
         assertThat(item1.getQuantity()).isEqualTo(2);
@@ -150,7 +150,7 @@ class OrderServiceTest {
 
     private OrderItem find(List<OrderItem> items, Long productId) {
         return items.stream()
-                .filter(i -> i.getProductId().equals(productId))
+                .filter(i -> i.getProduct().getId().equals(productId))
                 .findFirst()
                 .orElseThrow();
     }
@@ -295,7 +295,7 @@ class OrderServiceTest {
         p1.setName("CHANGED!");
         productService.saveEntity(p1);
 
-        OrderItem item = order.getOrderItems().getFirst();
+        OrderItem item = order.getOrderItems().stream().toList().getFirst();
         assertThat(item.getProductName()).isEqualTo("Test");
     }
 
@@ -312,9 +312,9 @@ class OrderServiceTest {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CREATED);
         assertThat(order.getUser().getId()).isEqualTo(testUser.getId());
 
-        OrderItem orderItem1 = find(order.getOrderItems(), p1.getId());
+        OrderItem orderItem1 = find(order.getOrderItems().stream().toList(), p1.getId());
 
-        assertThat(orderItem1.getProductId()).isEqualTo(p1.getId());
+        assertThat(orderItem1.getProduct().getId()).isEqualTo(p1.getId());
         assertThat(orderItem1.getProductName()).isEqualTo("p1");
         assertThat(orderItem1.getProductSku()).isEqualTo(p1.getSku());
         assertThat(orderItem1.getQuantity()).isEqualTo(2);

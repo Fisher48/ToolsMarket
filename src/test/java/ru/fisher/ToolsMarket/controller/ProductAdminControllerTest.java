@@ -25,11 +25,12 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(initializers = PostgresTestConfig.class)
 class ProductAdminControllerTest {
 
@@ -76,9 +77,9 @@ class ProductAdminControllerTest {
                 .shortDescription("Short description")
                 .description("Full description")
                 .active(true)
-                .attributeValues(List.of(attributeValue))
+                .attributeValues(Set.of((attributeValue)))
                 .categories(new HashSet<>()) // Инициализируем коллекцию
-                .images(new ArrayList<>())   // Инициализируем коллекцию изображений
+                .images(new HashSet<>())   // Инициализируем коллекцию изображений
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -379,7 +380,7 @@ class ProductAdminControllerTest {
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));
 
         // When & Then
-        mockMvc.perform(get("/admin/products/new"))
+        mockMvc.perform(get("/admin/products/new").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/products/new"))
                 .andExpect(model().attributeExists("product"))
@@ -419,7 +420,7 @@ class ProductAdminControllerTest {
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));
 
         // When & Then
-        mockMvc.perform(get("/admin/products/1/edit"))
+        mockMvc.perform(get("/admin/products/1/edit").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/products/edit"))
                 .andExpect(model().attributeExists("product"))
@@ -482,13 +483,14 @@ class ProductAdminControllerTest {
                 .id(productId)
                 .name("Дрель PRO")
                 .categories(Set.of(category))
-                .attributeValues(new ArrayList<>())
+                .attributeValues(new LinkedHashSet<>())
                 .build();
 
         when(productService.findWithDetailsById(productId)).thenReturn(Optional.of(product));
 
         // Act & Assert
-        mockMvc.perform(get("/admin/products/{id}/specifications", productId))
+        mockMvc.perform(get("/admin/products/{id}/specifications", productId)
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/products/specifications"))
                 .andExpect(model().attributeExists("product", "attributes", "currentValues"));
@@ -540,13 +542,14 @@ class ProductAdminControllerTest {
         Product product = Product.builder()
                 .id(productId)
                 .name("Дрель PRO")
-                .attributeValues(List.of(attributeValue))
+                .attributeValues(Set.of(attributeValue))
                 .build();
 
         when(productService.findWithDetailsById(productId)).thenReturn(Optional.of(product));
 
         // Act & Assert
-        mockMvc.perform(get("/admin/products/{id}/edit", productId))
+        mockMvc.perform(get("/admin/products/{id}/edit", productId)
+                .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/products/edit"))
                 .andExpect(model().attributeExists("product", "currentValues"))

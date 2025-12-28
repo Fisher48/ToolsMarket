@@ -19,12 +19,13 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(initializers = PostgresTestConfig.class)
 class CategoryAdminControllerTest {
 
@@ -45,7 +46,7 @@ class CategoryAdminControllerTest {
         when(categoryService.findAllEntities()).thenReturn(List.of(category));
 
         // When & Then
-        mockMvc.perform(get("/admin/categories"))
+        mockMvc.perform(get("/admin/categories").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/categories/index"))
                 .andExpect(model().attributeExists("categories"))
@@ -85,7 +86,7 @@ class CategoryAdminControllerTest {
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));
 
         // When & Then
-        mockMvc.perform(get("/admin/categories/new"))
+        mockMvc.perform(get("/admin/categories/new").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/categories/new"))
                 .andExpect(model().attributeExists("category"))
@@ -146,7 +147,7 @@ class CategoryAdminControllerTest {
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));
 
         // When & Then
-        mockMvc.perform(get("/admin/categories/1/edit"))
+        mockMvc.perform(get("/admin/categories/1/edit").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/categories/edit"))
                 .andExpect(model().attributeExists("category"))

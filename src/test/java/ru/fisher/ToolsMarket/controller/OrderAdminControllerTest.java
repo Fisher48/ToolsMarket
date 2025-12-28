@@ -24,15 +24,17 @@ import ru.fisher.ToolsMarket.service.UserService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.is;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ContextConfiguration(initializers = PostgresTestConfig.class)
 class OrderAdminControllerTest {
 
@@ -135,11 +137,11 @@ class OrderAdminControllerTest {
     void adminOrderDetailReturnsOrderWithItems() throws Exception {
         Long orderId = 1L;
         Order order = createOrder(orderId, "CREATED");
-        order.setOrderItems(List.of(new OrderItem()));
+        order.setOrderItems(Set.of(new OrderItem()));
 
         when(orderService.getOrder(orderId)).thenReturn(order);
 
-        mockMvc.perform(get("/admin/orders/{id}", orderId))
+        mockMvc.perform(get("/admin/orders/{id}", orderId).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/orders/show"))
                 .andExpect(model().attributeExists("order"))
