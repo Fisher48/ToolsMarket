@@ -22,6 +22,21 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     """)
     Optional<Order> findByIdWithItems(Long id);
 
+    @EntityGraph(attributePaths = {
+            "orderItems",
+            "orderItems.product",  // Загружаем продукт через цепочку
+            "orderItems.product.images"  // Если нужны изображения
+    })
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdWithItemsAndProduct(@Param("id") Long id);
+
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "LEFT JOIN FETCH o.orderItems oi " +
+            "LEFT JOIN FETCH oi.product " +
+            "WHERE o.user.id = :userId " +
+            "ORDER BY o.createdAt DESC")
+    List<Order> findByUserIdWithItems(@Param("userId") Long userId);
+
     List<Order> findAllByOrderByCreatedAtDesc();
 
     List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);

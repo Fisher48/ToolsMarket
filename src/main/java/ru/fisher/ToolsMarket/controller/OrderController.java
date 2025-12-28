@@ -12,14 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.fisher.ToolsMarket.dto.CartItemDto;
+import ru.fisher.ToolsMarket.dto.OrderItemDto;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
-import ru.fisher.ToolsMarket.models.Cart;
-import ru.fisher.ToolsMarket.models.Order;
-import ru.fisher.ToolsMarket.models.OrderStatus;
-import ru.fisher.ToolsMarket.models.User;
+import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.CartService;
 import ru.fisher.ToolsMarket.service.OrderService;
+import ru.fisher.ToolsMarket.service.ProductService;
 import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
@@ -34,6 +33,7 @@ public class OrderController {
     private final OrderService orderService;
     private final CartService cartService;
     private final UserService userService;
+    private final ProductService productService;
 
     @GetMapping("/{orderId}")
     public String viewOrder(@PathVariable Long orderId,
@@ -45,18 +45,38 @@ public class OrderController {
 
             if (userId != null) {
                 // Пользователь может видеть только свои заказы
-                order = orderService.getUserOrder(orderId, userId);
+                order = orderService.getOrderWithProducts(orderId);
+
+                // Проверяем принадлежность
+                if (!order.getUser().getId().equals(userId)) {
+                    log.warn("Пользователь {} пытается получить не свой заказ {}", userId, orderId);
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Доступ запрещен");
+                }
             } else {
                 // Анонимный пользователь - только общий доступ
-                order = orderService.getOrder(orderId);
+                // Здесь можно добавить дополнительную проверку, например по email или номеру заказа
+                order = orderService.getOrderWithProducts(orderId);
             }
+
+            // Если order все еще null (на всякий случай)
+            if (order == null) {
+                throw new OrderNotFoundException(orderId);
+            }
+
+            // Продукты уже загружены через JOIN FETCH
+            List<OrderItemDto> orderItemDtos = order.getOrderItems()
+                    .stream()
+                    .map(OrderItemDto::fromEntity) // новый метод без второго параметра
+                    .toList();
 
             // Проверяем возможность отмены
             boolean canCancel = canCancelOrder(order, userId);
 
             model.addAttribute("order", order);
+            model.addAttribute("orderItems", orderItemDtos);
             model.addAttribute("canCancel", canCancel);
             model.addAttribute("isAuthenticated", userId != null);
+            model.addAttribute("isPublicView", true);
 
             return "order/index";
 

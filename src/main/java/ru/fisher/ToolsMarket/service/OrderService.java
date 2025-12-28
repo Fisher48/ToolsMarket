@@ -22,10 +22,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -67,6 +64,17 @@ public class OrderService {
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
     }
 
+    @Transactional(readOnly = true)
+    public Order getOrderWithProducts(Long id) {
+        return orderRepository.findByIdWithItemsAndProduct(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Order> getUserOrdersWithItems(Long userId) {
+        return orderRepository.findByUserIdWithItems(userId);
+    }
+
     /**
      * Получение заказов пользователя по статусу
      */
@@ -86,7 +94,7 @@ public class OrderService {
             throw new IllegalStateException("Cannot create order from anonymous cart");
         }
 
-        List<CartItem> cartItems = cart.getItems();
+        Set<CartItem> cartItems = cart.getItems();
         if (cartItems.isEmpty()) {
             throw new IllegalStateException("Cart is empty");
         }
@@ -98,7 +106,7 @@ public class OrderService {
                 .status(OrderStatus.CREATED)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
-                .orderItems(new ArrayList<>())
+                .orderItems(new HashSet<>())
                 .build();
 
         BigDecimal total = BigDecimal.ZERO;
@@ -106,7 +114,7 @@ public class OrderService {
         for (CartItem ci : cartItems) {
             OrderItem oi = OrderItem.builder()
                     .order(order)
-                    .productId(ci.getProductId())
+                    .product(ci.getProduct())
                     .productName(ci.getProductName())
                     .productSku(ci.getProductSku())
                     .unitPrice(ci.getUnitPrice())
