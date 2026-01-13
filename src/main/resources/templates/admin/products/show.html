@@ -108,6 +108,15 @@
                                         <span th:if="${product.active}" class="badge bg-success">Активен</span>
                                         <span th:unless="${product.active}" class="badge bg-secondary">Неактивен</span>
                                     </dd>
+
+                                    <dt class="col-sm-3">Тип товара:</dt>
+                                    <dd>
+                                        <span th:each="productType, stat : ${product.productType}"
+                                              class="badge bg-light text-dark">
+                                            <span th:text="${product.productType.getDisplayName()}"></span>
+                                            <span th:if="${not stat.last}">, </span>
+                                        </span>
+                                    </dd>
                                 </dl>
                             </div>
                         </div>

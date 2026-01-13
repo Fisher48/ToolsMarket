@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.controller;
+package ru.fisher.ToolsMarket.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,15 +7,18 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.fisher.ToolsMarket.dto.OrderItemDto;
 import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderStatus;
+import ru.fisher.ToolsMarket.service.DiscountService;
 import ru.fisher.ToolsMarket.service.OrderService;
 import ru.fisher.ToolsMarket.service.UserService;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +33,7 @@ public class AdminOrderController {
 
     private final OrderService orderService;
     private final UserService userService;
+    private final DiscountService discountService;
 
     private static final String SUCCESS_MSG = "successMessage";
     private static final String ERROR_MSG = "errorMessage";
@@ -70,10 +74,63 @@ public class AdminOrderController {
     }
 
     @GetMapping("/{id}")
-    public String showOrder(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    public String showOrder(@PathVariable Long id,
+                            Model model,
+                            RedirectAttributes redirectAttributes) {
         try {
-            Order order = orderService.getOrder(id);
+            Order order = orderService.getOrderWithProducts(id);
+
+            // ИСПРАВЛЕНО: Используем метод БЕЗ discountService
+            List<OrderItemDto> orderItemDtos = order.getOrderItems()
+                    .stream()
+                    .map(OrderItemDto::fromEntity) // ← Без discountService!
+                    .toList();
+
+            // Рассчитываем итоги как у пользователя
+            BigDecimal originalTotal = orderItemDtos.stream()
+                    .map(OrderItemDto::getTotalWithoutDiscount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // ИСПРАВЛЕНО: Проверяем hasDiscount перед получением discountAmount
+            BigDecimal totalDiscount = orderItemDtos.stream()
+                    .map(dto -> dto.isHasDiscount() && dto.getDiscountAmount() != null
+                            ? dto.getDiscountAmount()
+                            : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            boolean hasDiscounts = totalDiscount.compareTo(BigDecimal.ZERO) > 0;
+
+            // Логируем для отладки
+            log.debug("Заказ #{}: товаров={}, скидка={} руб",
+                    order.getOrderNumber(),
+                    orderItemDtos.size(),
+                    totalDiscount);
+
+            if (!orderItemDtos.isEmpty()) {
+                OrderItemDto firstItem = orderItemDtos.getFirst();
+                log.debug("Первый товар: productId={}, name={}, hasDiscount={}",
+                        firstItem.getProductId(),
+                        firstItem.getProductName(),
+                        firstItem.isHasDiscount());
+
+                // Дополнительная отладка для цен
+                log.debug("Цены: original={}, unit={}, discountAmount={}",
+                        firstItem.getOriginalPrice(),
+                        firstItem.getUnitPrice(),
+                        firstItem.getDiscountAmount());
+            }
+
             model.addAttribute("order", order);
+            model.addAttribute("orderItems", orderItemDtos);
+            model.addAttribute("originalTotal", originalTotal);
+            model.addAttribute("totalDiscount", totalDiscount);
+            model.addAttribute("hasDiscounts", hasDiscounts);
+
+            // Добавляем тип пользователя если есть
+            if (order.getUser() != null && order.getUser().getUserType() != null) {
+                model.addAttribute("userTypeDisplay", order.getUser().getUserType().getDisplayName());
+            }
+
             return "admin/orders/show";
 
         } catch (OrderNotFoundException e) {

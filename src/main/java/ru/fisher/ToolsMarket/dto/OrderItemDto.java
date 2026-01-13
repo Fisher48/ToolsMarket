@@ -5,11 +5,8 @@ import lombok.Setter;
 import ru.fisher.ToolsMarket.models.OrderItem;
 import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.ProductImage;
-import ru.fisher.ToolsMarket.models.User;
-import ru.fisher.ToolsMarket.service.DiscountService;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Getter
 @Setter
