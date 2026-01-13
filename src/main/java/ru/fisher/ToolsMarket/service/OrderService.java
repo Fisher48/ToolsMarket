@@ -2,11 +2,10 @@ package ru.fisher.ToolsMarket.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.crossstore.ChangeSetPersister;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import ru.fisher.ToolsMarket.dto.OrderSummaryDto;
 import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
@@ -18,6 +17,7 @@ import ru.fisher.ToolsMarket.repository.OrderRepository;
 import ru.fisher.ToolsMarket.repository.UserRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +35,7 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
+    private final DiscountService discountService;
 
     /**
      * Создание заказа из корзины пользователя
@@ -83,13 +84,11 @@ public class OrderService {
         return orderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, status);
     }
 
-    // Обновляем существующий метод createOrder для работы с User
     @Transactional
     public Order createOrder(Long cartId) {
-        Cart cart = cartRepository.findById(cartId)
+        Cart cart = cartRepository.findByIdWithProducts(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
-        // Проверяем, что корзина принадлежит пользователю
         if (cart.getUser() == null) {
             throw new IllegalStateException("Cannot create order from anonymous cart");
         }
@@ -99,10 +98,10 @@ public class OrderService {
             throw new IllegalStateException("Cart is empty");
         }
 
-        // Создаём заказ
+        User user = cart.getUser();
         Order order = Order.builder()
-                .orderNumber(generateOrderNumber(cart.getUser().getId()))
-                .user(cart.getUser()) // Устанавливаем пользователя
+                .orderNumber(generateOrderNumber(user.getId()))
+                .user(user)
                 .status(OrderStatus.CREATED)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -110,33 +109,60 @@ public class OrderService {
                 .build();
 
         BigDecimal total = BigDecimal.ZERO;
+        BigDecimal totalDiscount = BigDecimal.ZERO;
 
         for (CartItem ci : cartItems) {
-            OrderItem oi = OrderItem.builder()
-                    .order(order)
-                    .product(ci.getProduct())
-                    .productName(ci.getProductName())
-                    .productSku(ci.getProductSku())
-                    .unitPrice(ci.getUnitPrice())
-                    .quantity(ci.getQuantity())
-                    .createdAt(Instant.now())
-                    .subtotal(ci.getUnitPrice().multiply(BigDecimal.valueOf(ci.getQuantity())))
-                    .build();
+            Product product = ci.getProduct();
+            Integer quantity = ci.getQuantity();
 
-            order.addOrderItem(oi);
+            // Получаем оригинальную цену (без скидки)
+            BigDecimal originalPrice = product.getPrice();
+
+            // Рассчитываем скидку для пользователя
+            BigDecimal discountPercentage = discountService.calculateDiscount(user, product);
+
+            // Создаем OrderItem с учетом скидки
+            OrderItem oi = OrderItem.createOrderItem(
+                    product,
+                    ci.getProductName(),
+                    ci.getProductSku(),
+                    quantity,
+                    originalPrice,           // Исходная цена
+                    originalPrice,           // originalUnitPrice (та же цена без скидки)
+                    discountPercentage       // Процент скидки
+            );
+
+            // Если есть скидка, пересчитываем
+            if (discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal discountPerUnit = originalPrice
+                        .multiply(discountPercentage)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+                BigDecimal itemDiscount = discountPerUnit.multiply(BigDecimal.valueOf(quantity));
+                totalDiscount = totalDiscount.add(itemDiscount);
+            }
+
             total = total.add(oi.getSubtotal());
+            oi.setOrder(order);
+            order.addOrderItem(oi);
         }
 
         order.setTotalPrice(total);
 
-        // Сохраняем заказ
+        // Сохраняем информацию о скидке
+        if (totalDiscount.compareTo(BigDecimal.ZERO) > 0) {
+            String note = String.format("Скидка по заказу: %.2f RUB", totalDiscount);
+            order.setNote(order.getNote() != null ?
+                    order.getNote() + "\n" + note : note);
+        }
+
         Order saved = orderRepository.save(order);
 
-        // Очищаем корзину
         cart.clear();
         cartRepository.save(cart);
-        log.info("Заказ создан: id={}, номер={}, статус={}, цена={}",
-                order.getId(), order.getOrderNumber(), order.getStatus(), order.getTotalPrice());
+
+        log.info("Заказ создан: id={}, номер={}, цена={}, скидка={}",
+                order.getId(), order.getOrderNumber(), order.getTotalPrice(), totalDiscount);
         return saved;
     }
 
@@ -305,4 +331,24 @@ public class OrderService {
     public List<Order> findOrdersByUserId(Long userId) {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
+
+    // Добавляем новый метод для получения заказа с расчетом скидок
+    public OrderSummaryDto getOrderSummary(Long orderId, Long userId) {
+        Order order = getUserOrder(orderId, userId);
+
+        BigDecimal totalDiscount = order.getOrderItems().stream()
+                .map(item -> {
+                    BigDecimal originalPrice = item.getProduct().getPrice()
+                            .multiply(BigDecimal.valueOf(item.getQuantity()));
+                    return originalPrice.subtract(item.getSubtotal());
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return OrderSummaryDto.builder()
+                .order(order)
+                .totalDiscount(totalDiscount)
+                .originalTotal(order.getTotalPrice().add(totalDiscount))
+                .build();
+    }
+
 }

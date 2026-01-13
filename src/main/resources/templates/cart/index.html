@@ -148,13 +148,17 @@
 
             <!-- Корзина с товарами -->
             <div th:if="${not #lists.isEmpty(items)}">
-                <!-- Информация о количестве -->
+                <!-- Информация о количестве и скидках -->
                 <div class="alert alert-light d-flex align-items-center mb-4">
                     <i class="bi bi-info-circle text-primary me-2"></i>
                     <span class="fw-medium">
-                        В корзине <span class="text-primary" th:text="${#lists.size(items)}"></span> товар(ов) на сумму
-                        <span class="text-primary" th:text="${#numbers.formatDecimal(totalAmount, 1, 2) + ' ₽'}"></span>
-                    </span>
+            В корзине <span class="text-primary" th:text="${#lists.size(items)}"></span> товар(ов)
+            <span th:if="${hasDiscounts}">
+                <span class="text-danger">
+                    (скидка <span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2)}"></span> ₽)
+                </span>
+            </span>
+        </span>
                 </div>
 
                 <div class="row">
@@ -196,10 +200,24 @@
                                             <i class="bi bi-upc me-1"></i>
                                             Артикул: <span th:text="${item.productSku}"></span>
                                         </p>
-                                        <p class="text-success fw-bold mb-0">
-                                            <i class="bi bi-tag me-1"></i>
-                                            <span th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></span>
-                                        </p>
+
+                                        <!-- Цена со скидкой -->
+                                        <div class="mb-2">
+                                            <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                                <div class="d-flex align-items-center">
+                                        <span class="text-muted text-decoration-line-through me-2 small"
+                                              th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></span>
+                                                    <span class="text-success fw-bold"
+                                                          th:text="${#numbers.formatDecimal(item.unitPriceWithDiscount, 1, 2) + ' ₽'}"></span>
+                                                    <span class="badge bg-danger ms-2 small"
+                                                          th:text="'-' + ${#numbers.formatDecimal(item.discountPercentage, 1, 0)} + '%'"></span>
+                                                </div>
+                                            </div>
+                                            <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                    <span class="text-success fw-bold"
+                                          th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></span>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <!-- Управление количеством -->
@@ -226,7 +244,15 @@
                                         <div class="text-center mt-2">
                                             <small class="text-muted">
                                                 <span th:text="${item.quantity}"></span> ×
-                                                <span th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2)}"></span> ₽
+                                                <span th:if="${item.discountPercentage != null and item.discountPercentage > 0}"
+                                                      th:text="${#numbers.formatDecimal(item.unitPriceWithDiscount, 1, 2)}"></span>
+                                                <span th:unless="${item.discountPercentage != null and item.discountPercentage > 0}"
+                                                      th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2)}"></span>
+                                                ₽
+                                                <span th:if="${item.discountPercentage != null and item.discountPercentage > 0}"
+                                                      class="text-success ms-1">
+                                        (скидка <span th:text="${#numbers.formatDecimal(item.discountAmount, 1, 2)}"></span> ₽)
+                                    </span>
                                             </small>
                                         </div>
                                     </div>
@@ -234,7 +260,16 @@
                                     <!-- Сумма и удаление -->
                                     <div class="col-md-3 col-12 mt-3 mt-md-0 text-md-end item-total">
                                         <p class="fw-bold fs-5 text-primary mb-2">
-                                            <span th:text="${#numbers.formatDecimal(item.totalPrice, 1, 2) + ' ₽'}"></span>
+                                            <!-- Показываем цену со скидкой если есть -->
+                                            <span th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                    <span class="text-muted text-decoration-line-through me-2 small"
+                                          th:text="${#numbers.formatDecimal(item.totalPrice, 1, 2) + ' ₽'}"></span>
+                                    <span class="text-danger"
+                                          th:text="${#numbers.formatDecimal(item.totalPriceWithDiscount, 1, 2) + ' ₽'}"></span>
+                                </span>
+                                            <span th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                    <span th:text="${#numbers.formatDecimal(item.totalPrice, 1, 2) + ' ₽'}"></span>
+                                </span>
                                         </p>
                                         <form th:action="@{/cart/remove}" method="post" class="d-inline">
                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
@@ -258,18 +293,35 @@
                             <div class="card-body">
                                 <!-- Детали суммы -->
                                 <div class="mb-3">
+                                    <!-- Товары без скидки -->
                                     <div class="d-flex justify-content-between mb-2">
                                         <span class="text-muted">Товары (<span th:text="${#lists.size(items)}"></span>):</span>
                                         <span class="fw-medium" th:text="${#numbers.formatDecimal(totalAmount, 1, 2) + ' ₽'}"></span>
                                     </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span class="text-muted">Доставка:</span>
-                                        <span class="text-success fw-medium">Бесплатно</span>
+
+                                    <!-- Скидка если есть -->
+                                    <div th:if="${hasDiscounts}" class="d-flex justify-content-between mb-2 text-success">
+                            <span>
+                                <i class="bi bi-percent me-1"></i>
+                                <span th:if="${userTypeDisplay}">Скидка (<span th:text="${userTypeDisplay}"></span>):</span>
+                                <span th:unless="${userTypeDisplay}">Скидка:</span>
+                            </span>
+                                        <span class="fw-bold">-<span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2)}"></span> ₽</span>
                                     </div>
+
+                                    <!-- Итоговая сумма -->
                                     <hr>
-                                    <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
                                         <span class="fw-bold">Итого к оплате:</span>
-                                        <span class="fw-bold fs-4 text-primary" th:text="${#numbers.formatDecimal(totalAmount, 1, 2) + ' ₽'}"></span>
+                                        <span class="fw-bold fs-4"
+                                              th:class="${hasDiscounts} ? 'text-danger' : 'text-primary'"
+                                              th:text="${#numbers.formatDecimal(totalWithDiscount, 1, 2) + ' ₽'}"></span>
+                                    </div>
+
+                                    <!-- Экономия если есть скидка -->
+                                    <div th:if="${hasDiscounts}" class="alert alert-success p-2 small mb-0">
+                                        <i class="bi bi-piggy-bank me-1"></i>
+                                        Ваша экономия: <strong th:text="${#numbers.formatDecimal(totalDiscount, 1, 2) + ' ₽'}"></strong>
                                     </div>
                                 </div>
 

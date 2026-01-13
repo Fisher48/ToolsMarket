@@ -20,7 +20,7 @@
 </head>
 <body>
 <!-- Header -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Site menu">
     <div class="container">
         <a class="navbar-brand fw-bold" th:href="@{/}">
             <i class="bi bi-hammer"></i> ToolsMarket
@@ -29,7 +29,7 @@
             <a th:href="@{/}" class="btn btn-outline-light btn-sm me-2">
                 <i class="bi bi-house"></i> Главная
             </a>
-            <a th:if="${not #lists.isEmpty(product.categories)}"
+            <a th:if="${product.categories != null and not #lists.isEmpty(product.categories)}"
                th:href="@{/category/{title}(title=${product.categories[0].title})}"
                class="btn btn-outline-light btn-sm">
                 <i class="bi bi-arrow-left"></i> Назад к категории
@@ -89,7 +89,7 @@
                 </div>
 
                 <!-- Thumbnails -->
-                <div class="d-flex gap-2" th:if="${product.images.size() > 1}">
+                <div class="d-flex gap-2" th:if="${not #lists.isEmpty(product.images)}">
                     <img th:each="image : ${product.images}"
                          th:src="${image.url}"
                          class="img-thumbnail"
@@ -104,30 +104,59 @@
         <div class="col-md-6">
             <h1 th:text="${product.name}">Название товара</h1>
 
-            <!-- Price and SKU -->
+            <!-- Price with discount -->
             <div class="mb-3">
+                <div th:if="${product.hasDiscount != null and product.hasDiscount}">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="text-muted text-decoration-line-through me-2 fs-4"
+                              th:if="${product.formattedPrice != null}"
+                              th:text="'РРЦ ' + ${product.formattedPrice}"></span>
+                        <span class="h2 text-danger"
+                              th:if="${product.formattedDiscountedPrice != null}"
+                              th:text="${product.formattedDiscountedPrice}"></span>
+                        <span class="badge bg-danger ms-2 fs-6"
+                              th:if="${product.discountPercentage != null}"
+                              th:text="'-' + ${#numbers.formatDecimal(product.discountPercentage, 1, 0)} + '%'">
+            Скидка
+        </span>
+                    </div>
+                    <div th:if="${userTypeDisplay != null and !userTypeDisplay.isEmpty()}"
+                         class="text-success small">
+                        <i class="bi bi-tag"></i>
+                        <span>Ваша скидка как
+            <span th:text="${userTypeDisplay}">пользователь</span>
+        </span>
+                    </div>
+                </div>
+                <div th:unless="${product.hasDiscount != null and product.hasDiscount}">
                     <span class="h2 text-primary"
-                          th:text="${#numbers.formatDecimal(product.price, 1, 2) + ' ₽'}">0 ₽</span>
-                <span th:if="${product.sku}" class="text-muted ms-3"
+                          th:if="${product.formattedPrice != null}"
+                          th:text="${product.formattedPrice}"></span>
+                </div>
+
+                <span th:if="${product.sku != null and !product.sku.isEmpty()}"
+                      class="text-muted ms-3"
                       th:text="'Артикул: ' + ${product.sku}">
-                        Артикул: 000000
-                    </span>
+                    Артикул: 000000
+                </span>
             </div>
 
             <!-- Status -->
             <div class="mb-4">
-                    <span th:if="${product.active}"
-                          class="badge bg-success fs-6 p-2">
-                          <i class="bi bi-check-circle"></i> В наличии
-                    </span>
-                <span th:if="${!product.active}"
+                <span th:if="${product.active}"
+                      class="badge bg-success fs-6 p-2">
+                    <i class="bi bi-check-circle"></i> В наличии
+                </span>
+                <span th:if="${product.active != null and !product.active}"
                       class="badge bg-secondary fs-6 p-2">
-                          <i class="bi bi-x-circle"></i> Недоступен
-                    </span>
+                    <i class="bi bi-x-circle"></i> Недоступен
+                </span>
             </div>
 
             <!-- Short Description -->
-            <p class="lead mb-4" th:text="${product.shortDescription}">
+            <p class="lead mb-4"
+               th:if="${product.shortDescription != null and !product.shortDescription.isEmpty()}"
+               th:text="${product.shortDescription}">
                 Краткое описание товара
             </p>
 
@@ -145,7 +174,7 @@
                     </button>
                 </form>
 
-                <button th:if="${!product.active}"
+                <button th:if="${product.active != null and !product.active}"
                         class="btn btn-secondary btn-lg flex-grow-1" disabled>
                     <i class="bi bi-envelope"></i> Уведомить о поступлении
                 </button>
@@ -162,7 +191,7 @@
             </div>
 
             <!-- Categories -->
-            <div class="mb-4">
+            <div class="mb-4" th:if="${product.categories != null and not #lists.isEmpty(product.categories)}">
                 <strong>Категории:</strong>
                 <div class="mt-1">
                     <a th:each="cat : ${product.categories}"
@@ -197,15 +226,19 @@
             <div class="tab-content p-4 border border-top-0 rounded-bottom" id="productTabsContent">
                 <!-- Description -->
                 <div class="tab-pane fade show active" id="description" role="tabpanel">
-                    <div th:utext="${product.description ?: 'Описание товара отсутствует'}">
+                    <div th:if="${product.description != null and !product.description.isEmpty()}"
+                         th:utext="${product.description}">
                         Полное описание товара...
+                    </div>
+                    <div th:unless="${product.description != null and !product.description.isEmpty()}"
+                         class="text-muted">
+                        Описание товара отсутствует
                     </div>
                 </div>
 
                 <!-- Specifications -->
                 <div class="tab-pane fade" id="specs" role="tabpanel">
-                    <!-- Если есть характеристики -->
-                    <div th:if="${not #lists.isEmpty(product.attributeValues)}">
+                    <div th:if="${product.attributeValues != null and not #lists.isEmpty(product.attributeValues)}">
                         <div class="row">
                             <div class="col-md-8">
                                 <table class="table table-striped table-hover">
@@ -219,12 +252,13 @@
                                     <tr th:each="attrValue : ${product.attributeValues}">
                                         <td style="width: 40%">
                                             <strong th:text="${attrValue.attributeName}"></strong>
-                                            <span th:if="${attrValue.attributeUnit}" class="text-danger" title="Обязательная характеристика">*</span>
+                                            <span th:if="${attrValue.attributeUnit != null and !attrValue.attributeUnit.isEmpty()}"
+                                                  class="text-danger" title="Обязательная характеристика">*</span>
                                             <div class="small text-muted mt-1" th:text="${attrValue.attributeName}"></div>
                                         </td>
                                         <td style="width: 60%">
                                             <span class="fw-bold text-dark" th:text="${attrValue.value}"></span>
-                                            <small th:if="${attrValue.attributeUnit}"
+                                            <small th:if="${attrValue.attributeUnit != null and !attrValue.attributeUnit.isEmpty()}"
                                                    class="text-muted ms-2"
                                                    th:text="${attrValue.attributeUnit}"></small>
                                         </td>
@@ -233,6 +267,13 @@
                                 </table>
                             </div>
                         </div>
+                    </div>
+                    <div th:unless="${product.attributeValues != null and not #lists.isEmpty(product.attributeValues)}"
+                         class="text-center text-muted py-5">
+                        <i class="bi bi-info-circle fs-1"></i>
+                        <p class="mt-3">Характеристики товара отсутствуют</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -241,7 +282,7 @@
 <footer class="bg-dark text-light mt-5">
     <div class="container py-4">
         <div class="text-center">
-            <p class="mb-0">&copy; 2024 ToolsMarket. Все права защищены.</p>
+            <p class="mb-0">&copy; 2025 ToolsMarket. Все права защищены.</p>
         </div>
     </div>
 </footer>

@@ -21,6 +21,7 @@ public class CartService {
     private final ProductRepository productRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
+    private final DiscountService discountService;
 
     /**
      * Получение или создание корзины с учетом пользователя
@@ -186,16 +187,22 @@ public class CartService {
 
     @Transactional(readOnly = true)
     public List<CartItemDto> getUserCartItems(Long userId) {
+        // Получаем пользователя для расчета скидок
+        User user = userId != null ?
+                userRepository.findById(userId).orElse(null) : null;
+
         Cart cart = getCartWithProducts(userId);
-        return convertCartItemsToDto(cart.getItems());
+        return convertCartItemsToDto(cart.getItems(), user);
     }
 
     @Transactional(readOnly = true)
     public List<CartItemDto> getCartItems(Long cartId) {
         Cart cart = cartRepository.findByIdWithProducts(cartId)
-                .orElseThrow(() -> new IllegalArgumentException("Cart not found with id: " + cartId));
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
-        return convertCartItemsToDto(cart.getItems());
+        // Получаем пользователя из корзины для расчета скидок
+        User user = cart.getUser();
+        return convertCartItemsToDto(cart.getItems(), user);
     }
 
 
@@ -226,53 +233,93 @@ public class CartService {
 //    }
 
     /**
-     * Получение данных корзины с подсчетом итогов
+     * Получение данных корзины с подсчетом итогов и скидок
      */
     @Transactional(readOnly = true)
     public CartDataDto getCartData(Long userId) {
-        Cart cart = getCartWithProducts(userId);
+        User user = userId != null ?
+                userRepository.findById(userId).orElse(null) : null;
 
-        List<CartItemDto> items = convertCartItemsToDto(cart.getItems());
+        Cart cart = getCartWithProducts(userId);
+        List<CartItemDto> items = convertCartItemsToDto(cart.getItems(), user);
 
         BigDecimal total = items.stream()
-                .map(CartItemDto::getTotalPrice)
+                .map(item -> item.getUnitPrice()
+                        .multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalWithDiscount = items.stream()
+                .map(CartItemDto::getTotalPriceWithDiscount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalDiscount = items.stream()
+                .map(CartItemDto::getDiscountAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return CartDataDto.builder()
                 .items(items)
                 .total(total)
+                .totalWithDiscount(totalWithDiscount)
+                .totalDiscount(totalDiscount)
                 .itemCount(items.size())
                 .build();
+    }
+
+    /**
+     * Конвертация списка CartItem в DTO с учетом скидок
+     */
+    private List<CartItemDto> convertCartItemsToDto(Set<CartItem> cartItems, User user) {
+        return cartItems.stream()
+                .map(item -> convertToDto(item, user))
+                .toList();
     }
 
 
     @Transactional(readOnly = true)
     public List<CartItemDto> getCartItemsBySession(String sessionId) {
         Cart cart = getCartWithProductsBySession(sessionId);
-        return convertCartItemsToDto(cart.getItems());
+        // Для анонимной корзины пользователь = null, скидок нет
+        return convertCartItemsToDto(cart.getItems(), cart.getUser());
     }
 
     /**
-     * Конвертация списка CartItem в DTO
+     * Конвертация списка CartItem в DTO (старый метод для совместимости)
      */
     private List<CartItemDto> convertCartItemsToDto(Set<CartItem> cartItems) {
-        return cartItems.stream()
-                .map(this::convertToDto)
-                .toList();
+        return convertCartItemsToDto(cartItems, null); // Без скидок для анонимных пользователей
     }
 
     /**
-     * Конвертация одного CartItem в DTO
+     * Конвертация одного CartItem в DTO с учетом скидок пользователя
      */
-    private CartItemDto convertToDto(CartItem cartItem) {
+    private CartItemDto convertToDto(CartItem cartItem, User user) {
         Product product = cartItem.getProduct();
+
+        // Расчет скидки, если пользователь существует
+        BigDecimal discountPercentage = BigDecimal.ZERO;
+        if (user != null) {
+            discountPercentage = discountService.calculateDiscount(user, product);
+        }
+
+        BigDecimal unitPrice = cartItem.getUnitPrice();
+        BigDecimal unitPriceWithDiscount = unitPrice;
+        BigDecimal discountAmount = BigDecimal.ZERO;
+
+        if (discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
+            unitPriceWithDiscount = discountService.getPriceWithDiscount(user, product);
+            discountAmount = discountService.calculateDiscountAmount(
+                    user, product, BigDecimal.valueOf(cartItem.getQuantity())
+            );
+        }
+
+        BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+        BigDecimal totalPriceWithDiscount = totalPrice.subtract(discountAmount);
 
         String title = product != null ? product.getTitle() : cartItem.getProductName();
         String imageUrl = null;
         String imageAlt = null;
 
         if (product != null && !product.getImages().isEmpty()) {
-            // Берем первое изображение (отсортированное по sortOrder)
             ProductImage mainImage = product.getImages().stream().findFirst().orElse(null);
             imageUrl = mainImage.getUrl();
             imageAlt = mainImage.getAlt();
@@ -285,10 +332,14 @@ public class CartService {
         itemDto.setProductTitle(title);
         itemDto.setProductImageUrl(imageUrl);
         itemDto.setProductImageAlt(imageAlt);
-        itemDto.setUnitPrice(cartItem.getUnitPrice());
+        itemDto.setUnitPrice(unitPrice);
+        itemDto.setUnitPriceWithDiscount(unitPriceWithDiscount);
         itemDto.setQuantity(cartItem.getQuantity());
-        itemDto.setTotalPrice(cartItem.getUnitPrice()
-                .multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+        itemDto.setTotalPrice(totalPrice);
+        itemDto.setTotalPriceWithDiscount(totalPriceWithDiscount);
+        itemDto.setDiscountAmount(discountAmount);
+        itemDto.setDiscountPercentage(discountPercentage);
+
         return itemDto;
     }
 
@@ -416,6 +467,8 @@ public class CartService {
     public static class CartDataDto {
         private List<CartItemDto> items;
         private BigDecimal total;
+        private BigDecimal totalWithDiscount;
+        private BigDecimal totalDiscount;
         private Integer itemCount;
     }
 }

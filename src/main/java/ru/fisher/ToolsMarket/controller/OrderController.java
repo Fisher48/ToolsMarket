@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,12 +17,10 @@ import ru.fisher.ToolsMarket.dto.OrderItemDto;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.models.*;
-import ru.fisher.ToolsMarket.service.CartService;
-import ru.fisher.ToolsMarket.service.OrderService;
-import ru.fisher.ToolsMarket.service.ProductService;
-import ru.fisher.ToolsMarket.service.UserService;
+import ru.fisher.ToolsMarket.service.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Controller
@@ -34,6 +33,7 @@ public class OrderController {
     private final CartService cartService;
     private final UserService userService;
     private final ProductService productService;
+    private final DiscountService discountService;
 
     @GetMapping("/{orderId}")
     public String viewOrder(@PathVariable Long orderId,
@@ -44,32 +44,34 @@ public class OrderController {
             Order order;
 
             if (userId != null) {
-                // Пользователь может видеть только свои заказы
                 order = orderService.getOrderWithProducts(orderId);
 
-                // Проверяем принадлежность
                 if (!order.getUser().getId().equals(userId)) {
-                    log.warn("Пользователь {} пытается получить не свой заказ {}", userId, orderId);
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Доступ запрещен");
                 }
             } else {
-                // Анонимный пользователь - только общий доступ
-                // Здесь можно добавить дополнительную проверку, например по email или номеру заказа
                 order = orderService.getOrderWithProducts(orderId);
             }
 
-            // Если order все еще null (на всякий случай)
-            if (order == null) {
-                throw new OrderNotFoundException(orderId);
-            }
-
-            // Продукты уже загружены через JOIN FETCH
             List<OrderItemDto> orderItemDtos = order.getOrderItems()
                     .stream()
-                    .map(OrderItemDto::fromEntity) // новый метод без второго параметра
+                    .map(OrderItemDto::fromEntity) // ← БЕЗ discountService!
                     .toList();
 
-            // Проверяем возможность отмены
+            // Рассчитываем итоги из сохраненных данных
+            BigDecimal originalTotal = BigDecimal.ZERO;
+            BigDecimal totalDiscount = BigDecimal.ZERO;
+
+            for (OrderItemDto dto : orderItemDtos) {
+                BigDecimal itemOriginalTotal = dto.getOriginalPrice()
+                        .multiply(BigDecimal.valueOf(dto.getQuantity()));
+                originalTotal = originalTotal.add(itemOriginalTotal);
+
+                if (dto.isHasDiscount() && dto.getDiscountAmount() != null) {
+                    totalDiscount = totalDiscount.add(dto.getDiscountAmount());
+                }
+            }
+
             boolean canCancel = canCancelOrder(order, userId);
 
             model.addAttribute("order", order);
@@ -77,11 +79,18 @@ public class OrderController {
             model.addAttribute("canCancel", canCancel);
             model.addAttribute("isAuthenticated", userId != null);
             model.addAttribute("isPublicView", true);
+            model.addAttribute("originalTotal", originalTotal);
+            model.addAttribute("totalDiscount", totalDiscount);
+            model.addAttribute("hasDiscounts", totalDiscount.compareTo(BigDecimal.ZERO) > 0);
+
+            // Добавляем тип пользователя для отображения
+            if (order.getUser() != null && order.getUser().getUserType() != null) {
+                model.addAttribute("userTypeDisplay", order.getUser().getUserType().getDisplayName());
+            }
 
             return "order/index";
 
         } catch (OrderNotFoundException e) {
-            log.warn("Заказ не найден: id={}", orderId);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Заказ не найден");
         } catch (Exception e) {
             log.error("Ошибка при получении заказа: id={}", orderId, e);
@@ -106,43 +115,56 @@ public class OrderController {
     }
 
     @GetMapping("/checkout")
-    public String checkout(@CookieValue(value = "sessionId") String sessionId,
-                           Model model,
-                           Authentication authentication) {
-        try {
-            Long userId = getCurrentUserId(authentication);
-            Cart cart = cartService.getOrCreateCart(userId, sessionId);
+    public String checkout(@AuthenticationPrincipal UserDetails userDetails,
+                           Model model) {
 
-            // Проверяем, что корзина не пуста
-            List<CartItemDto> items = cartService.getCartItems(cart.getId());
-            if (items.isEmpty()) {
-                return "redirect:/cart?error=empty";
-            }
+        Long userId = null;
+        User user = null;
 
-            // Вычисляем общую сумму
-            BigDecimal totalAmount = items.stream()
-                    .map(item -> item.getTotalPrice() != null ?
-                            item.getTotalPrice() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            // Если пользователь авторизован, добавляем его данные в модель
-            if (userId != null) {
-                User user = userService.findById(userId)
-                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
-                model.addAttribute("user", user);
-            }
-
-            model.addAttribute("cart", cart);
-            model.addAttribute("items", items);
-            model.addAttribute("totalAmount", totalAmount);
-            model.addAttribute("isAuthenticated", userId != null);
-
-            return "order/checkout";
-
-        } catch (Exception e) {
-            log.error("Ошибка при оформлении заказа: sessionId={}", sessionId, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Ошибка сервера");
+        if (userDetails != null) {
+            userId = userService.findByUsername(userDetails.getUsername())
+                    .map(User::getId)
+                    .orElse(null);
+            user = userService.findById(userId).orElse(null);
         }
+
+        // Получаем товары из корзины с учетом скидок
+        List<CartItemDto> items;
+        if (userId != null) {
+            items = cartService.getUserCartItems(userId);
+        } else {
+            // Для анонимных пользователей
+            Cart cart = cartService.getOrCreateCart(null, null);
+            items = cartService.getCartItems(cart.getId());
+        }
+
+        // Вычисляем суммы
+        BigDecimal totalAmount = items.stream()
+                .map(item -> item.getUnitPrice() != null ?
+                        item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())) : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalWithDiscount = items.stream()
+                .map(CartItemDto::getTotalPriceWithDiscount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalDiscount = totalAmount.subtract(totalWithDiscount);
+
+        boolean hasDiscounts = totalDiscount.compareTo(BigDecimal.ZERO) > 0;
+
+        model.addAttribute("items", items);
+        model.addAttribute("totalAmount", totalAmount);
+        model.addAttribute("totalWithDiscount", totalWithDiscount);
+        model.addAttribute("totalDiscount", totalDiscount);
+        model.addAttribute("hasDiscounts", hasDiscounts);
+        model.addAttribute("isAuthenticated", userId != null);
+        model.addAttribute("user", user);
+
+        if (user != null) {
+            model.addAttribute("userTypeDisplay", user.getUserType().getDisplayName());
+        }
+
+        return "order/checkout";
     }
 
     @PostMapping("/create")

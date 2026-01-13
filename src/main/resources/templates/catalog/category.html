@@ -196,10 +196,40 @@
                                 <!-- Price and SKU -->
                                 <div class="mt-auto">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="h5 text-primary mb-0"
-                                          th:text="${#numbers.formatDecimal(product.price, 1, 2) + ' ₽'}">0 ₽</span>
+                                        <!-- Цена со скидкой или без -->
+                                        <div th:if="${product.hasDiscount}" class="d-flex align-items-center">
+                                            <!-- Цена со скидкой -->
+                                            <span class="h5 text-danger mb-0 me-2"
+                                                  th:if="${product.formattedDiscountedPrice != null}"
+                                                  th:text="${product.formattedDiscountedPrice}">0 ₽
+                                            </span>
+                                            <!-- Старая цена -->
+                                            <span class="text-muted text-decoration-line-through small"
+                                                  th:if="${product.formattedPrice != null}"
+                                                  th:text="${product.formattedPrice}">0 ₽
+                                            </span>
+                                            <!-- Бейдж скидки -->
+                                            <span class="badge bg-danger ms-2"
+                                                  th:if="${product.discountPercentage != null}"
+                                                  th:text="'-' + ${#numbers.formatDecimal
+                                                  (product.discountPercentage, 1, 0)} + '%'">Скидка
+                                            </span>
+                                        </div>
+                                        <div th:unless="${product.hasDiscount != null and product.hasDiscount}">
+                                            <span class="h2 text-primary"
+                                                  th:if="${product.formattedPrice != null}"
+                                                  th:text="${product.formattedPrice}"></span>
+                                        </div>
+
                                         <small class="text-muted" th:if="${product.sku}"
                                                th:text="${product.sku}">Артикул</small>
+                                    </div>
+
+                                    <!-- Дополнительная информация о скидке -->
+                                    <div th:if="${product.hasDiscount and userTypeDisplay != null}"
+                                         class="text-success small mb-2">
+                                        <i class="bi bi-tag"></i>
+                                        <span th:text="'Ваша скидка как ' + ${userTypeDisplay}"></span>
                                     </div>
 
                                     <!-- Actions -->

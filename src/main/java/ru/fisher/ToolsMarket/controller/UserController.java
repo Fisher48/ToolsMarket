@@ -11,15 +11,15 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.fisher.ToolsMarket.dto.OrderItemDto;
 import ru.fisher.ToolsMarket.dto.UserProfileUpdateDto;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderStatus;
 import ru.fisher.ToolsMarket.models.User;
-import ru.fisher.ToolsMarket.service.CartService;
-import ru.fisher.ToolsMarket.service.OrderService;
-import ru.fisher.ToolsMarket.service.UserService;
+import ru.fisher.ToolsMarket.service.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,13 +31,15 @@ public class UserController {
 
     private final UserService userService;
     private final OrderService orderService;
+    private final DiscountService discountService;
     private final CartService cartService;
+    private final ProductService productService;
 
     @GetMapping
     public String profilePage(Model model, Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
         User user = userService.findById(userId).orElseThrow();
-        List<Order> orders = orderService.getUserOrders(userId);
+        List<Order> orders = orderService.getUserOrdersWithItems(userId);
 
         // Получаем активные заказы (не завершенные)
         List<Order> activeOrders = orders.stream()
@@ -45,8 +47,10 @@ public class UserController {
                         order.getStatus() != OrderStatus.CANCELLED)
                 .toList();
 
-        // Получаем завершенные заказы
-        List<Order> completedOrders = orderService.getUserOrdersByStatus(userId, OrderStatus.COMPLETED);
+        // Получаем завершенные заказы (уже есть в orders, фильтруем)
+        List<Order> completedOrders = orders.stream()
+                .filter(order -> order.getStatus() == OrderStatus.COMPLETED)
+                .toList();
 
         // Считаем общую сумму потраченных денег
         BigDecimal totalSpent = completedOrders.stream()
@@ -84,14 +88,78 @@ public class UserController {
                               Model model,
                               Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        log.info("Запрос деталей заказа ID: {}, пользователь ID: {}", id, userId);
+
         if (userId == null) {
             return "redirect:/auth/login";
         }
 
-        Order order = orderService.getUserOrder(id, userId);
+        Order order = orderService.getOrderWithProducts(id);
+
+        if (!order.getUser().getId().equals(userId)) {
+            return "redirect:/profile/orders";
+        }
+
+        // ИСПРАВЛЕНО: Используем метод БЕЗ DiscountService
+        List<OrderItemDto> orderItemDtos = order.getOrderItems()
+                .stream()
+                .map(OrderItemDto::fromEntity) // ← Без discountService!
+                .toList();
+
+        // Рассчитываем итоги из сохраненных данных
+        BigDecimal originalTotal = BigDecimal.ZERO;
+        BigDecimal totalDiscount = BigDecimal.ZERO;
+
+        for (OrderItemDto dto : orderItemDtos) {
+            // Используем сохраненные данные
+            BigDecimal itemOriginalTotal = dto.getOriginalPrice()
+                    .multiply(BigDecimal.valueOf(dto.getQuantity()));
+            originalTotal = originalTotal.add(itemOriginalTotal);
+
+            if (dto.isHasDiscount() && dto.getDiscountAmount() != null) {
+                totalDiscount = totalDiscount.add(dto.getDiscountAmount());
+            }
+        }
+
+        // Если в Dto нет метода getTotalWithoutDiscount, добавим локальную переменную
+        BigDecimal totalWithoutDiscount = orderItemDtos.stream()
+                .map(dto -> dto.getOriginalPrice().multiply(
+                        BigDecimal.valueOf(dto.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        boolean hasDiscounts = totalDiscount.compareTo(BigDecimal.ZERO) > 0;
+        boolean canCancel = canCancelOrder(order, userId);
+
         model.addAttribute("order", order);
+        model.addAttribute("orderItems", orderItemDtos);
+        model.addAttribute("canCancel", canCancel);
+        model.addAttribute("isAuthenticated", true);
+        model.addAttribute("originalTotal", originalTotal);
+        model.addAttribute("totalDiscount", totalDiscount);
+        model.addAttribute("hasDiscounts", hasDiscounts);
+        model.addAttribute("totalWithoutDiscount", totalWithoutDiscount); // Добавляем
+
+        // Тип пользователя для отображения
+        if (order.getUser().getUserType() != null) {
+            model.addAttribute("userTypeDisplay", order.getUser().getUserType().getDisplayName());
+        }
+
         return "profile/order-detail";
+    }
+
+    private boolean canCancelOrder(Order order, Long userId) {
+        // Проверяем, может ли пользователь отменить заказ
+        if (order.getStatus() != OrderStatus.CREATED &&
+                order.getStatus() != OrderStatus.PAID) {
+            return false;
+        }
+
+        // Проверяем принадлежность заказа
+        if (userId != null) {
+            return order.belongsToUser(userId);
+        }
+
+        // Анонимный пользователь может отменять только созданные заказы
+        return order.getStatus() == OrderStatus.CREATED;
     }
 
     @PostMapping("/orders/{id}/cancel")

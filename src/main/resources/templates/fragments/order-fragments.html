@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!-- Фрагмент с товарами заказа (с изображениями и ссылками) -->
+<div th:fragment="order-items-table(orderItems, totalDiscount, originalTotal, order)">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+            <tr>
+                <th style="width: 60px;"></th>
+                <th>Товар</th>
+                <th class="text-center">Кол-во</th>
+                <th class="text-end">Цена за шт.</th>
+                <th class="text-end">Сумма</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${orderItems}">
+                <!-- Изображение товара -->
+                <td>
+                    <a th:href="@{'/product/' + ${item.productTitle}}" class="d-block">
+                        <th:block th:if="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
+                            <img th:src="@{${item.productImageUrl}}"
+                                 th:alt="${item.productImageAlt != null ? item.productImageAlt : item.productName}"
+                                 class="img-fluid rounded product-image">
+                        </th:block>
+                        <th:block th:unless="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
+                            <div class="product-image d-flex align-items-center justify-content-center">
+                                <i class="bi bi-image text-muted"></i>
+                            </div>
+                        </th:block>
+                    </a>
+                </td>
+
+                <!-- Информация о товаре -->
+                <td>
+                    <div>
+                        <h6 class="mb-1 product-name">
+                            <a th:href="@{'/product/' + ${item.productTitle}}"
+                               class="text-decoration-none text-dark product-link">
+                                <span th:text="${item.productName}"></span>
+                                <i class="bi bi-box-arrow-up-right ms-1 small text-muted"></i>
+                            </a>
+                        </h6>
+                        <small class="text-muted">
+                            <i class="bi bi-upc me-1"></i>
+                            Артикул: <span th:text="${item.productSku}"></span>
+                        </small>
+                    </div>
+                </td>
+
+                <!-- Количество -->
+                <td class="text-center align-middle">
+                    <span class="badge bg-light text-dark fs-6"
+                          th:text="${item.quantity}"></span>
+                </td>
+
+                <!-- Цена за единицу - ОЧЕНЬ КОМПАКТНО -->
+                <td class="text-end align-middle">
+                    <div th:if="${item.isHasDiscount()}">
+                        <div class="d-flex flex-column align-items-end">
+                            <!-- Основная цена со скидкой -->
+                            <div class="text-success fw-bold"
+                                 th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></div>
+                            <!-- Компактная строка: старая цена + процент -->
+                            <div class="d-flex align-items-center">
+                <span class="text-muted text-decoration-line-through me-2 small"
+                      th:text="${#numbers.formatDecimal(item.originalPrice, 1, 2) + ' ₽'}"></span>
+                                <span class="badge bg-danger small"
+                                      th:text="'-' + ${#numbers.formatDecimal(item.discountPercentage, 1, 0)} + '%'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:unless="${item.isHasDiscount()}">
+                        <div class="text-success fw-bold"
+                             th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></div>
+                    </div>
+                </td>
+
+                <!-- Общая сумма - ОЧЕНЬ КОМПАКТНО -->
+                <td class="text-end align-middle">
+                    <div th:if="${item.isHasDiscount()}">
+                        <div class="d-flex flex-column align-items-end">
+                            <!-- Основная сумма со скидкой -->
+                            <div class="fw-bold text-primary"
+                                 th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></div>
+                            <!-- Компактная строка: старая сумма + скидка -->
+                            <div class="d-flex align-items-center">
+                <span class="text-muted text-decoration-line-through me-2 small"
+                      th:text="${#numbers.formatDecimal(item.getTotalWithoutDiscount(), 1, 2) + ' ₽'}"></span>
+                                <span class="text-success small">
+                    -<span th:text="${#numbers.formatDecimal(item.discountAmount, 1, 2) + ' ₽'}"></span>
+                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:unless="${item.isHasDiscount()}">
+                        <div class="fw-bold"
+                             th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></div>
+                    </div>
+                </td>
+            </tbody>
+            <tfoot class="table-light">
+            <tr>
+                <td colspan="3" class="text-end">
+                    <div class="d-flex flex-column align-items-end">
+                        <div class="mb-1">
+                            <strong class="fs-5">Товары (<span th:text="${order.getTotalItemsCount()}"></span>):</strong>
+                        </div>
+                        <div th:if="${totalDiscount > 0}" class="mb-1">
+                            <strong class="fs-5 text-success">Скидка:</strong>
+                        </div>
+                        <div class="mt-2">
+                            <strong class="fs-5">Итого к оплате:</strong>
+                        </div>
+                    </div>
+                </td>
+                <td colspan="2" class="text-end">
+                    <div class="d-flex flex-column align-items-end">
+                        <!-- Сумма без скидки -->
+                        <div class="mb-1">
+                            <span th:text="${#numbers.formatDecimal(originalTotal, 1, 2) + ' ₽'}"></span>
+                        </div>
+                        <!-- Общая скидка -->
+                        <div th:if="${totalDiscount > 0}" class="mb-1 text-success">
+                            <strong>-<span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2) + ' ₽'}"></span></strong>
+                        </div>
+                        <!-- Итоговая сумма -->
+                        <div class="mt-2">
+                            <strong class="h4 text-primary"
+                                    th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}"></strong>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Фрагмент статуса заказа -->
+<div th:fragment="order-status-timeline(order)">
+    <div class="order-timeline mt-3">
+        <div th:class="${order.status.toString() == 'CREATED' ? 'timeline-item active' : 'timeline-item'}">
+            <h6 class="mb-1">Создан</h6>
+            <p class="text-muted small mb-0">Заказ создан и ожидает обработки</p>
+            <small class="text-muted"
+                   th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></small>
+        </div>
+        <div th:class="${order.status.toString() == 'PAID' ? 'timeline-item active' : 'timeline-item'}">
+            <h6 class="mb-1">Оплачен</h6>
+            <p class="text-muted small mb-0">Заказ оплачен клиентом</p>
+        </div>
+        <div th:class="${order.status.toString() == 'PROCESSING' ? 'timeline-item active' : 'timeline-item'}">
+            <h6 class="mb-1">В обработке</h6>
+            <p class="text-muted small mb-0">Заказ обрабатывается менеджером</p>
+        </div>
+        <div th:class="${order.status.toString() == 'COMPLETED' ? 'timeline-item active' : 'timeline-item'}">
+            <h6 class="mb-1">Завершен</h6>
+            <p class="text-muted small mb-0">Заказ выполнен и доставлен</p>
+        </div>
+    </div>
+</div>
+
+<!-- Фрагмент бейджа статуса -->
+<div th:fragment="order-status-badge(order)">
+    <span th:if="${order.status.toString() == 'CREATED'}"
+          class="badge bg-primary py-2 px-3 fs-6">
+        <i class="bi bi-plus-circle me-1"></i> Создан
+    </span>
+    <span th:if="${order.status.toString() == 'PAID'}"
+          class="badge bg-success py-2 px-3 fs-6">
+        <i class="bi bi-credit-card me-1"></i> Оплачен
+    </span>
+    <span th:if="${order.status.toString() == 'PROCESSING'}"
+          class="badge bg-info py-2 px-3 fs-6">
+        <i class="bi bi-gear me-1"></i> В обработке
+    </span>
+    <span th:if="${order.status.toString() == 'COMPLETED'}"
+          class="badge bg-warning py-2 px-3 fs-6">
+        <i class="bi bi-check-circle me-1"></i> Завершен
+    </span>
+    <span th:if="${order.status.toString() == 'CANCELLED'}"
+          class="badge bg-danger py-2 px-3 fs-6">
+        <i class="bi bi-x-circle me-1"></i> Отменен
+    </span>
+</div>
+
+</body>
+</html>

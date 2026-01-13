@@ -44,26 +44,36 @@ public class CartController {
         String finalSessionId = getOrCreateSessionId(sessionId, response);
         Long userId = getCurrentUserId(authentication);
 
-        // Получаем корзину с учетом пользователя
         Cart cart = cartService.getOrCreateCart(userId, finalSessionId);
-        List<CartItemDto> items = cartService.getCartItems(cart.getId());
+        List<CartItemDto> items;
+
+        if (userId != null) {
+            items = cartService.getUserCartItems(userId);
+        } else {
+            items = cartService.getCartItems(cart.getId());
+        }
 
         // Логирование
-        log.debug("Cart items with titles:");
         items.forEach(item ->
-                log.debug("Product: '{}', Title (URL): '{}'",
-                        item.getProductName(), item.getProductTitle())
+                log.debug("Product: {}, Скидка: {}%",
+                        item.getProductName(), item.getDiscountPercentage())
         );
 
-        // Обновляем счетчик в сессии
         updateCartItemCountInSession(session, cart);
 
-        // Вычисляем общую сумму
+        // Вычисляем суммы
         BigDecimal totalAmount = items.stream()
-                .map(CartItemDto::getTotalPrice)
+                .map(item -> item.getUnitPrice() != null ?
+                        item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())) : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Если пользователь залогинен, проверяем нужно ли объединить корзины
+        BigDecimal totalWithDiscount = items.stream()
+                .map(CartItemDto::getTotalPriceWithDiscount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalDiscount = totalAmount.subtract(totalWithDiscount);
+
+        // Если пользователь залогинен
         if (userId != null && StringUtils.hasText(finalSessionId)) {
             session.setAttribute("hasAnonymousCart", true);
             session.setAttribute("anonymousSessionId", finalSessionId);
@@ -72,8 +82,21 @@ public class CartController {
         model.addAttribute("cart", cart);
         model.addAttribute("items", items);
         model.addAttribute("totalAmount", totalAmount);
+        model.addAttribute("totalWithDiscount", totalWithDiscount);
+        model.addAttribute("totalDiscount", totalDiscount);
+        model.addAttribute("hasDiscounts", totalDiscount.compareTo(BigDecimal.ZERO) > 0);
         model.addAttribute("sessionId", finalSessionId);
         model.addAttribute("isAuthenticated", userId != null);
+
+        // Добавляем информацию о пользователе для отображения скидок
+        if (userId != null) {
+            User user = userService.findById(userId).orElse(null);
+            if (user != null) {
+                model.addAttribute("userType", user.getUserType());
+                model.addAttribute("userTypeDisplay", user.getUserType().getDisplayName());
+                model.addAttribute("currentUser", user);
+            }
+        }
 
         return "cart/index";
     }

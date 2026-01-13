@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<!-- Фрагмент для отображения скидки на товар -->
+<div th:fragment="item-discount-badge(discountPercentage, discountAmount)">
+    <div th:if="${discountPercentage != null and discountPercentage > 0}">
+            <span class="badge bg-danger small">
+                -<span th:text="${#numbers.formatDecimal(discountPercentage, 1, 0)}"></span>%
+            </span>
+        <small class="text-success ms-1">
+            <i class="bi bi-piggy-bank"></i>
+            Экономия: <span th:text="${#numbers.formatDecimal(discountAmount, 1, 2)}"></span> ₽
+        </small>
+    </div>
+</div>
+
+<!-- Фрагмент для отображения цены со скидкой -->
+<div th:fragment="price-with-discount(originalPrice, discountedPrice, discountPercentage)">
+    <div th:if="${discountPercentage != null and discountPercentage > 0}">
+        <small class="text-muted text-decoration-line-through">
+            <span th:text="${#numbers.formatDecimal(originalPrice, 1, 2)}"></span> ₽
+        </small>
+        <div class="fw-bold text-danger">
+            <span th:text="${#numbers.formatDecimal(discountedPrice, 1, 2)}"></span> ₽
+        </div>
+    </div>
+    <div th:unless="${discountPercentage != null and discountPercentage > 0}">
+            <span class="fw-bold">
+                <span th:text="${#numbers.formatDecimal(originalPrice, 1, 2)}"></span> ₽
+            </span>
+    </div>
+</div>
+
+<!-- Фрагмент для отображения общей скидки -->
+<div th:fragment="total-discount-info(totalDiscount, userTypeDisplay)">
+    <div th:if="${totalDiscount != null and totalDiscount > 0}">
+        <div class="alert alert-success p-2 small mb-0">
+            <i class="bi bi-piggy-bank me-1"></i>
+            <strong>Ваша экономия: <span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2)}"></span> ₽</strong>
+            <div th:if="${userTypeDisplay != null and !userTypeDisplay.isEmpty()}"
+                 class="extra-small mt-1">
+                Благодаря вашей скидке как <span th:text="${userTypeDisplay}"></span>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

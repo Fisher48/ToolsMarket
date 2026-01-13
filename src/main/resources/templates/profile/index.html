@@ -116,6 +116,11 @@
                             </div>
 
                             <div class="info-item">
+                                <strong><i class="bi bi-discount me-2"></i>Тип скидки:</strong>
+                                <div class="text-muted" th:text="${user.userType.getDisplayName()} ?: 'Не указан'"></div>
+                            </div>
+
+                            <div class="info-item">
                                 <strong><i class="bi bi-cart me-2"></i>Корзина:</strong>
                                 <div class="text-muted">
                                     <a th:href="@{/cart}">Перейти в корзину</a>

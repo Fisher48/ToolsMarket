@@ -5,8 +5,11 @@ import lombok.Setter;
 import ru.fisher.ToolsMarket.models.OrderItem;
 import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.ProductImage;
+import ru.fisher.ToolsMarket.models.User;
+import ru.fisher.ToolsMarket.service.DiscountService;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Getter
 @Setter
@@ -20,57 +23,62 @@ public class OrderItemDto {
     private Integer quantity;
     private BigDecimal unitPrice;
     private BigDecimal subtotal;
+    private BigDecimal originalPrice; // Цена без скидки
 
-    // Новый конструктор - работает с новыми OrderItem (со связью Product)
-    public static OrderItemDto fromEntity(OrderItem orderItem) {
+    // Скидка на момент заказа
+    private BigDecimal discountPercentage;
+    private BigDecimal discountAmount;
+    private boolean hasDiscount;
+
+    // НЕ ИСПОЛЬЗУЕМ DiscountService - работаем только с сохраненными данными
+    public static OrderItemDto fromEntity(OrderItem item) {
         OrderItemDto dto = new OrderItemDto();
-        dto.setProductId(orderItem.getProduct().getId());
-        dto.setProductName(orderItem.getProductName());
-        dto.setProductSku(orderItem.getProductSku());
-        dto.setQuantity(orderItem.getQuantity());
-        dto.setUnitPrice(orderItem.getUnitPrice());
-        dto.setSubtotal(orderItem.getSubtotal());
+        dto.setProductId(item.getProduct().getId());
+        dto.setProductName(item.getProductName());
+        dto.setProductSku(item.getProductSku());
+        dto.setQuantity(item.getQuantity());
+        dto.setUnitPrice(item.getUnitPrice());
+        dto.setSubtotal(item.getSubtotal());
 
         // Получаем данные из связанного Product
-        Product product = orderItem.getProduct();
-        if (product != null) {
-            dto.setProductTitle(product.getTitle() != null ?
-                    product.getTitle() : product.getName());
+        Product product = item.getProduct();
+        dto.setProductTitle(product.getTitle() != null ?
+                product.getTitle() : product.getName());
 
-            // Получаем изображение
-            if (!product.getImages().isEmpty()) {
-                ProductImage mainImage = product.getImages().stream().findFirst().orElse(null);
-                dto.setProductImageUrl(mainImage.getUrl());
-                dto.setProductImageAlt(mainImage.getAlt() != null ?
-                        mainImage.getAlt() : product.getName());
+        // Получаем изображение
+        if (!product.getImages().isEmpty()) {
+            ProductImage mainImage = product.getImages().stream().findFirst().orElse(null);
+            dto.setProductImageUrl(mainImage.getUrl());
+            dto.setProductImageAlt(mainImage.getAlt() != null ?
+                    mainImage.getAlt() : product.getName());
+        }
+
+        // Используем только сохраненные данные из БД
+        if (item.getOriginalUnitPrice() != null) {
+            dto.setOriginalPrice(item.getOriginalUnitPrice());
+            dto.setHasDiscount(item.isHasDiscount());
+
+            if (item.isHasDiscount() && item.getDiscountAmount() != null) {
+                dto.setDiscountAmount(item.getDiscountAmount());
+                dto.setDiscountPercentage(item.getDiscountPercentage());
+            } else {
+                // Если нет скидки
+                dto.setOriginalPrice(item.getUnitPrice());
+                dto.setHasDiscount(false);
             }
+        } else {
+            // Защита на случай если миграция не сработала
+            dto.setOriginalPrice(item.getUnitPrice());
+            dto.setHasDiscount(false);
         }
 
         return dto;
     }
 
-    // Конструктор из сущности OrderItem
-    public static OrderItemDto fromEntity(OrderItem orderItem, ProductDto product) {
-        OrderItemDto dto = new OrderItemDto();
-        dto.setProductId(orderItem.getProduct().getId());
-        dto.setProductName(orderItem.getProductName());
-        dto.setProductSku(orderItem.getProductSku());
-        dto.setQuantity(orderItem.getQuantity());
-        dto.setUnitPrice(orderItem.getUnitPrice());
-        dto.setSubtotal(orderItem.getSubtotal());
-
-        // Если передали Product, заполняем дополнительные поля
-        if (product != null) {
-            dto.setProductTitle(product.getTitle());
-            // Получаем первое изображение товара
-            if (!product.getImages().isEmpty()) {
-                ProductImageDto mainImage = product.getImages().getFirst();
-                dto.setProductImageUrl(mainImage.getUrl());
-                dto.setProductImageAlt(mainImage.getAlt() != null ?
-                        mainImage.getAlt() : product.getName());
-            }
-        }
-
-        return dto;
+    // Дополнительный метод для расчета суммы без скидки
+    public BigDecimal getTotalWithoutDiscount() {
+        return originalPrice != null
+                ? originalPrice.multiply(BigDecimal.valueOf(quantity))
+                : unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
 }

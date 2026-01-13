@@ -18,6 +18,12 @@
         }
         .action-btn { transition: all 0.2s; }
         .action-btn:hover { transform: translateY(-1px); }
+
+        /* Стили для скидок */
+        .text-decoration-line-through {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -141,43 +147,156 @@
                 <div class="card-header bg-white">
                     <h6 class="mb-0">
                         <i class="bi bi-box-seam text-primary me-2"></i>
-                        Товары (<span th:text="${#lists.size(order.orderItems)}"></span>)
+                        Товары (<span th:text="${orderItems.size()}"></span>)
+                        <span th:if="${hasDiscounts}" class="badge bg-success ms-2">
+                    <i class="bi bi-percent me-1"></i>Есть скидки
+                </span>
                     </h6>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        <div th:each="item : ${order.orderItems}" class="list-group-item">
+                        <div th:each="item : ${orderItems}" class="list-group-item">
                             <div class="row align-items-center">
-                                <div class="col-1">
-                                    <div class="product-img">
-                                        <i class="bi bi-tools text-muted"></i>
+                                <!-- Иконка товара со ссылкой -->
+                                <div class="col-2">
+                                    <div class="text-center">
+                                        <a th:href="@{'/product/' + ${item.productTitle}}"
+                                           target="_blank"
+                                           class="d-inline-block position-relative">
+                                            <th:block th:if="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
+                                                <img th:src="@{${item.productImageUrl}}"
+                                                     th:alt="${item.productImageAlt != null ? item.productImageAlt : item.productName}"
+                                                     class="img-fluid rounded product-image-admin">
+                                            </th:block>
+                                            <th:block th:unless="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
+                                                <div class="product-image-container-admin">
+                                                    <i class="bi bi-tools text-muted" style="font-size: 1.5rem;"></i>
+                                                </div>
+                                            </th:block>
+                                        </a>
                                     </div>
                                 </div>
+
+                                <!-- Информация о товаре -->
                                 <div class="col-5">
-                                    <h6 class="mb-1" th:text="${item.productName}"></h6>
-                                    <small class="text-muted">SKU: <span th:text="${item.productSku}"></span></small>
+                                    <!-- Название товара со ссылкой -->
+                                    <h6 class="mb-1">
+                                        <a th:href="@{'/product/' + ${item.productTitle}}"
+                                           class="text-decoration-none text-dark hover-primary"
+                                           target="_blank"
+                                           th:if="${item.productId != null and item.productTitle != null}"
+                                           th:text="${item.productName}">
+                                        </a>
+                                        <span th:unless="${item.productId != null and item.productTitle != null}"
+                                              th:text="${item.productName}"></span>
+                                    </h6>
+
+                                    <!-- Артикул и ID -->
+                                    <div class="small text-muted mb-2">
+                                        <div class="mb-1">
+                                            <i class="bi bi-upc me-1"></i>
+                                            Артикул: <span th:text="${item.productSku}"></span>
+                                            <span th:if="${item.productId != null}"
+                                                  class="ms-2 badge bg-light text-dark border">
+                                        ID: <span th:text="${item.productId}"></span>
+                                    </span>
+                                        </div>
+
+                                        <!-- Скидка если есть -->
+                                        <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}"
+                                             class="text-success small">
+                                            <i class="bi bi-percent me-1"></i>
+                                            Скидка:
+                                            <span th:text="${#numbers.formatDecimal(item.discountPercentage, 1, 0)}"></span>%
+                                            (<span th:text="${#numbers.formatDecimal(item.discountAmount, 1, 2)}"></span> ₽)
+                                        </div>
+                                    </div>
+
+                                    <!-- Быстрые ссылки для админа -->
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        <a th:href="@{'/admin/products/' + ${item.productId} + '/edit'}"
+                                           class="badge bg-light text-dark border text-decoration-none"
+                                           target="_blank"
+                                           th:if="${item.productId != null}">
+                                            <i class="bi bi-pencil-square me-1"></i> Редактировать
+                                        </a>
+                                        <a th:href="@{'/product/' + ${item.productTitle} + '?admin=true'}"
+                                           class="badge bg-light text-dark border text-decoration-none"
+                                           target="_blank"
+                                           th:if="${item.productId != null and item.productTitle != null}">
+                                            <i class="bi bi-eye me-1"></i> Просмотр
+                                        </a>
+                                        <a th:href="@{'/admin/products?search=' + ${item.productSku}}"
+                                           class="badge bg-light text-dark border text-decoration-none"
+                                           target="_blank">
+                                            <i class="bi bi-search me-1"></i> Найти в базе
+                                        </a>
+                                    </div>
                                 </div>
+
+                                <!-- Количество -->
                                 <div class="col-2 text-center">
-                                    <span class="badge bg-light text-dark" th:text="${item.quantity}"></span>
+                            <span class="badge bg-light text-dark fs-6"
+                                  th:text="${item.quantity}"></span>
+                                    <div class="text-muted small mt-1">шт.</div>
                                 </div>
+
+                                <!-- Цена за единицу -->
                                 <div class="col-2 text-end">
-                                    <span th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></span>
+                                    <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                        <div class="text-muted text-decoration-line-through small"
+                                             th:text="${#numbers.formatDecimal(item.originalPrice, 1, 2) + ' ₽'}"></div>
+                                        <div class="text-success fw-bold"
+                                             th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></div>
+                                    </div>
+                                    <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                        <div class="fw-bold"
+                                             th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></div>
+                                    </div>
                                 </div>
+
+                                <!-- Итоговая сумма -->
                                 <div class="col-2 text-end">
-                                    <strong th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></strong>
+                                    <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                        <div class="text-muted text-decoration-line-through small"
+                                             th:text="${#numbers.formatDecimal(item.totalWithoutDiscount, 1, 2) + ' ₽'}"></div>
+                                        <div class="text-danger fw-bold fs-5"
+                                             th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></div>
+                                    </div>
+                                    <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                        <div class="fw-bold fs-5"
+                                             th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Итоги по заказу -->
                 <div class="card-footer bg-white border-top">
                     <div class="row">
-                        <div class="col text-end">
-                            <span class="h5 mb-0" th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}"></span>
+                        <div class="col-8 text-end">
+                            <div class="mb-1">
+                                <span class="text-muted">Итого без скидок:</span>
+                                <span class="fw-bold ms-2"
+                                      th:text="${#numbers.formatDecimal(originalTotal, 1, 2) + ' ₽'}"></span>
+                            </div>
+                            <div th:if="${hasDiscounts}" class="mb-1 text-success">
+                                <span class="text-muted">Скидка:</span>
+                                <span class="fw-bold ms-2"
+                                      th:text="'-' + ${#numbers.formatDecimal(totalDiscount, 1, 2) + ' ₽'}"></span>
+                            </div>
+                            <div class="h5 mb-0">
+                                <span class="text-muted">Сумма заказа:</span>
+                                <span class="text-primary ms-2"
+                                      th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
             <!-- Примечание -->
             <div th:if="${order.note}" class="card mt-3">

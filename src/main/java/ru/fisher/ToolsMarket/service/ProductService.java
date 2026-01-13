@@ -12,9 +12,12 @@ import ru.fisher.ToolsMarket.mapper.ProductMapperService;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.ProductImage;
+import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 @Service
@@ -28,6 +31,7 @@ public class ProductService {
     private final ProductMapperService productMapperService;
     private final ProductImageMapperService productImageMapperService;
     private final AttributeService attributeService;
+    private final DiscountService discountService;
 
     @Transactional(readOnly = true)
     public List<Product> findAllEntities() {
@@ -157,5 +161,45 @@ public class ProductService {
     public Optional<ProductDto> findWithAttributesByTitle(String title) {
         return productRepository.findByTitleWithAttributes(title)
                 .map(productMapperService::toDto);
+    }
+
+    /**
+     * Поиск по категории с учетом скидок
+     */
+    public Page<ProductListDto> findByCategoryWithDiscounts(Long categoryId, User user, Pageable pageable) {
+        Page<Product> products = productRepository.findActiveByCategory(categoryId, pageable);
+
+        return products.map(product -> {
+            ProductListDto dto = productMapperService.toListDto(product, user);
+            return dto;
+        });
+    }
+
+    /**
+     * Поиск с учетом скидок
+     */
+    public Page<ProductListDto> searchWithDiscounts(String query, User user, Pageable pageable) {
+        Page<Product> products = productRepository.searchActive(query.trim(), pageable);
+
+        return products.map(product -> {
+            ProductListDto dto = productMapperService.toListDto(product, user);
+            return dto;
+        });
+    }
+
+    /**
+     * Получение товара с учетом скидок
+     */
+    public Optional<ProductDto> findByTitleWithDiscounts(String title, User user) {
+        return productRepository.findByTitleWithAttributes(title)
+                .map(product -> productMapperService.toDto(product, user));
+    }
+
+    /**
+     * Получение по ID с учетом скидок
+     */
+    public Optional<ProductDto> findByIdWithDiscounts(Long id, User user) {
+        return productRepository.findById(id)
+                .map(product -> productMapperService.toDto(product, user));
     }
 }
