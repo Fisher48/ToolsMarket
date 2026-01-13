@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${user.email} + ' - Пользователь'">Пользователь</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+</head>
+<body>
+<div class="container-fluid mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Админка</a></li>
+            <li class="breadcrumb-item"><a href="/admin/users">Пользователи</a></li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${user.email}"></li>
+        </ol>
+    </nav>
+
+    <!-- Сообщения -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row">
+        <!-- Основная информация -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person"></i> Информация о пользователе
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">ID:</dt>
+                                <dd class="col-sm-8" th:text="${user.id}"></dd>
+
+                                <dt class="col-sm-4">Email:</dt>
+                                <dd class="col-sm-8" th:text="${user.email}"></dd>
+
+                                <dt class="col-sm-4">Имя:</dt>
+                                <dd class="col-sm-8" th:text="${user.firstName}"></dd>
+
+                                <dt class="col-sm-4">Фамилия:</dt>
+                                <dd class="col-sm-8" th:text="${user.lastName}"></dd>
+
+                                <dt class="col-sm-4">Телефон:</dt>
+                                <dd class="col-sm-8" th:text="${user.phone ?: 'Не указан'}"></dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Тип:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge"
+                                          th:class="'bg-' + ${user.userType == T(ru.fisher.ToolsMarket.models.UserType).REGULAR} ? 'secondary' : 'primary'">
+                                        <span th:text="${user.userType.displayName}"></span>
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Статус:</dt>
+                                <dd class="col-sm-8">
+                                    <span th:if="${user.enabled}" class="text-success">
+                                        <i class="bi bi-check-circle"></i> Активен
+                                    </span>
+                                    <span th:unless="${user.enabled}" class="text-danger">
+                                        <i class="bi bi-x-circle"></i> Заблокирован
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Зарегистрирован:</dt>
+                                <dd class="col-sm-8" th:text="${#dates.format(user.createdAt, 'dd.MM.yyyy HH:mm')}"></dd>
+
+                                <dt class="col-sm-4">Обновлен:</dt>
+                                <dd class="col-sm-8" th:text="${#dates.format(user.updatedAt, 'dd.MM.yyyy HH:mm')}"></dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a th:href="@{/admin/users/{id}/edit(id=${user.id})}"
+                           class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Редактировать
+                        </a>
+                        <form th:action="@{/admin/users/{id}/toggle-status(id=${user.id})}"
+                              method="post"
+                              class="d-inline">
+                            <button type="submit"
+                                    class="btn"
+                                    th:class="${user.enabled} ? 'btn-warning' : 'btn-success'">
+                                <i th:if="${user.enabled}" class="bi bi-toggle-on"></i>
+                                <i th:unless="${user.enabled}" class="bi bi-toggle-off"></i>
+                                <span th:text="${user.enabled} ? ' Деактивировать' : ' Активировать'"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Управление типом пользователя -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-percent"></i> Управление типом для скидок
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/users/{id}/change-user-type(id=${user.id})}"
+                          method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Тип пользователя</label>
+                            <select name="userType" class="form-select" required>
+                                <option th:each="type : ${userTypes}"
+                                        th:value="${type}"
+                                        th:selected="${user.userType == type}"
+                                        th:text="${type.displayName}">
+                                </option>
+                            </select>
+                            <div class="form-text">
+                                Этот тип определяет какие скидки будут применены к пользователю
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save"></i> Сохранить тип
+                        </button>
+                    </form>
+
+                    <!-- Скидки для этого типа пользователя -->
+                    <div th:if="${not #lists.isEmpty(userDiscounts)}" class="mt-4">
+                        <h6>Скидки для этого типа:</h6>
+                        <ul class="list-group">
+                            <li th:each="discount : ${userDiscounts}"
+                                class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong th:text="${discount.productType.displayName}"></strong>
+                                    <br>
+                                    <small class="text-muted">Тип товара</small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">
+                                    <span th:text="${discount.discountPercentage}"></span>%
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div th:if="${#lists.isEmpty(userDiscounts)}" class="mt-3">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Для этого типа пользователя не настроены скидки
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка назад -->
+    <div class="mt-3">
+        <a href="/admin/users" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Назад к списку
+        </a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -33,6 +33,11 @@
                 </h6>
                 <ul class="nav flex-column">
                     <li class="nav-item">
+                        <a class="nav-link" href="/admin/users">
+                            <i class="bi bi-people"></i> Пользователи
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link active" href="/admin/products">
                             <i class="fas fa-box me-2"></i>
                             Товары
@@ -91,6 +96,7 @@
                                     <th>Артикул</th>
                                     <th>Цена</th>
                                     <th>Статус</th>
+                                    <th>Тип товара</th>
                                     <th>Категории</th>
                                     <th>Дата создания</th>
                                     <th>Действия</th>
@@ -112,6 +118,13 @@
                                     <td>
                                         <span th:if="${product.active}" class="badge bg-success">Активен</span>
                                         <span th:unless="${product.active}" class="badge bg-secondary">Неактивен</span>
+                                    </td>
+                                    <td>
+                                                <span th:each="productType, stat : ${product.productType}"
+                                                      class="badge bg-light text-dark">
+                                                    <span th:text="${product.productType.getDisplayName()}"></span>
+                                                    <span th:if="${not stat.last}">, </span>
+                                                </span>
                                     </td>
                                     <td>
                                                 <span th:each="category, stat : ${product.categories}"
