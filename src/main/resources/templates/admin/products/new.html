@@ -119,6 +119,18 @@
                                         <option value="EUR">EUR</option>
                                     </select>
                                 </div>
+                                <div class="col-md-6">
+                                    <label for="productType" class="form-label">Тип товара</label>
+                                    <select class="form-select" id="productType" name="productType">
+                                        <option value="">-- Выберите тип --</option>
+                                        <option th:each="type : ${allProductTypes}"
+                                                th:value="${type}"
+                                                th:text="${type.displayName ?: type.name()}"
+                                                th:selected="${product.productType != null and product.productType == type}">
+                                        </option>
+                                    </select>
+                                    <div class="form-text">Для расчета скидок</div>
+                                </div>
                             </div>
 
                             <!-- Описания -->

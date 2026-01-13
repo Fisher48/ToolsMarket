@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.controller;
+package ru.fisher.ToolsMarket.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +56,7 @@ public class ProductAdminController {
     public String newProduct(Model model) {
         model.addAttribute("product", new Product());
         model.addAttribute("categories", categoryService.findAllCategories());
+        model.addAttribute("allProductTypes", ProductType.values());
         return "admin/products/new";
     }
 
@@ -88,7 +89,8 @@ public class ProductAdminController {
                          @RequestParam(required = false) List<Long> categoryIds,
                          @RequestParam(required = false) List<MultipartFile> images,
                          @RequestParam(required = false) List<String> imageAlts,
-                         @RequestParam(required = false) List<Integer> imageSortOrders) {
+                         @RequestParam(required = false) List<Integer> imageSortOrders,
+                         @RequestParam(required = false) ProductType productType) {
 
         log.info("Creating product: {}", name);
         log.info("Received {} images", images != null ? images.size() : 0);
@@ -106,7 +108,8 @@ public class ProductAdminController {
                 .createdAt(Instant.now())  // Устанавливаем createdAt
                 .updatedAt(Instant.now())  // Устанавливаем updatedAt
                 .categories(new HashSet<>())
-                .images(new ArrayList<>())
+                .images(new HashSet<>())
+                .productType(productType)
                 .build();
 
         // Устанавливаем категории
@@ -156,6 +159,7 @@ public class ProductAdminController {
         model.addAttribute("product", product);
         model.addAttribute("categories", categoryService.findAllCategories());
         model.addAttribute("currentValues", currentValues);
+        model.addAttribute("allProductTypes", ProductType.values());
 
 //        model.addAttribute("product", product);
 //        model.addAttribute("categories", categoryService.findAllCategories());
@@ -204,7 +208,8 @@ public class ProductAdminController {
                          @RequestParam(required = false) List<String> newImageAlts,
                          @RequestParam(required = false) List<Integer> newImageSortOrders,
                          @RequestParam(required = false) List<Long> deleteImageIds,
-                         @RequestParam(required = false) Map<String, String> allParams) {
+                         @RequestParam(required = false) Map<String, String> allParams,
+                         @RequestParam(required = false) ProductType productType) {
 
         log.info("=== UPDATE PRODUCT START ===");
         log.info("Product ID: {}", id);
@@ -215,7 +220,8 @@ public class ProductAdminController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
         // Обновляем основные поля
-        updateProductFields(existing, name, title, shortDescription, description, sku, price, currency, active);
+        updateProductFields(existing, name, title, shortDescription, description,
+                sku, price, currency, active, productType);
 
         // Обновляем категории
         if (categoryIds != null) {
@@ -257,7 +263,7 @@ public class ProductAdminController {
 
     private void updateProductFields(Product product, String name, String title,
                                      String shortDescription, String description, String sku,
-                                     BigDecimal price, String currency, boolean active) {
+                                     BigDecimal price, String currency, boolean active, ProductType productType) {
         product.setName(name);
         product.setTitle(title);
         product.setShortDescription(shortDescription);
@@ -266,6 +272,7 @@ public class ProductAdminController {
         product.setPrice(price);
         product.setCurrency(currency);
         product.setActive(active);
+        product.setProductType(productType);
     }
 
     // Удаление

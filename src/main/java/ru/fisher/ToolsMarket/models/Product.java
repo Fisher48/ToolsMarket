@@ -44,6 +44,11 @@ public class Product {
     @Column(nullable = false)
     private boolean active = true; // Доступность
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "product_type", length = 50)
+    @Builder.Default
+    private ProductType productType = ProductType.OTHER;
+
     @ManyToMany
     @JoinTable(
             name = "product_category",
