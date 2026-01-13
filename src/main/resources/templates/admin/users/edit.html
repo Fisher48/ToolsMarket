@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${user.email} + ' - Редактирование'">Редактирование пользователя</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+</head>
+<body>
+<div class="container-fluid mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Админка</a></li>
+            <li class="breadcrumb-item"><a href="/admin/users">Пользователи</a></li>
+            <li class="breadcrumb-item">
+                <a th:href="@{/admin/users/{id}(id=${user.id})}" th:text="${user.email}"></a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Редактирование</li>
+        </ol>
+    </nav>
+
+    <!-- Сообщения -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil"></i> Редактирование пользователя
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/users/{id}/update(id=${user.id})}" method="post">
+                        <div class="row">
+                            <!-- Основная информация -->
+                            <div class="col-md-6">
+                                <h6 class="border-bottom pb-2 mb-3">Основная информация</h6>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Имя</label>
+                                    <input type="text"
+                                           name="firstName"
+                                           class="form-control"
+                                           th:value="${user.firstName}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Фамилия</label>
+                                    <input type="text"
+                                           name="lastName"
+                                           class="form-control"
+                                           th:value="${user.lastName}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email"
+                                           name="email"
+                                           class="form-control"
+                                           th:value="${user.email}"
+                                           required>
+                                    <div class="form-text">
+                                        Email используется для входа и уведомлений
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6 class="border-bottom pb-2 mb-3">Контакты и статус</h6>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Телефон</label>
+                                    <input type="tel"
+                                           name="phone"
+                                           class="form-control"
+                                           th:value="${user.phone ?: ''}"
+                                           placeholder="+7 (XXX) XXX-XX-XX">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Тип пользователя для скидок</label>
+                                    <select name="userType" class="form-select">
+                                        <option th:each="type : ${userTypes}"
+                                                th:value="${type}"
+                                                th:selected="${user.userType == type}"
+                                                th:text="${type.displayName}">
+                                        </option>
+                                    </select>
+                                    <div class="form-text">
+                                        Этот тип определяет какие скидки будут применены к пользователю
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox"
+                                               name="enabled"
+                                               class="form-check-input"
+                                               role="switch"
+                                               th:checked="${user.enabled}"
+                                               value="true">
+                                        <label class="form-check-label">Активный аккаунт</label>
+                                    </div>
+                                    <div class="form-text">
+                                        Если отключено, пользователь не сможет войти в систему
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Дополнительная информация -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6 class="border-bottom pb-2 mb-3">Дополнительная информация</h6>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Имя пользователя (логин)</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               th:value="${user.username}"
+                                               disabled>
+                                        <div class="form-text">
+                                            Логин нельзя изменить
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Дата регистрации</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               th:value="${#dates.format(user.createdAt, 'dd.MM.yyyy HH:mm')}"
+                                               disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Кнопки -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save"></i> Сохранить изменения
+                                </button>
+                                <a th:href="@{/admin/users/{id}(id=${user.id})}"
+                                   class="btn btn-outline-secondary ms-2">
+                                    <i class="bi bi-x-circle"></i> Отмена
+                                </a>
+                            </div>
+
+                            <div>
+                                <a th:href="@{/admin/users/{id}/change-password(id=${user.id})}"
+                                   class="btn btn-outline-warning me-2">
+                                    <i class="bi bi-key"></i> Сменить пароль
+                                </a>
+                                <button type="button"
+                                        class="btn btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal">
+                                    <i class="bi bi-trash"></i> Удалить
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Боковая панель с информацией -->
+        <div class="col-lg-4">
+            <!-- Информация о пользователе -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Информация
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt>ID пользователя:</dt>
+                        <dd th:text="${user.id}"></dd>
+
+                        <dt>Текущий тип:</dt>
+                        <dd>
+                            <span class="badge"
+                                  th:class="'bg-' + ${user.userType == T(ru.fisher.ToolsMarket.models.UserType).REGULAR} ? 'secondary' : 'primary'">
+                                <span th:text="${user.userType.displayName}"></span>
+                            </span>
+                        </dd>
+
+                        <dt>Текущий статус:</dt>
+                        <dd>
+                            <span th:if="${user.enabled}" class="text-success">
+                                <i class="bi bi-check-circle"></i> Активен
+                            </span>
+                            <span th:unless="${user.enabled}" class="text-danger">
+                                <i class="bi bi-x-circle"></i> Заблокирован
+                            </span>
+                        </dd>
+
+                        <dt>Последнее обновление:</dt>
+                        <dd th:text="${#dates.format(user.updatedAt, 'dd.MM.yyyy HH:mm')}"></dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Быстрые действия -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning"></i> Быстрые действия
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <form th:action="@{/admin/users/{id}/toggle-status(id=${user.id})}"
+                              method="post"
+                              class="d-grid">
+                            <button type="submit"
+                                    class="btn"
+                                    th:class="${user.enabled} ? 'btn-warning' : 'btn-success'">
+                                <i th:if="${user.enabled}" class="bi bi-toggle-on"></i>
+                                <i th:unless="${user.enabled}" class="bi bi-toggle-off"></i>
+                                <span th:text="${user.enabled} ? ' Деактивировать' : ' Активировать'"></span>
+                            </button>
+                        </form>
+
+                        <a th:href="@{/admin/users/{id}(id=${user.id})}"
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-eye"></i> Просмотр профиля
+                        </a>
+
+                        <a th:href="@{/admin/orders?userId={id}(id=${user.id})}"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-cart"></i> Заказы пользователя
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить пользователя <strong th:text="${user.email}"></strong>?</p>
+                <p class="text-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Внимание:</strong> Это действие нельзя отменить!
+                </p>
+                <ul class="text-danger">
+                    <li>Будет удалена вся информация о пользователе</li>
+                    <li>Будут удалены все его заказы</li>
+                    <li>Будут удалены все его отзывы и комментарии</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Отмена
+                </button>
+                <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

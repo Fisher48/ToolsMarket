@@ -51,6 +51,11 @@ public class User implements UserDetails {
     @JsonIgnore
     private Cart cart;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type", length = 50)
+    @Builder.Default
+    private UserType userType = UserType.REGULAR;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     @Builder.Default

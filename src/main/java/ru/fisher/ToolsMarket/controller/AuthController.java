@@ -25,11 +25,21 @@ public class AuthController {
     private final CartService cartService;
 
     @GetMapping("/login")
-    public String loginPage(HttpSession session, Model model) {
+    public String loginPage(@RequestParam(value = "success", required = false) String success,
+                            @RequestParam(value = "error", required = false) String error,
+                            @RequestParam(value = "logout", required = false) String logout,
+                            HttpSession session, Model model) {
+        // Сообщение об успешной регистрации
+        if (success != null) {
+            model.addAttribute("registrationSuccess",
+                    "Регистрация успешно завершена! Теперь вы можете войти в систему.");
+        }
+
         // Проверяем, есть ли анонимная корзина для объединения
         if (session.getAttribute("hasAnonymousCart") != null) {
             model.addAttribute("hasAnonymousCart", true);
         }
+
         return "auth/login";
     }
 
@@ -86,6 +96,9 @@ public class AuthController {
 
             model.addAttribute("successMessage",
                     "Регистрация успешна! Теперь вы можете войти в систему.");
+
+            // Очищаем форму
+            model.addAttribute("userDto", new UserDto());
 
             return "redirect:/auth/login?success";
 
