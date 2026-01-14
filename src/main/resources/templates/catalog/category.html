@@ -57,8 +57,11 @@
                           th:text="${session.cartItemCount}">0</span>
                 </a>
             </div>
-            <a class="nav-link text-white mx-2" href="/profile">
+            <a class="nav-link text-white mx-2" th:href="@{/profile}">
                 <i class="bi bi-person fs-5"></i>
+                <span th:if="${currentUser != null and currentUser.isEnabled()}">
+                    Привет, [[${currentUser.username}]]!</span>
+                <span th:unless="${currentUser != null and currentUser.isEnabled()}"> Войти</span>
             </a>
         </div>
 

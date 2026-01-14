@@ -71,9 +71,10 @@
 
         <div class="navbar-nav flex-row">
             <!-- Секция пользователя -->
-            <div th:if="${isAuthenticated}" class="nav-item dropdown">
-                <a class="nav-link text-white mx-2 dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle fs-5"></i>
+            <div class="nav-item dropdown" th:if="${isAuthenticated}">
+                <a class="nav-link text-white mx-2 dropdown-toggle" href="#"
+                   id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle fs-5"></i> Привет, [[${currentUser.username}]]!
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" th:href="@{/profile/orders}"><i class="bi bi-box-seam"></i> Мои заказы</a></li>
