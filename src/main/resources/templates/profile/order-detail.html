@@ -204,9 +204,9 @@
                                             <div class="d-flex align-items-center mt-1">
                                                 <span class="original-price me-2"
                                                       th:text="${#numbers.formatDecimal(item.originalPrice, 1, 2) + ' ₽'}"></span>
-                                                <span class="badge discount-badge"
-                                                      th:text="'-' + ${#numbers.formatDecimal(item.discountPercentage, 1, 0)} + '%'">
-                                                </span>
+<!--                                                <span class="badge discount-badge"-->
+<!--                                                      th:text="'-' + ${#numbers.formatDecimal(item.discountPercentage, 1, 0)} + '%'">-->
+<!--                                                </span>-->
                                             </div>
                                         </div>
                                     </div>
@@ -287,10 +287,10 @@
                                 <p class="mb-0">
                                     Благодаря скидке вы сэкономили
                                     <strong th:text="${#numbers.formatDecimal(totalDiscount, 1, 2) + ' ₽'}"></strong>
-                                    <span th:if="${userTypeDisplay != null}">
-                                        по вашей персональной скидке как
-                                        <strong th:text="${userTypeDisplay}"></strong>
-                                    </span>
+<!--                                    <span th:if="${userTypeDisplay != null}">-->
+<!--                                        по вашей персональной скидке как-->
+<!--                                        <strong th:text="${userTypeDisplay}"></strong>-->
+<!--                                    </span>-->
                                 </p>
                             </div>
                         </div>

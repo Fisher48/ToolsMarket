@@ -210,14 +210,14 @@
                                               th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></span>
                                                     <span class="text-success fw-bold"
                                                           th:text="${#numbers.formatDecimal(item.unitPriceWithDiscount, 1, 2) + ' ₽'}"></span>
-                                                    <span class="badge bg-danger ms-2 small"
-                                                          th:text="'-' + ${#numbers.formatDecimal(item.discountPercentage, 1, 0)} + '%'"></span>
+<!--                                                    <span class="badge bg-danger ms-2 small"-->
+<!--                                                          th:text="'-' + ${#numbers.formatDecimal(item.discountPercentage, 1, 0)} + '%'"></span>-->
                                                 </div>
                                             </div>
-                                            <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                    <span class="text-success fw-bold"
-                                          th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></span>
-                                            </div>
+<!--                                            <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">-->
+<!--                                    <span class="text-success fw-bold"-->
+<!--                                          th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></span>-->
+<!--                                            </div>-->
                                         </div>
                                     </div>
 
@@ -304,7 +304,7 @@
                                     <div th:if="${hasDiscounts}" class="d-flex justify-content-between mb-2 text-success">
                             <span>
                                 <i class="bi bi-percent me-1"></i>
-                                <span th:if="${userTypeDisplay}">Скидка (<span th:text="${userTypeDisplay}"></span>):</span>
+<!--                                <span th:if="${userTypeDisplay}">Скидка (<span th:text="${userTypeDisplay}"></span>):</span>-->
                                 <span th:unless="${userTypeDisplay}">Скидка:</span>
                             </span>
                                         <span class="fw-bold">-<span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2)}"></span> ₽</span>

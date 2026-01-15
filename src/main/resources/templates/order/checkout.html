@@ -73,9 +73,9 @@
 
                                 <!-- Скидка на товар -->
                                 <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                    <span class="badge bg-danger discount-badge">
-                                        -<span th:text="${#numbers.formatDecimal(item.discountPercentage, 1, 0)}"></span>%
-                                    </span>
+<!--                                    <span class="badge bg-danger discount-badge">-->
+<!--                                        -<span th:text="${#numbers.formatDecimal(item.discountPercentage, 1, 0)}"></span>%-->
+<!--                                    </span>-->
                                     <small class="text-success ms-1">
                                         <i class="bi bi-piggy-bank"></i>
                                         Экономия: <span th:text="${#numbers.formatDecimal(item.discountAmount, 1, 2)}"></span> ₽
@@ -193,8 +193,8 @@
                     <div th:if="${hasDiscounts}" class="d-flex justify-content-between mb-2 text-success">
                         <span>
                             <i class="bi bi-percent"></i>
-                            <span th:if="${userTypeDisplay}">Скидка (<span th:text="${userTypeDisplay}"></span>):</span>
-                            <span th:unless="${userTypeDisplay}">Скидка:</span>
+<!--                            <span th:if="${userTypeDisplay}">Скидка (<span th:text="${userTypeDisplay}"></span>):</span>-->
+<!--                            <span th:unless="${userTypeDisplay}">Скидка:</span>-->
                         </span>
                         <span class="fw-bold">-<span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2)}"></span> ₽</span>
                     </div>
@@ -215,9 +215,9 @@
                             <i class="bi bi-piggy-bank me-2"></i>
                             <div>
                                 <strong>Ваша экономия: <span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2)}"></span> ₽</strong>
-                                <div th:if="${userTypeDisplay}" class="extra-small">
-                                    Благодаря вашей скидке как <span th:text="${userTypeDisplay}"></span>
-                                </div>
+<!--                                <div th:if="${userTypeDisplay}" class="extra-small">-->
+<!--                                    Благодаря вашей скидке как <span th:text="${userTypeDisplay}"></span>-->
+<!--                                </div>-->
                             </div>
                         </div>
                     </div>
