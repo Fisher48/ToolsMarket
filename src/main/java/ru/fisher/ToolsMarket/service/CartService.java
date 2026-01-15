@@ -456,6 +456,16 @@ public class CartService {
         cartItemRepository.deleteByCartId(cartId);
     }
 
+    public boolean isProductInCart(Long cartId, Long productId) {
+        return cartItemRepository.existsByCartIdAndProductId(cartId, productId);
+    }
+
+    public int getProductQuantityInCart(Long cartId, Long productId) {
+        return cartItemRepository.findByCartIdAndProductId(cartId, productId)
+                .map(CartItem::getQuantity)
+                .orElse(0);
+    }
+
     /**
      * DTO для полных данных корзины
      */

@@ -16,6 +16,7 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     List<CartItem> findAllByCart(Cart cart);
     List<CartItem> findByCartId(Long cartId);
     Optional<CartItem> findByCartIdAndProductId(Long cartId, Long productId);
+    boolean existsByCartIdAndProductId(Long cartId, Long productId);
     
     @Modifying
     @Query("DELETE FROM CartItem ci WHERE ci.cart.id = :cartId")

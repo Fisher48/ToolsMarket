@@ -16,6 +16,18 @@
         .tab-content {
             min-height: 200px;
         }
+        .cart-management-widget .square-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bg-light-success {
+            background-color: rgba(25, 135, 84, 0.1);
+            border-color: rgba(25, 135, 84, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -73,6 +85,12 @@
         </ol>
     </nav>
 
+    <div th:if="${showCartMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        <span th:text="${cartMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <!-- Product Details -->
     <div class="row">
         <!-- Product Images -->
@@ -117,19 +135,13 @@
                         <span class="h2 text-danger"
                               th:if="${product.formattedDiscountedPrice != null}"
                               th:text="${product.formattedDiscountedPrice}"></span>
-                        <span class="badge bg-danger ms-2 fs-6"
-                              th:if="${product.discountPercentage != null}"
-                              th:text="'-' + ${#numbers.formatDecimal(product.discountPercentage, 1, 0)} + '%'">
-            Скидка
-        </span>
+<!--                        <span class="badge bg-danger ms-2 fs-6"-->
+<!--                              th:if="${product.discountPercentage != null}"-->
+<!--                              th:text="'-' + ${#numbers.formatDecimal(product.discountPercentage, 1, 0)} + '%'">-->
+<!--                            Скидка-->
+<!--                        </span>-->
                     </div>
-                    <div th:if="${userTypeDisplay != null and !userTypeDisplay.isEmpty()}"
-                         class="text-success small">
-                        <i class="bi bi-tag"></i>
-                        <span>Ваша скидка как
-            <span th:text="${userTypeDisplay}">пользователь</span>
-        </span>
-                    </div>
+
                 </div>
                 <div th:unless="${product.hasDiscount != null and product.hasDiscount}">
                     <span class="h2 text-primary"
@@ -164,18 +176,88 @@
             </p>
 
             <!-- Add to Cart -->
-            <div class="d-grid gap-2 d-md-flex mb-4">
-                <form th:action="@{/cart/add}" method="post" class="flex-grow-1">
-                    <input type="hidden" name="productId" th:value="${product.id}">
-                    <input type="hidden" name="quantity" id="quantityInput" value="1">
+            <!-- Блок с количеством и кнопкой -->
+            <div class="mb-4">
+                <div th:if="${isInCart}" class="cart-management-widget">
+                    <!-- Индикатор в корзине -->
+                    <div class="alert alert-success border-0 bg-light-success mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">Товар добавлен в корзину</h6>
+                                <p class="mb-0">
+                                    Текущее количество:
+                                    <span class="badge bg-success rounded-pill" th:text="${cartQuantity}"></span> шт.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                    <button th:if="${product.active}"
-                            type="submit"
-                            class="btn btn-primary btn-lg w-100"
-                            id="addToCartBtn">
-                        <i class="bi bi-cart-plus"></i> Добавить в корзину
-                    </button>
-                </form>
+                    <!-- Счетчик -->
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="fw-medium">Изменить количество:</span>
+                        <div class="d-flex align-items-center">
+                            <!-- Уменьшить -->
+                            <form th:action="@{/cart/decrease}" method="post" class="me-2">
+                                <input type="hidden" name="productId" th:value="${product.id}">
+                                <input type="hidden" name="redirectTo" value="product">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm square-btn">
+                                    <i class="bi bi-dash-lg"></i>
+                                </button>
+                            </form>
+
+                            <!-- Количество -->
+                            <span class="mx-3 fw-bold fs-5" th:text="${cartQuantity}"></span>
+
+                            <!-- Увеличить -->
+                            <form th:action="@{/cart/add}" method="post" class="ms-2">
+                                <input type="hidden" name="productId" th:value="${product.id}">
+                                <input type="hidden" name="quantity" value="1">
+                                <input type="hidden" name="redirectTo" value="product">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm square-btn">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Кнопки действий -->
+                    <div class="d-grid gap-2">
+                        <!-- Перейти в корзину -->
+                        <a th:href="@{/cart}" class="btn btn-primary">
+                            <i class="bi bi-cart-check me-2"></i>Перейти к оформлению
+                        </a>
+
+                        <!-- Удалить из корзины -->
+                        <form th:action="@{/cart/remove}" method="post">
+                            <input type="hidden" name="productId" th:value="${product.id}">
+                            <input type="hidden" name="redirectTo" value="product">
+                            <button type="submit"
+                                    class="btn btn-outline-danger w-100"
+                                    onclick="return confirm('Удалить товар из корзины?')">
+                                <i class="bi bi-trash me-2"></i>Удалить из корзины
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Если товара нет в корзине -->
+                <div th:unless="${isInCart}">
+                    <form th:action="@{/cart/add}" method="post">
+                        <input type="hidden" name="productId" th:value="${product.id}">
+                        <input type="hidden" name="quantity" value="1">
+                        <input type="hidden" name="redirectTo" value="product">
+
+                        <button th:if="${product.active}"
+                                type="submit"
+                                class="btn btn-primary btn-lg w-100 py-3 fw-bold">
+                            <i class="bi bi-cart-plus me-2"></i>Добавить в корзину
+                        </button>
+                    </form>
+                </div>
+            </div>
 
                 <button th:if="${product.active != null and !product.active}"
                         class="btn btn-secondary btn-lg flex-grow-1" disabled>
@@ -291,6 +373,18 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- И скрипт для автоматического скрытия: -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const alert = document.querySelector('.alert-success');
+        if (alert) {
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
+        }
+    });
+</script>
 
 <script>
     function changeQuantity(delta) {

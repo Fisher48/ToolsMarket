@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.fisher.ToolsMarket.dto.CartItemDto;
 import ru.fisher.ToolsMarket.models.Cart;
+import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.service.CartService;
 import ru.fisher.ToolsMarket.service.ProductService;
@@ -22,7 +23,6 @@ import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Controller
@@ -104,8 +104,11 @@ public class CartController {
     @PostMapping("/add")
     public String addToCart(@RequestParam Long productId,
                             @RequestParam(defaultValue = "1") Integer quantity,
+                            @RequestParam(defaultValue = "cart") String redirectTo,
                             @CookieValue(value = "sessionId", required = false) String sessionId,
-                            HttpServletResponse response, HttpSession session) {
+                            HttpServletResponse response, HttpSession session,
+                            @RequestHeader(value = "Referer", required = false) String referer,
+                            RedirectAttributes redirectAttributes) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String finalSessionId = getOrCreateSessionId(sessionId, response);
@@ -117,13 +120,21 @@ public class CartController {
         // Обновляем счетчик в сессии
         updateCartItemCountInSession(session, cart);
 
-        return "redirect:/cart";
+        // Добавляем сообщение об успехе
+        if ("product".equals(redirectTo) || (referer != null && referer.contains("/product/"))) {
+            redirectAttributes.addFlashAttribute("cartMessage", "Товар добавлен в корзину");
+        }
+
+        return determineRedirectUrl(redirectTo, productId, referer);
     }
 
     @PostMapping("/remove")
     public String removeFromCart(@RequestParam Long productId,
+                                 @RequestParam(defaultValue = "cart") String redirectTo,
                                  @CookieValue("sessionId") String sessionId,
-                                 HttpSession session) {
+                                 HttpSession session,
+                                 @RequestHeader(value = "Referer", required = false) String referer,
+                                 RedirectAttributes redirectAttributes) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(authentication);
@@ -133,13 +144,21 @@ public class CartController {
         // Обновляем счетчик в сессии
         updateCartItemCountInSession(session, cart);
 
-        return "redirect:/cart";
+        // Добавляем сообщение
+        if ("product".equals(redirectTo) || (referer != null && referer.contains("/product/"))) {
+            redirectAttributes.addFlashAttribute("cartMessage", "Товар удален из корзины");
+        }
+
+        return determineRedirectUrl(redirectTo, productId, referer);
     }
 
     @PostMapping("/decrease")
     public String decreaseQuantity(@RequestParam Long productId,
+                                   @RequestParam(defaultValue = "cart") String redirectTo,
                                    @CookieValue("sessionId") String sessionId,
-                                   HttpSession session) {
+                                   HttpSession session,
+                                   @RequestHeader(value = "Referer", required = false) String referer,
+                                   RedirectAttributes redirectAttributes) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(authentication);
@@ -149,7 +168,12 @@ public class CartController {
         // Обновляем счетчик в сессии
         updateCartItemCountInSession(session, cart);
 
-        return "redirect:/cart";
+        // Добавляем сообщение
+        if ("product".equals(redirectTo) || (referer != null && referer.contains("/product/"))) {
+            redirectAttributes.addFlashAttribute("cartMessage", "Количество уменьшено");
+        }
+
+        return determineRedirectUrl(redirectTo, productId, referer);
     }
 
     /**
@@ -228,4 +252,42 @@ public class CartController {
                 .sum();
         session.setAttribute("cartItemCount", totalItems);
     }
+
+    // Вспомогательный метод для определения редиректа
+    private String determineRedirectUrl(String redirectTo, Long productId, String referer) {
+        // 1. Если явно указано "product" - на страницу товара
+        if ("product".equals(redirectTo)) {
+            String productTitle = productService.findEntityById(productId)
+                    .map(Product::getTitle)
+                    .orElse(null);
+
+            if (productTitle != null) {
+                return "redirect:/product/" + productTitle;
+            }
+        }
+
+        // 2. Если явно указано "category" - остаемся в категории
+        if ("category".equals(redirectTo) && referer != null && referer.contains("/category/")) {
+            return "redirect:" + referer; // Остаемся на той же странице категории
+        }
+
+        // 3. Если пришли со страницы товара
+        if (referer != null && referer.contains("/product/")) {
+            return "redirect:" + referer;
+        }
+
+        // 4. Если пришли из корзины
+        if ("cart".equals(redirectTo) || (referer != null && referer.contains("/cart"))) {
+            return "redirect:/cart";
+        }
+
+        // 5. По умолчанию - остаемся на текущей странице если это категория
+        if (referer != null && referer.contains("/category/")) {
+            return "redirect:" + referer;
+        }
+
+        // 6. По умолчанию - в корзину
+        return "redirect:/cart";
+    }
+
 }

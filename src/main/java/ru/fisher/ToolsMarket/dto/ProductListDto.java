@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -34,6 +35,16 @@ public class ProductListDto {
     private BigDecimal discountPercentage;
     private BigDecimal discountedPrice;
     private boolean hasDiscount;
+
+    private boolean inCart;
+    private int cartQuantity;
+
+    // Метод для установки информации о корзине
+    public void setCartInfo(Map<Long, Integer> cartProductQuantities) {
+        Integer quantity = cartProductQuantities.get(this.id);
+        this.inCart = quantity != null && quantity > 0;
+        this.cartQuantity = quantity != null ? quantity : 0;
+    }
 
     // Метод для получения цены со скидкой
     public BigDecimal getDiscountedPrice() {

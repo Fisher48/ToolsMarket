@@ -23,6 +23,106 @@
             height: 200px;
             object-fit: cover;
         }
+
+        .cart-control-card {
+            margin-top: 0.5rem;
+        }
+
+        /* Индикатор в корзине */
+        .cart-status-indicator {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 0.75rem;
+            border: 1px solid #e9ecef;
+        }
+
+        .cart-status-icon {
+            background: #d1e7dd;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Счетчик как на Wildberries/Ozon */
+        .cart-counter-widget {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .cart-counter-controls {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 2px;
+        }
+
+        .cart-counter-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ced4da;
+            background: white;
+        }
+
+        .cart-counter-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .cart-counter-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .cart-quantity-display {
+            min-width: 36px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        /* Кнопки */
+        .add-to-cart-main-btn {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .add-to-cart-main-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+        }
+
+        .cart-to-checkout-btn {
+            background: linear-gradient(135deg, #198754 0%, #157347 100%);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .quick-add-more-btn {
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        /* Анимации */
+        @keyframes cartAddSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .cart-add-success {
+            animation: cartAddSuccess 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -165,6 +265,9 @@
                 <!-- Products Grid -->
                 <div class="row" th:if="${not #lists.isEmpty(products.content)}">
                     <div class="col-xl-3 col-lg-4 col-md-6 mb-4" th:each="product : ${products.content}">
+                        <!-- Кликабельная область карточки -->
+                        <a th:href="@{/product/{title}(title=${product.title})}"
+                           class="text-decoration-none text-dark">
                         <div class="card product-card h-100 border-0 shadow-sm">
                             <!-- Product Image -->
                             <div class="position-relative">
@@ -212,11 +315,11 @@
                                                   th:text="${product.formattedPrice}">0 ₽
                                             </span>
                                             <!-- Бейдж скидки -->
-                                            <span class="badge bg-danger ms-2"
-                                                  th:if="${product.discountPercentage != null}"
-                                                  th:text="'-' + ${#numbers.formatDecimal
-                                                  (product.discountPercentage, 1, 0)} + '%'">Скидка
-                                            </span>
+<!--                                            <span class="badge bg-danger ms-2"-->
+<!--                                                  th:if="${product.discountPercentage != null}"-->
+<!--                                                  th:text="'-' + ${#numbers.formatDecimal-->
+<!--                                                  (product.discountPercentage, 1, 0)} + '%'">Скидка-->
+<!--                                            </span>-->
                                         </div>
                                         <div th:unless="${product.hasDiscount != null and product.hasDiscount}">
                                             <span class="h2 text-primary"
@@ -229,29 +332,126 @@
                                     </div>
 
                                     <!-- Дополнительная информация о скидке -->
-                                    <div th:if="${product.hasDiscount and userTypeDisplay != null}"
-                                         class="text-success small mb-2">
-                                        <i class="bi bi-tag"></i>
-                                        <span th:text="'Ваша скидка как ' + ${userTypeDisplay}"></span>
-                                    </div>
+<!--                                    <div th:if="${product.hasDiscount and userTypeDisplay != null}"-->
+<!--                                         class="text-success small mb-2">-->
+<!--                                        <i class="bi bi-tag"></i>-->
+<!--                                        <span th:text="'Ваша скидка как ' + ${userTypeDisplay}"></span>-->
+<!--                                    </div>-->
 
                                     <!-- Actions -->
                                     <div class="d-grid gap-2">
-                                        <a th:href="@{/product/{title}(title=${product.title})}"
-                                           class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-eye"></i> Подробнее
-                                        </a>
+<!--                                        <a th:href="@{/product/{title}(title=${product.title})}"-->
+<!--                                           class="btn btn-outline-primary btn-sm">-->
+<!--                                            <i class="bi bi-eye"></i> Подробнее-->
+<!--                                        </a>-->
 
-                                        <!-- Форма добавления в корзину -->
-                                        <form th:action="@{/cart/add}" method="post" class="d-inline">
-                                            <input type="hidden" name="productId" th:value="${product.id}">
-                                            <button th:if="${product.active}"
-                                                    type="submit"
-                                                    class="btn btn-primary btn-sm w-100"
-                                                    onclick="showCartSuccess(this)">
-                                                <i class="bi bi-cart-plus"></i> В корзину
-                                            </button>
-                                        </form>
+                                        <!-- Блок с управлением корзиной в карточке товара -->
+                                        <div class="cart-control-card">
+                                            <!-- Если товар уже в корзине -->
+                                            <div th:if="${cartProductQuantities[product.id] != null}" class="cart-item-controls">
+                                                <!-- Компактный индикатор -->
+                                                <div class="cart-status-indicator mb-3">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="cart-status-icon me-2">
+                                                                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                                            </div>
+                                                            <div>
+                                                                <span class="text-muted small">В вашей корзине</span>
+                                                                <div class="d-flex align-items-center">
+                                                                    <strong class="me-2" th:text="${cartProductQuantities[product.id]}"></strong>
+                                                                    <span class="text-muted small">шт.</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Быстрое удаление -->
+                                                        <form th:action="@{/cart/remove}" method="post" class="d-inline">
+                                                            <input type="hidden" name="productId" th:value="${product.id}">
+                                                            <input type="hidden" name="redirectTo" value="category">
+                                                            <button type="submit"
+                                                                    class="btn btn-sm btn-link text-danger p-0"
+                                                                    title="Удалить из корзины"
+                                                                    onclick="return confirm('Убрать товар из корзины?')">
+                                                                <i class="bi bi-x-lg"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Счетчик как на маркетплейсах -->
+                                                <div class="cart-counter-widget mb-3">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <span class="text-muted small">Количество:</span>
+                                                        <div class="d-flex align-items-center cart-counter-controls">
+                                                            <!-- Уменьшить -->
+                                                            <form th:action="@{/cart/decrease}" method="post" class="d-inline">
+                                                                <input type="hidden" name="productId" th:value="${product.id}">
+                                                                <input type="hidden" name="redirectTo" value="category">
+                                                                <button type="submit"
+                                                                        class="btn btn-outline-secondary btn-sm cart-counter-btn"
+                                                                        th:disabled="${cartProductQuantities[product.id] < 0}"
+                                                                        title="Уменьшить">
+                                                                    <i class="bi bi-dash-lg"></i>
+                                                                </button>
+                                                            </form>
+
+                                                            <!-- Количество -->
+                                                            <span class="cart-quantity-display mx-2 fw-bold"
+                                                                  th:text="${cartProductQuantities[product.id]}"></span>
+
+                                                            <!-- Увеличить -->
+                                                            <form th:action="@{/cart/add}" method="post" class="d-inline">
+                                                                <input type="hidden" name="productId" th:value="${product.id}">
+                                                                <input type="hidden" name="quantity" value="1">
+                                                                <input type="hidden" name="redirectTo" value="category">
+                                                                <button type="submit"
+                                                                        class="btn btn-outline-secondary btn-sm cart-counter-btn"
+                                                                        title="Увеличить">
+                                                                    <i class="bi bi-plus-lg"></i>
+                                                                </button>
+                                                            </form>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Кнопка перехода в корзину -->
+                                                <a th:href="@{/cart}" class="btn btn-success w-100 mb-2 cart-to-checkout-btn">
+                                                    <i class="bi bi-basket me-2"></i>Перейти в корзину
+                                                </a>
+
+                                                <!-- Кнопка быстрого добавления еще -->
+<!--                                                <form th:action="@{/cart/add}" method="post">-->
+<!--                                                    <input type="hidden" name="productId" th:value="${product.id}">-->
+<!--                                                    <input type="hidden" name="quantity" value="1">-->
+<!--                                                    <input type="hidden" name="redirectTo" value="category">-->
+<!--                                                    <button type="submit"-->
+<!--                                                            class="btn btn-outline-primary w-100 quick-add-more-btn">-->
+<!--                                                        <i class="bi bi-plus-circle me-2"></i>Добавить еще один-->
+<!--                                                    </button>-->
+<!--                                                </form>-->
+                                            </div>
+
+                                            <!-- Если товара нет в корзине -->
+                                            <div th:unless="${cartProductQuantities[product.id] != null}">
+                                                <form th:action="@{/cart/add}" method="post">
+                                                    <input type="hidden" name="productId" th:value="${product.id}">
+                                                    <input type="hidden" name="quantity" value="1">
+                                                    <input type="hidden" name="redirectTo" value="category">
+
+                                                    <button th:if="${product.active}"
+                                                            type="submit"
+                                                            class="btn btn-primary w-100 py-2 add-to-cart-main-btn">
+                                                        <i class="bi bi-cart-plus me-2"></i>В корзину
+                                                    </button>
+
+                                                    <button th:if="${!product.active}"
+                                                            class="btn btn-secondary w-100 py-2" disabled>
+                                                        <i class="bi bi-clock me-2"></i>Сообщить о поступлении
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
 
                                         <button th:if="${!product.active}"
                                                 class="btn btn-secondary btn-sm" disabled>
@@ -261,6 +461,7 @@
                                 </div>
                             </div>
                         </div>
+                        </a>
                     </div>
                 </div>
 
@@ -344,6 +545,49 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- JavaScript для улучшения UX -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработка кнопок корзины в карточках
+        const cartButtons = document.querySelectorAll('.cart-counter-btn, .quick-add-more-btn, .add-to-cart-main-btn');
+
+        cartButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (this.type === 'submit') {
+                    const originalText = this.innerHTML;
+                    const productId = this.closest('form').querySelector('input[name="productId"]').value;
+
+                    // Анимация нажатия
+                    this.classList.add('cart-add-success');
+                    setTimeout(() => {
+                        this.classList.remove('cart-add-success');
+                    }, 300);
+
+                    // Если это AJAX - можно добавить обработку
+                    // this.disabled = true;
+                    // this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                }
+            });
+        });
+
+        // Подтверждение удаления с улучшенным UX
+        const deleteButtons = document.querySelectorAll('button[onclick*="confirm"]');
+        deleteButtons.forEach(button => {
+            const originalOnClick = button.getAttribute('onclick');
+            button.removeAttribute('onclick');
+
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                // Кастомное подтверждение
+                if (confirm('Убрать товар из корзины?')) {
+                    this.closest('form').submit();
+                }
+            });
+        });
+    });
+</script>
 
 <script>
     function addToCart(button) {
