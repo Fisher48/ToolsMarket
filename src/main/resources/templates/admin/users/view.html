@@ -62,8 +62,8 @@
                                 <dt class="col-sm-4">Тип:</dt>
                                 <dd class="col-sm-8">
                                     <span class="badge"
-                                          th:class="'bg-' + ${user.userType == T(ru.fisher.ToolsMarket.models.UserType).REGULAR} ? 'secondary' : 'primary'">
-                                        <span th:text="${user.userType.displayName}"></span>
+                                          th:class="'badge-user-type-' + ${user.userType?.getDisplayName()} ?: 'secondary'">
+                                        <span th:text="${user.userType?.getDisplayName() ?: 'Не указан'}"></span>
                                     </span>
                                 </dd>
 

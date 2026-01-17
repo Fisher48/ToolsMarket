@@ -5,7 +5,7 @@
 </head>
 <body>
 
-<!-- Фрагмент с товарами заказа (с изображениями и ссылками) -->
+<!-- Фрагмент с товарами заказа -->
 <div th:fragment="order-items-table(orderItems, totalDiscount, originalTotal, order)">
     <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -59,48 +59,53 @@
                           th:text="${item.quantity}"></span>
                 </td>
 
-                <!-- Цена за единицу - ОЧЕНЬ КОМПАКТНО -->
+                <!-- Цена за единицу -->
                 <td class="text-end align-middle">
-                    <div th:if="${item.isHasDiscount()}">
+                    <div th:if="${item.hasDiscount}">
                         <div class="d-flex flex-column align-items-end">
                             <!-- Основная цена со скидкой -->
                             <div class="text-success fw-bold"
-                                 th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></div>
-                            <!-- Компактная строка: старая цена + процент -->
+                                 th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}">
+                            </div>
+                            <!-- Старая цена -->
                             <div class="d-flex align-items-center">
-                <span class="text-muted text-decoration-line-through me-2 small"
-                      th:text="${#numbers.formatDecimal(item.originalPrice, 1, 2) + ' ₽'}"></span>
-<!--                                <span class="badge bg-danger small"-->
-<!--                                      th:text="'-' + ${#numbers.formatDecimal(item.discountPercentage, 1, 0)} + '%'"></span>-->
+                                <span class="text-muted text-decoration-line-through me-2 small"
+                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.originalPrice) + ' ₽'}">
+                                </span>
                             </div>
                         </div>
                     </div>
-                    <div th:unless="${item.isHasDiscount()}">
+                    <div th:unless="${item.hasDiscount}">
                         <div class="text-success fw-bold"
-                             th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></div>
+                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.originalPrice) + ' ₽'}">
+                        </div>
                     </div>
                 </td>
 
-                <!-- Общая сумма - ОЧЕНЬ КОМПАКТНО -->
+                <!-- Общая сумма -->
                 <td class="text-end align-middle">
-                    <div th:if="${item.isHasDiscount()}">
+                    <div th:if="${item.hasDiscount}">
                         <div class="d-flex flex-column align-items-end">
                             <!-- Основная сумма со скидкой -->
                             <div class="fw-bold text-primary"
-                                 th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></div>
-                            <!-- Компактная строка: старая сумма + скидка -->
+                                 th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.subtotal) + ' ₽'}">
+                            </div>
+                            <!-- Старая сумма + скидка -->
                             <div class="d-flex align-items-center">
-                <span class="text-muted text-decoration-line-through me-2 small"
-                      th:text="${#numbers.formatDecimal(item.getTotalWithoutDiscount(), 1, 2) + ' ₽'}"></span>
+                                <span class="text-muted text-decoration-line-through me-2 small"
+                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.getTotalPrice()) + ' ₽'}">
+                                </span>
                                 <span class="text-success small">
-                    -<span th:text="${#numbers.formatDecimal(item.discountAmount, 1, 2) + ' ₽'}"></span>
-                </span>
+                                    -<span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.discountAmount) + ' ₽'}">
+                                    </span>
+                                </span>
                             </div>
                         </div>
                     </div>
-                    <div th:unless="${item.isHasDiscount()}">
+                    <div th:unless="${item.hasDiscount}">
                         <div class="fw-bold"
-                             th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></div>
+                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.getTotalPrice()) + ' ₽'}">
+                        </div>
                     </div>
                 </td>
             </tbody>
@@ -123,16 +128,21 @@
                     <div class="d-flex flex-column align-items-end">
                         <!-- Сумма без скидки -->
                         <div class="mb-1">
-                            <span th:text="${#numbers.formatDecimal(originalTotal, 1, 2) + ' ₽'}"></span>
+                            <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(originalTotal) + ' ₽'}">
+                            </span>
                         </div>
                         <!-- Общая скидка -->
                         <div th:if="${totalDiscount > 0}" class="mb-1 text-success">
-                            <strong>-<span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2) + ' ₽'}"></span></strong>
+                            <strong>
+                                -<span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}">
+                                </span>
+                            </strong>
                         </div>
                         <!-- Итоговая сумма -->
                         <div class="mt-2">
                             <strong class="h4 text-primary"
-                                    th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}"></strong>
+                                    th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(order.totalAmount) + ' ₽'}">
+                            </strong>
                         </div>
                     </div>
                 </td>
@@ -142,7 +152,7 @@
     </div>
 </div>
 
-<!-- Фрагмент статуса заказа -->
+<!-- Остальные фрагменты без изменений -->
 <div th:fragment="order-status-timeline(order)">
     <div class="order-timeline mt-3">
         <div th:class="${order.status.toString() == 'CREATED' ? 'timeline-item active' : 'timeline-item'}">
@@ -166,7 +176,6 @@
     </div>
 </div>
 
-<!-- Фрагмент бейджа статуса -->
 <div th:fragment="order-status-badge(order)">
     <span th:if="${order.status.toString() == 'CREATED'}"
           class="badge bg-primary py-2 px-3 fs-6">

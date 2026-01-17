@@ -78,8 +78,13 @@ public class UserController {
         if (userId == null) {
             return "redirect:/auth/login";
         }
+        // Получаем текущего пользователя
+        User currentUser = userService.findById(userId).orElseThrow();
+
         List<Order> orders = orderService.getUserOrders(userId);
         model.addAttribute("orders", orders);
+        model.addAttribute("isAuthenticated", true);
+        model.addAttribute("currentUser", currentUser);
         return "profile/orders";
     }
 
@@ -98,6 +103,9 @@ public class UserController {
         if (!order.getUser().getId().equals(userId)) {
             return "redirect:/profile/orders";
         }
+
+        // Получаем текущего пользователя
+        User currentUser = userService.findById(userId).orElseThrow();
 
         // ИСПРАВЛЕНО: Используем метод БЕЗ DiscountService
         List<OrderItemDto> orderItemDtos = order.getOrderItems()
@@ -137,6 +145,8 @@ public class UserController {
         model.addAttribute("totalDiscount", totalDiscount);
         model.addAttribute("hasDiscounts", hasDiscounts);
         model.addAttribute("totalWithoutDiscount", totalWithoutDiscount); // Добавляем
+        model.addAttribute("isAuthenticated", true);
+        model.addAttribute("currentUser", currentUser);
 
         // Тип пользователя для отображения
         if (order.getUser().getUserType() != null) {

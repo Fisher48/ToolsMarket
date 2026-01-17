@@ -149,7 +149,8 @@
                             <small class="text-muted">Активных заказов</small>
                         </div>
                         <div class="col">
-                            <h5 th:text="${#numbers.formatDecimal(totalSpent, 1, 2) + ' ₽'}">0 ₽</h5>
+                            <h5 th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                            .format(totalSpent) + ' ₽'}">0 ₽</h5>
                             <small class="text-muted">Всего потрачено</small>
                         </div>
                     </div>
@@ -236,13 +237,7 @@
 </main>
 
 <!-- Footer -->
-<footer class="bg-dark text-light mt-5">
-    <div class="container py-4">
-        <div class="text-center">
-            <p class="mb-0">&copy; 2025 ToolsMarket. Все права защищены.</p>
-        </div>
-    </div>
-</footer>
+<div th:replace="~{fragments/footer :: #site-footer}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

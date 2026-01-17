@@ -22,16 +22,8 @@
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/}">
-            <i class="bi bi-hammer"></i> ToolsMarket
-        </a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link" th:href="@{/profile}">← Назад в профиль</a>
-        </div>
-    </div>
-</nav>
+<!-- Header -->
+<div th:replace="~{fragments/header :: header}"></div>
 
 <main class="container my-5">
     <div class="row">
@@ -108,7 +100,8 @@
 
                                     <div class="text-end">
                                         <h5 class="text-primary mb-1"
-                                            th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}">
+                                            th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                            .format(order.totalPrice) + ' ₽'}">
                                             0 ₽
                                         </h5>
                                         <p class="text-muted mb-2">

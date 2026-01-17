@@ -78,4 +78,21 @@ public class OrderItemDto {
                 ? originalPrice.multiply(BigDecimal.valueOf(quantity))
                 : unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
+
+    // В класс OrderItemDto добавьте:
+    public BigDecimal getTotalPrice() {
+        // Общая сумма без скидки
+        if (originalPrice != null && quantity != null) {
+            return originalPrice.multiply(BigDecimal.valueOf(quantity));
+        }
+        return BigDecimal.ZERO;
+    }
+
+    public BigDecimal getTotalPriceWithDiscount() {
+        // Общая сумма со скидкой
+        if (hasDiscount && subtotal != null) {
+            return subtotal;
+        }
+        return getTotalPrice(); // Без скидки - обычная сумма
+    }
 }
