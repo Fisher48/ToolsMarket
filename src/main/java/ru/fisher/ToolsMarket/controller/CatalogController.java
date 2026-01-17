@@ -52,6 +52,10 @@ public class CatalogController {
         List<CategoryDto> rootCategories = categoryService.getRootCategories();
         model.addAttribute("categories", rootCategories);
 
+        // Флаг авторизации
+        boolean isAuthenticated = userDetails != null;
+        model.addAttribute("isAuthenticated", isAuthenticated);
+
         // Добавляем информацию о пользователе и скидках
         if (userDetails != null) {
             userService.findByUsername(userDetails.getUsername())
@@ -123,6 +127,8 @@ public class CatalogController {
     public String search(@RequestParam(required = false) String q,
                          @RequestParam(defaultValue = "0") int page,
                          @AuthenticationPrincipal UserDetails userDetails,
+                         @CookieValue(value = "sessionId", required = false) String sessionId,
+                         HttpServletResponse response,
                          Model model) {
 
         User user = null;
@@ -138,9 +144,80 @@ public class CatalogController {
             searchResults = productService.searchWithDiscounts(q.trim(), user, PageRequest.of(page, 12));
         }
 
+        // === ТОЧНО ТАК ЖЕ КАК В КАТЕГОРИЯХ: Проверка товаров в корзине ===
+        Map<Long, Integer> cartProductQuantities = new HashMap<>();
+
+        try {
+            // Получаем sessionId или создаем новый
+            if (sessionId == null || sessionId.isEmpty()) {
+                sessionId = UUID.randomUUID().toString();
+                Cookie cookie = new Cookie("sessionId", sessionId);
+                cookie.setPath("/");
+                response.addCookie(cookie);
+            }
+
+            // Получаем ID пользователя
+            Long userId = user != null ? user.getId() : null;
+
+            // Получаем корзину
+            Cart cart = cartService.getOrCreateCart(userId, sessionId);
+
+            // Получаем все товары в корзине
+            List<CartItemDto> cartItems = cartService.getCartItems(cart.getId());
+
+            // Создаем мапу productId -> quantity
+            for (CartItemDto cartItem : cartItems) {
+                if (cartItem.getProductId() != null) {
+                    cartProductQuantities.put(cartItem.getProductId(), cartItem.getQuantity());
+                }
+            }
+
+        } catch (Exception e) {
+            log.warn("Ошибка при проверке корзины: {}", e.getMessage());
+        }
+
+        // === Добавляем информацию о товарах в корзине в каждый продукт ===
+        List<ProductListDto> productsWithCartInfo = searchResults.getContent().stream()
+                .map(product -> {
+                    // Создаем копию продукта с информацией о корзине
+                    ProductListDto enhancedProduct = new ProductListDto();
+
+                    // Копируем все поля из оригинального продукта
+                    BeanUtils.copyProperties(product, enhancedProduct);
+
+                    // Добавляем информацию о корзине
+                    Integer cartQuantity = cartProductQuantities.get(product.getId());
+                    if (cartQuantity != null && cartQuantity > 0) {
+                        enhancedProduct.setInCart(true);
+                        enhancedProduct.setCartQuantity(cartQuantity);
+                    } else {
+                        enhancedProduct.setInCart(false);
+                        enhancedProduct.setCartQuantity(0);
+                    }
+
+                    return enhancedProduct;
+                })
+                .toList();
+
+        // Создаем новую страницу с обновленными продуктами
+        Page<ProductListDto> enhancedProducts = new PageImpl<>(
+                productsWithCartInfo,
+                searchResults.getPageable(),
+                searchResults.getTotalElements()
+        );
+
+        // === ДОБАВЛЕНО: Данные для хедера ===
+        if (user != null) {
+            model.addAttribute("isAuthenticated", true);
+            model.addAttribute("currentUser", user);
+        } else {
+            model.addAttribute("isAuthenticated", false);
+        }
+
         model.addAttribute("query", q);
-        model.addAttribute("results", searchResults);
+        model.addAttribute("results", enhancedProducts);
         model.addAttribute("resultsCount", searchResults.getTotalElements());
+        model.addAttribute("cartProductQuantities", cartProductQuantities);
 
         return "catalog/search";
     }

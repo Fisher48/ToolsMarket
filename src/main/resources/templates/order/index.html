@@ -6,7 +6,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <style>
-        /* Стили как в предыдущем улучшенном варианте */
         .product-image {
             width: 60px;
             height: 60px;
@@ -54,13 +53,9 @@
     </style>
 </head>
 <body>
-<!-- Простой header для публичного доступа -->
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" th:href="@{/}"><i class="bi bi-hammer"></i> ToolsMarket</a>
-        <div class="text-white">Заказ #<span th:text="${order.orderNumber}"></span></div>
-    </div>
-</nav>
+
+<!-- Header -->
+<div th:replace="~{fragments/header :: header}"></div>
 
 <main class="container my-4">
     <div class="row">
@@ -75,12 +70,101 @@
                         </small>
                     </div>
 
-                    <!-- Товары заказа (используем фрагмент со всеми параметрами) -->
-                    <div th:replace="~{fragments/order-fragments :: order-items-table(
-                        orderItems=${orderItems},
-                        totalDiscount=${totalDiscount},
-                        originalTotal=${originalTotal},
-                        order=${order})}"></div>
+                    <!-- Таблица товаров заказа -->
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th style="width: 60px">Фото</th>
+                                <th>Товар</th>
+                                <th class="text-center">Кол-во</th>
+                                <th class="text-end">Цена</th>
+                                <th class="text-end">Сумма</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item : ${orderItems}">
+                                <td>
+                                    <img th:if="${item.productImageUrl}"
+                                         th:src="${item.productImageUrl}"
+                                         class="product-image"
+                                         th:alt="${item.productName}">
+                                    <div th:unless="${item.productImageUrl}" class="product-image d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-tools text-muted"></i>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a th:href="@{'/product/' + ${item.productTitle}}"
+                                       class="text-decoration-none text-dark product-link">
+                                        <span th:text="${item.productName}"></span>
+                                    </a>
+                                    <br>
+                                    <small class="text-muted" th:text="${item.productSku}"></small>
+                                </td>
+                                <td class="text-center" th:text="${item.quantity} + ' шт.'"></td>
+                                <td class="text-end">
+                                    <div th:if="${item.hasDiscount}">
+                                        <small class="text-muted text-decoration-line-through d-block">
+                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.originalPrice) + ' ₽'}">
+                                                </span>
+                                        </small>
+                                        <span class="text-danger">
+                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}">
+                                                </span>
+                                            </span>
+                                    </div>
+                                    <div th:unless="${item.hasDiscount}">
+                                            <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.originalPrice) + ' ₽'}">
+                                            </span>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div th:if="${item.hasDiscount}">
+                                        <small class="text-muted text-decoration-line-through d-block">
+                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}">
+                                                </span>
+                                        </small>
+                                        <span class="text-danger fw-bold">
+                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPriceWithDiscount) + ' ₽'}">
+                                                </span>
+                                            </span>
+                                    </div>
+                                    <div th:unless="${item.hasDiscount}">
+                                            <span class="fw-bold">
+                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}">
+                                                </span>
+                                            </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                            <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-end">Общая стоимость:</td>
+                                <td class="text-end">
+                                        <span class="fw-bold" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(originalTotal) + ' ₽'}">
+                                        </span>
+                                </td>
+                            </tr>
+                            <tr th:if="${hasDiscounts}">
+                                <td colspan="4" class="text-end text-success">Скидка:</td>
+                                <td class="text-end text-success">
+                                        <span class="fw-bold">-<span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}">
+                                        </span></span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" class="text-end fw-bold">Итого к оплате:</td>
+                                <td class="text-end">
+                                        <span class="fw-bold h5 text-primary">
+                                            <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(order.totalPrice) + ' ₽'}">
+                                            </span>
+                                        </span>
+                                </td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
 
                     <!-- Информация о скидке (если есть) -->
                     <div th:if="${hasDiscounts}" class="alert alert-success mt-4">
@@ -90,11 +174,8 @@
                                 <h6 class="mb-1">Ваша экономия</h6>
                                 <p class="mb-0">
                                     Благодаря скидке вы сэкономили
-                                    <strong th:text="${#numbers.formatDecimal(totalDiscount, 1, 2) + ' ₽'}"></strong>
-<!--                                    <span th:if="${userTypeDisplay != null}">-->
-<!--                                        по вашей персональной скидке как-->
-<!--                                        <strong th:text="${userTypeDisplay}"></strong>-->
-<!--                                    </span>-->
+                                    <strong th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}">
+                                    </strong>
                                 </p>
                             </div>
                         </div>
@@ -104,7 +185,7 @@
         </div>
 
         <div class="col-lg-4">
-            <!-- Статус заказа (используем фрагменты) -->
+            <!-- Статус заказа -->
             <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title mb-3">
@@ -114,12 +195,53 @@
 
                     <!-- Бейдж статуса -->
                     <div class="mb-3">
-                        <div th:replace="~{fragments/order-fragments :: order-status-badge(order=${order})}"></div>
+                        <span th:switch="${order.status}" class="badge rounded-pill">
+                            <span th:case="CREATED" class="badge bg-primary">Создан</span>
+                            <span th:case="PAID" class="badge bg-success">Оплачен</span>
+                            <span th:case="PROCESSING" class="badge bg-warning">В обработке</span>
+                            <span th:case="SHIPPED" class="badge bg-info">Отправлен</span>
+                            <span th:case="DELIVERED" class="badge bg-success">Доставлен</span>
+                            <span th:case="CANCELLED" class="badge bg-secondary">Отменен</span>
+                            <span th:case="REFUNDED" class="badge bg-danger">Возвращен</span>
+                        </span>
                     </div>
 
                     <!-- Таймлайн статусов -->
                     <h6 class="mb-2">История статусов:</h6>
-                    <div th:replace="~{fragments/order-fragments :: order-status-timeline(order=${order})}"></div>
+                    <div class="order-timeline">
+                        <div th:class="${order.status == 'CREATED'} ? 'timeline-item active' : 'timeline-item'">
+                            <small class="text-muted">Заказ создан</small><br>
+                            <small th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></small>
+                        </div>
+
+                        <th:block th:if="${order.paidAt}">
+                            <div th:class="${order.status == 'PAID'} ? 'timeline-item active' : 'timeline-item'">
+                                <small class="text-muted">Оплачен</small><br>
+                                <small th:text="${#temporals.format(order.paidAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            </div>
+                        </th:block>
+
+                        <th:block th:if="${order.shippedAt}">
+                            <div th:class="${order.status == 'SHIPPED'} ? 'timeline-item active' : 'timeline-item'">
+                                <small class="text-muted">Отправлен</small><br>
+                                <small th:text="${#temporals.format(order.shippedAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            </div>
+                        </th:block>
+
+                        <th:block th:if="${order.deliveredAt}">
+                            <div th:class="${order.status == 'DELIVERED'} ? 'timeline-item active' : 'timeline-item'">
+                                <small class="text-muted">Доставлен</small><br>
+                                <small th:text="${#temporals.format(order.deliveredAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            </div>
+                        </th:block>
+
+                        <th:block th:if="${order.cancelledAt}">
+                            <div th:class="${order.status == 'CANCELLED'} ? 'timeline-item active' : 'timeline-item'">
+                                <small class="text-muted">Отменен</small><br>
+                                <small th:text="${#temporals.format(order.cancelledAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            </div>
+                        </th:block>
+                    </div>
                 </div>
             </div>
 
@@ -150,7 +272,7 @@
                 </div>
             </div>
 
-            <!-- Действия для публичного доступа -->
+            <!-- Действия -->
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title mb-3">

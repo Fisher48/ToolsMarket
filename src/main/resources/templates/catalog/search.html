@@ -2,6 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Поиск - ToolsMarket</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
@@ -9,42 +11,152 @@
         .product-card {
             transition: transform 0.2s;
             height: 100%;
+            display: flex;
+            flex-direction: column;
         }
+
         .product-card:hover {
             transform: translateY(-5px);
         }
+
         .product-image {
             height: 200px;
             object-fit: cover;
         }
+
+        /* Блок управления корзиной */
+        .cart-control-container {
+            position: relative;
+            height: 44px;
+            margin-top: 10px;
+        }
+
+        .cart-controls, .add-to-cart-section {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .hidden {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+        }
+
+        .visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* Кнопки управления количеством */
+        .quantity-controls-full {
+            display: flex;
+            width: 100%;
+            border: 2px solid #005bff;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #005bff;
+            height: 44px;
+        }
+
+        .quantity-btn-full {
+            flex: 1;
+            height: 44px;
+            border: none;
+            background: #005bff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            padding: 0;
+        }
+
+        .quantity-btn-full:hover {
+            background: #004ecc;
+        }
+
+        .quantity-btn-full:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #6c757d;
+        }
+
+        .quantity-display-full {
+            flex: 1;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+            background: #005bff;
+            border-left: 2px solid #1e6bff;
+            border-right: 2px solid #1e6bff;
+        }
+
+        /* Кнопка добавления */
+        .add-to-cart-btn {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.2s;
+            height: 44px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-to-cart-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+        }
+
+        /* Анимации */
+        @keyframes cartAddSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .cart-add-success {
+            animation: cartAddSuccess 0.3s ease;
+        }
+
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Описание товара */
+        .product-description {
+            min-height: 40px;
+            max-height: 60px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-description-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
-<!-- Header -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/}">
-            <i class="bi bi-hammer"></i> ToolsMarket
-        </a>
-
-        <!-- Search Form -->
-        <form class="d-flex flex-grow-1 mx-4" th:action="@{/search}" method="get">
-            <div class="input-group">
-                <input class="form-control" type="search" name="q"
-                       th:value="${query}"
-                       placeholder="Поиск инструментов..."
-                       aria-label="Search">
-                <button class="btn btn-warning" type="submit">
-                    <i class="bi bi-search"></i>
-                </button>
-            </div>
-        </form>
-
-        <a th:href="@{/}" class="btn btn-outline-light btn-sm">
-            <i class="bi bi-arrow-left"></i> На главную
-        </a>
-    </div>
-</nav>
+<!-- Header с пользователем -->
+<div th:replace="~{fragments/header :: header}"></div>
 
 <main class="container my-4">
     <!-- Search Header -->
@@ -76,7 +188,7 @@
         </div>
     </div>
 
-    <!-- Search Results - показываем только если есть запрос И есть результаты -->
+    <!-- Search Results -->
     <div th:if="${query != null and !query.isEmpty() and resultsCount > 0}">
         <!-- Products Grid -->
         <div class="row">
@@ -84,66 +196,116 @@
                 <div class="card product-card h-100 border-0 shadow-sm">
                     <!-- Product Image -->
                     <div class="position-relative">
-                        <img th:if="${not #lists.isEmpty(product.images)}"
-                             th:src="${product.images[0].url}"
-                             class="card-img-top product-image"
-                             th:alt="${product.images[0].alt} ?: ${product.name}">
-                        <img th:if="${#lists.isEmpty(product.images)}"
-                             src="/static/placeholder.jpg"
-                             class="card-img-top product-image"
-                             alt="No image">
+                        <a th:href="@{/product/{title}(title=${product.title})}" class="text-decoration-none">
+                            <img th:if="${not #lists.isEmpty(product.images)}"
+                                 th:src="${product.images[0].url}"
+                                 class="card-img-top product-image"
+                                 th:alt="${product.images[0].alt} ?: ${product.name}">
+                            <img th:if="${#lists.isEmpty(product.images)}"
+                                 src="/static/placeholder.jpg"
+                                 class="card-img-top product-image"
+                                 alt="No image">
+                        </a>
 
                         <!-- Status badge -->
                         <div class="position-absolute top-0 end-0 m-2">
-                                <span th:if="${product.active}" class="badge bg-success">
-                                    <i class="bi bi-check-circle"></i> В наличии
-                                </span>
+                            <span th:if="${product.active}" class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> В наличии
+                            </span>
                             <span th:if="${!product.active}" class="badge bg-secondary">
-                                    <i class="bi bi-x-circle"></i> Недоступен
-                                </span>
+                                <i class="bi bi-x-circle"></i> Недоступен
+                            </span>
                         </div>
                     </div>
 
                     <!-- Product Info -->
                     <div class="card-body d-flex flex-column">
-                        <h6 class="card-title" th:text="${product.name}">Название товара</h6>
-                        <p class="card-text text-muted small flex-grow-1"
-                           th:text="${product.shortDescription ?: 'Описание товара отсутствует'}">
-                            Краткое описание
-                        </p>
+                        <a th:href="@{/product/{title}(title=${product.title})}"
+                           class="text-decoration-none text-dark">
+                            <h6 class="card-title" th:text="${product.name}">Название товара</h6>
+                        </a>
+
+                        <div class="product-description">
+                            <p class="card-text text-muted small mb-0 product-description-text"
+                               th:text="${product.shortDescription ?: 'Описание товара отсутствует'}">
+                                Краткое описание
+                            </p>
+                        </div>
 
                         <!-- Price and SKU -->
-                        <div class="mt-auto">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="h5 text-primary mb-0"
-                                          th:text="${#numbers.formatDecimal(product.price, 1, 2) + ' ₽'}">
-                                        0 ₽
-                                    </span>
+                        <div class="mt-auto pt-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <!-- Цена с форматированием -->
+                                <div>
+                                    <div th:if="${product.hasDiscount}">
+                                        <div class="d-flex align-items-center">
+                                            <span class="h5 text-danger mb-0 me-2"
+                                                  th:if="${product.formattedDiscountedPrice != null}"
+                                                  th:text="${product.formattedDiscountedPrice}">0 ₽</span>
+                                            <span class="text-muted text-decoration-line-through small"
+                                                  th:if="${product.formattedPrice != null}"
+                                                  th:text="${product.formattedPrice}">0 ₽</span>
+                                        </div>
+                                    </div>
+                                    <div th:unless="${product.hasDiscount != null and product.hasDiscount}">
+                                        <span class="h4 text-primary mb-0 price-formatted"
+                                              th:if="${product.formattedPrice != null}"
+                                              th:text="${product.formattedPrice}"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Артикул -->
                                 <small class="text-muted" th:if="${product.sku}"
                                        th:text="${product.sku}">Артикул</small>
                             </div>
+                        </div>
+                    </div>
 
-                            <!-- Actions -->
-                            <div class="d-grid gap-2">
-                                <a th:href="@{/product/{title}(title=${product.title})}"
-                                   class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-eye"></i> Подробнее
-                                </a>
-                                <!-- В карточке товара в результатах поиска -->
-                                <form th:action="@{/cart/add}" method="post" class="d-inline">
-                                    <input type="hidden" name="productId" th:value="${product.id}">
-                                    <button th:if="${product.active}"
-                                            type="submit"
-                                            class="btn btn-primary btn-sm w-100"
-                                            onclick="showCartSuccess(this)">
-                                        <i class="bi bi-cart-plus"></i> В корзину
-                                    </button>
-                                </form>
-                                <button th:if="${!product.active}"
-                                        class="btn btn-secondary btn-sm" disabled>
-                                    Недоступен
+                    <!-- Блок управления корзиной -->
+                    <div class="cart-control-container"
+                         th:data-product-id="${product.id}"
+                         th:data-initial-quantity="${cartProductQuantities[product.id] ?: 0}">
+
+                        <!-- Блок управления (если товар в корзине) -->
+                        <div class="cart-controls hidden"
+                             th:id="'cart-controls-' + ${product.id}">
+                            <!-- Кнопки + и - на всю ширину -->
+                            <div class="quantity-controls-full">
+                                <button class="quantity-btn-full quantity-btn-minus"
+                                        th:data-product-id="${product.id}"
+                                        onclick="decreaseFromCart(this)"
+                                        title="Уменьшить количество">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+
+                                <span class="quantity-display-full"
+                                      th:id="'quantity-value-' + ${product.id}">
+                                    [[${cartProductQuantities[product.id] ?: 0}]]
+                                </span>
+
+                                <button class="quantity-btn-full quantity-btn-plus"
+                                        th:data-product-id="${product.id}"
+                                        onclick="addToCart(this)"
+                                        title="Увеличить количество">
+                                    <i class="bi bi-plus"></i>
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Кнопка добавления (если товара нет в корзине) -->
+                        <div class="add-to-cart-section visible"
+                             th:id="'add-section-' + ${product.id}">
+                            <button th:if="${product.active}"
+                                    class="add-to-cart-btn"
+                                    th:data-product-id="${product.id}"
+                                    onclick="addToCart(this)">
+                                <i class="bi bi-cart-plus me-1"></i>В корзину
+                            </button>
+
+                            <button th:if="${!product.active}"
+                                    class="btn btn-secondary w-100" disabled>
+                                <i class="bi bi-clock me-1"></i>Нет в наличии
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -209,7 +371,7 @@
         </div>
     </div>
 
-    <!-- No results - показываем только если есть запрос И нет результатов -->
+    <!-- No results -->
     <div th:if="${query != null and !query.isEmpty() and resultsCount == 0}" class="text-center py-5">
         <i class="bi bi-search display-1 text-muted"></i>
         <h3 class="text-muted mt-3">Ничего не найдено</h3>
@@ -218,13 +380,10 @@
             <a th:href="@{/}" class="btn btn-primary">
                 <i class="bi bi-house"></i> На главную
             </a>
-            <button onclick="clearSearch()" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-clockwise"></i> Новый поиск
-            </button>
         </div>
     </div>
 
-    <!-- Empty query - показываем только если нет запроса -->
+    <!-- Empty query -->
     <div th:if="${query == null or query.isEmpty()}" class="text-center py-5">
         <i class="bi bi-search display-1 text-muted"></i>
         <h3 class="text-muted mt-3">Введите поисковый запрос</h3>
@@ -233,57 +392,216 @@
 </main>
 
 <!-- Footer -->
-<footer class="bg-dark text-light mt-5">
-    <div class="container py-4">
-        <div class="text-center">
-            <p class="mb-0">&copy; 2025 ToolMarket. Все права защищены.</p>
-        </div>
-    </div>
-</footer>
+<div th:replace="~{fragments/footer :: #site-footer}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-    function changeQuantity(delta) {
-        const input = document.getElementById('quantityInput');
-        let value = parseInt(input.value) + delta;
-        const min = parseInt(input.min) || 1;
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
-        if (value < min) value = min;
-        input.value = value;
+    // Утилиты
+    function showNotification(message, type = 'success') {
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+            document.body.appendChild(container);
+        }
 
-        // Также обновляем видимое значение если нужно
-        const displayInput = document.getElementById('quantity');
-        if (displayInput) displayInput.value = value;
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show mb-2 shadow`;
+
+        const icon = type === 'success' ? 'check-circle' :
+            type === 'danger' ? 'exclamation-circle' : 'info-circle';
+
+        alert.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-${icon} fs-5 me-2"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        container.appendChild(alert);
+
+        setTimeout(() => {
+            if (alert.parentNode) {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            }
+        }, 2000);
     }
 
-    // Убираем старую функцию addToCart и добавляем обработчик для формы
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form[th\\:action="@{/cart/add}"]');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                const button = document.getElementById('addToCartBtn');
-                const originalText = button.innerHTML;
+    async function cartRequest(endpoint, data = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
 
-                // Визуальный feedback
-                button.innerHTML = '<i class="bi bi-check"></i> Добавлено в корзину';
-                button.classList.remove('btn-primary');
-                button.classList.add('btn-success');
-                button.disabled = true;
-
-                // Продолжаем отправку формы
-                // Форма сама отправится, не нужно e.preventDefault()
-
-                // Через 2 секунды возвращаем исходный вид (на случай если страница не перезагрузилась)
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-primary');
-                    button.disabled = false;
-                }, 2000);
-            });
+        if (csrfToken && csrfHeader) {
+            headers[csrfHeader] = csrfToken;
         }
+
+        const response = await fetch(`/api/cart${endpoint}`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    }
+
+    function updateCartBadge(totalQuantity) {
+        let badge = document.querySelector('.cart-indicator .badge');
+
+        if (totalQuantity > 0) {
+            if (!badge) {
+                const cartLink = document.querySelector('.cart-indicator a');
+                if (cartLink) {
+                    badge = document.createElement('span');
+                    badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                    cartLink.appendChild(badge);
+                }
+            }
+            if (badge) {
+                badge.textContent = totalQuantity;
+                badge.style.display = 'inline-block';
+            }
+        } else if (badge) {
+            badge.style.display = 'none';
+        }
+    }
+
+    // Основные функции работы с корзиной
+    async function addToCart(button) {
+        const productId = button.dataset.productId;
+        if (!productId) return;
+
+        // Блокируем кнопку
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        button.disabled = true;
+        button.classList.add('btn-loading');
+
+        try {
+            const result = await cartRequest('/add', {
+                productId: Number(productId),
+                quantity: 1
+            });
+
+            // Обновляем UI
+            updateProductUI(productId, result.quantities[productId] || 0);
+            updateCartBadge(result.totalQuantity);
+            showNotification('Товар добавлен в корзину', 'success');
+
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Ошибка при добавлении в корзину', 'danger');
+        } finally {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            button.classList.remove('btn-loading');
+        }
+    }
+
+    async function decreaseFromCart(button) {
+        const productId = button.dataset.productId;
+        if (!productId) return;
+
+        button.disabled = true;
+        button.classList.add('btn-loading');
+
+        try {
+            const result = await cartRequest('/decrease', {
+                productId: Number(productId)
+            });
+
+            const quantity = result.quantities[productId] || 0;
+            updateProductUI(productId, quantity);
+            updateCartBadge(result.totalQuantity);
+
+            if (quantity === 0) {
+                showNotification('Товар удален из корзины', 'info');
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Ошибка при изменении количества', 'danger');
+        } finally {
+            button.disabled = false;
+            button.classList.remove('btn-loading');
+        }
+    }
+
+    // Функция обновления UI для конкретного товара
+    function updateProductUI(productId, quantity) {
+        const cartControls = document.getElementById(`cart-controls-${productId}`);
+        const addSection = document.getElementById(`add-section-${productId}`);
+        const quantityValue = document.getElementById(`quantity-value-${productId}`);
+
+        // Обновляем количество
+        if (quantityValue) quantityValue.textContent = quantity;
+
+        // Переключаем видимость блоков
+        if (quantity > 0) {
+            if (cartControls) {
+                cartControls.classList.remove('hidden');
+                cartControls.classList.add('visible');
+                cartControls.classList.add('cart-add-success');
+                setTimeout(() => cartControls.classList.remove('cart-add-success'), 300);
+            }
+            if (addSection) {
+                addSection.classList.remove('visible');
+                addSection.classList.add('hidden');
+            }
+        } else {
+            if (cartControls) {
+                cartControls.classList.remove('visible');
+                cartControls.classList.add('hidden');
+            }
+            if (addSection) {
+                addSection.classList.remove('hidden');
+                addSection.classList.add('visible');
+            }
+        }
+    }
+
+    // Загрузка начального состояния корзины
+    async function loadInitialCartState() {
+        try {
+            const response = await fetch('/api/cart/state');
+            if (response.ok) {
+                const result = await response.json();
+                updateCartBadge(result.totalQuantity);
+
+                // Для каждого товара на странице
+                const productContainers = document.querySelectorAll('.cart-control-container');
+                productContainers.forEach(container => {
+                    const productId = container.dataset.productId;
+                    const currentQuantity = result.quantities?.[productId] || 0;
+
+                    if (currentQuantity > 0) {
+                        updateProductUI(productId, currentQuantity);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error loading cart state:', error);
+        }
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        loadInitialCartState();
     });
+    /*]]>*/
 </script>
 </body>
 </html>

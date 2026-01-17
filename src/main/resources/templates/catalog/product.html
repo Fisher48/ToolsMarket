@@ -2,6 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <!-- ДОБАВИТЬ CSRF ЗАЩИТУ -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title th:text="${product.name} + ' - ToolStore'">Товар - ToolsMarket</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
@@ -28,48 +31,238 @@
             background-color: rgba(25, 135, 84, 0.1);
             border-color: rgba(25, 135, 84, 0.2);
         }
+
+        /* Улучшенные анимации */
+        .fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s ease forwards;
+        }
+
+        .slide-down {
+            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .slide-up {
+            animation: slideUp 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+        }
+
+        /* Основные анимации */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-15px) scale(0.98);
+            }
+            70% {
+                opacity: 0.8;
+                transform: translateY(2px) scale(1.01);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(10px) scale(0.98);
+            }
+        }
+
+        @keyframes slideDown {
+            0% {
+                opacity: 0;
+                max-height: 0;
+                overflow: hidden;
+            }
+            100% {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+
+        @keyframes slideUp {
+            0% {
+                opacity: 1;
+                max-height: 500px;
+            }
+            100% {
+                opacity: 0;
+                max-height: 0;
+                overflow: hidden;
+            }
+        }
+
+        /* Плавные переходы для кнопок */
+        .quantity-btn-full-width {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .quantity-btn-full-width:hover {
+            transform: translateY(-1px);
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .quantity-btn-full-width:active {
+            transform: translateY(1px) scale(0.97);
+            transition-duration: 0.1s;
+        }
+
+        /* Плавная анимация для уведомлений */
+        .alert {
+            animation: alertSlideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes alertSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateX(100px) scale(0.8);
+            }
+            70% {
+                transform: translateX(-5px) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        /* Анимация для кнопок корзины */
+        .cart-add-success {
+            animation: cartPulse 0.5s ease;
+        }
+
+        @keyframes cartPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Плавное изменение количества */
+        .quantity-display-full-width {
+            transition: all 0.2s ease;
+        }
+
+        .quantity-display-full-width.updated {
+            animation: quantityUpdate 0.4s ease;
+        }
+
+        @keyframes quantityUpdate {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.3); }
+            50% { transform: scale(0.9); }
+            75% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Плавное появление/исчезновение блоков */
+        .cart-transition {
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            opacity: 0;
+            transform: translateY(-20px);
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .cart-transition.visible {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 500px;
+        }
+
+        .d-none {
+            display: none !important;
+        }
+
+        /* Кнопки + и - на всю ширину карточки товара */
+        .quantity-controls-full-width {
+            display: flex;
+            width: 100%;
+            border: 2px solid #0d6efd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0d6efd;
+            height: 46px;
+            box-shadow: 0 2px 6px rgba(13, 110, 253, 0.2);
+        }
+
+        .quantity-btn-full-width {
+            flex: 1;
+            height: 100%;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            font-size: 22px;
+            font-weight: 600;
+            padding: 0;
+        }
+
+        .quantity-btn-full-width:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .quantity-btn-full-width:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.98);
+        }
+
+        .quantity-btn-full-width:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #6c757d;
+        }
+
+        .quantity-display-full-width {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            background: transparent;
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
+            border-right: 2px solid rgba(255, 255, 255, 0.2);
+            min-width: 50px;
+        }
+
+        /* Стиль для блока управления на странице товара */
+        .cart-management-widget {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #dee2e6;
+        }
+
+        .cart-management-widget .btn-primary {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            border: none;
+            color: white;
+        }
+
+        .cart-management-widget .btn-primary:hover {
+            background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+            color: white;
+        }
     </style>
 </head>
 <body>
 <!-- Header -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Site menu">
-    <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/}">
-            <i class="bi bi-hammer"></i> ToolsMarket
-        </a>
-        <div>
-            <a th:href="@{/}" class="btn btn-outline-light btn-sm me-2">
-                <i class="bi bi-house"></i> Главная
-            </a>
-            <a th:if="${product.categories != null and not #lists.isEmpty(product.categories)}"
-               th:href="@{/category/{title}(title=${product.categories[0].title})}"
-               class="btn btn-outline-light btn-sm">
-                <i class="bi bi-arrow-left"></i> Назад к категории
-            </a>
-        </div>
-        <!-- Действия пользователя -->
-        <div class="navbar-nav flex-row">
-            <a class="nav-link text-white mx-2" href="#">
-                <i class="bi bi-heart fs-5"></i>
-            </a>
-            <div class="cart-indicator">
-                <a th:href="@{/cart}" class="btn btn-outline-light position-relative">
-                    <i class="bi bi-cart"></i>
-                    Корзина
-                    <span th:if="${session.cartItemCount != null and session.cartItemCount > 0}"
-                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                          th:text="${session.cartItemCount}">0</span>
-                </a>
-            </div>
-            <a class="nav-link text-white mx-2" th:href="@{/profile}">
-                <i class="bi bi-person fs-5"></i>
-                <span th:if="${currentUser != null and currentUser.isEnabled()}">
-                    Привет, [[${currentUser.username}]]!</span>
-                <span th:unless="${currentUser != null and currentUser.isEnabled()}"> Войти</span>
-            </a>
-        </div>
-    </div>
-</nav>
+<div th:replace="~{fragments/header :: header}"></div>
 
 <main class="container my-4">
     <!-- Breadcrumbs -->
@@ -135,11 +328,6 @@
                         <span class="h2 text-danger"
                               th:if="${product.formattedDiscountedPrice != null}"
                               th:text="${product.formattedDiscountedPrice}"></span>
-<!--                        <span class="badge bg-danger ms-2 fs-6"-->
-<!--                              th:if="${product.discountPercentage != null}"-->
-<!--                              th:text="'-' + ${#numbers.formatDecimal(product.discountPercentage, 1, 0)} + '%'">-->
-<!--                            Скидка-->
-<!--                        </span>-->
                     </div>
 
                 </div>
@@ -176,93 +364,93 @@
             </p>
 
             <!-- Add to Cart -->
-            <!-- Блок с количеством и кнопкой -->
-            <div class="mb-4">
-                <div th:if="${isInCart}" class="cart-management-widget">
-                    <!-- Индикатор в корзине -->
+            <div class="mb-4" id="cart-section" th:data-product-id="${product.id}">
+
+                <!-- Блок управления (если товар в корзине) -->
+                <div id="cart-management-section" class="cart-management-widget"
+                     style="display: none;">
+
+                    <!-- Индикатор -->
                     <div class="alert alert-success border-0 bg-light-success mb-3">
                         <div class="d-flex align-items-center">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-check-circle-fill text-success fs-4"></i>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
+                            <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                            <div class="ms-3">
                                 <h6 class="mb-1">Товар добавлен в корзину</h6>
                                 <p class="mb-0">
                                     Текущее количество:
-                                    <span class="badge bg-success rounded-pill" th:text="${cartQuantity}"></span> шт.
+                                    <span class="badge bg-success rounded-pill"
+                                          id="cartQuantity"
+                                          th:text="${cartQuantity}">0</span> шт.
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Счетчик -->
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="fw-medium">Изменить количество:</span>
-                        <div class="d-flex align-items-center">
-                            <!-- Уменьшить -->
-                            <form th:action="@{/cart/decrease}" method="post" class="me-2">
-                                <input type="hidden" name="productId" th:value="${product.id}">
-                                <input type="hidden" name="redirectTo" value="product">
-                                <button type="submit" class="btn btn-outline-secondary btn-sm square-btn">
-                                    <i class="bi bi-dash-lg"></i>
-                                </button>
-                            </form>
+                    <!-- Счетчик на всю ширину -->
+                    <div class="mb-4">
+                        <div class="mb-2">
+                            <span class="fw-medium">Изменить количество:</span>
+                        </div>
 
-                            <!-- Количество -->
-                            <span class="mx-3 fw-bold fs-5" th:text="${cartQuantity}"></span>
+                        <!-- Кнопки + и - на всю ширину -->
+                        <div class="quantity-controls-full-width">
+                            <button type="button"
+                                    class="quantity-btn-full-width"
+                                    th:data-product-id="${product.id}"
+                                    onclick="decreaseFromCart(this)"
+                                    id="decrease-btn"
+                                    th:disabled="${cartQuantity <= 1}">
+                                <i class="bi bi-dash-lg"></i>
+                            </button>
 
-                            <!-- Увеличить -->
-                            <form th:action="@{/cart/add}" method="post" class="ms-2">
-                                <input type="hidden" name="productId" th:value="${product.id}">
-                                <input type="hidden" name="quantity" value="1">
-                                <input type="hidden" name="redirectTo" value="product">
-                                <button type="submit" class="btn btn-outline-secondary btn-sm square-btn">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            </form>
+                            <span class="quantity-display-full-width" id="cartQuantityValue"
+                                  th:text="${cartQuantity}">0</span>
+
+                            <button type="button"
+                                    class="quantity-btn-full-width"
+                                    th:data-product-id="${product.id}"
+                                    onclick="addToCart(this)"
+                                    id="increase-btn">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
                         </div>
                     </div>
 
                     <!-- Кнопки действий -->
                     <div class="d-grid gap-2">
-                        <!-- Перейти в корзину -->
-                        <a th:href="@{/cart}" class="btn btn-primary">
+                        <a th:href="@{/cart}" class="btn btn-primary btn-lg py-3">
                             <i class="bi bi-cart-check me-2"></i>Перейти к оформлению
                         </a>
 
-                        <!-- Удалить из корзины -->
-                        <form th:action="@{/cart/remove}" method="post">
-                            <input type="hidden" name="productId" th:value="${product.id}">
-                            <input type="hidden" name="redirectTo" value="product">
-                            <button type="submit"
-                                    class="btn btn-outline-danger w-100"
-                                    onclick="return confirm('Удалить товар из корзины?')">
-                                <i class="bi bi-trash me-2"></i>Удалить из корзины
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="btn btn-outline-danger btn-lg py-3"
+                                th:data-product-id="${product.id}"
+                                onclick="removeFromCart(this)"
+                                id="remove-btn">
+                            <i class="bi bi-trash me-2"></i>Удалить из корзины
+                        </button>
                     </div>
                 </div>
 
-                <!-- Если товара нет в корзине -->
-                <div th:unless="${isInCart}">
-                    <form th:action="@{/cart/add}" method="post">
-                        <input type="hidden" name="productId" th:value="${product.id}">
-                        <input type="hidden" name="quantity" value="1">
-                        <input type="hidden" name="redirectTo" value="product">
+                <!-- Блок "Добавить в корзину" (если товара нет в корзине) -->
+                <div id="add-to-cart-section"
+                     style="display: none;">
+                    <button th:if="${product.active}"
+                            type="button"
+                            class="btn btn-primary btn-lg w-100 py-3 fw-bold"
+                            th:data-product-id="${product.id}"
+                            onclick="addToCart(this)"
+                            id="add-to-cart-btn">
+                        <i class="bi bi-cart-plus me-2"></i>
+                        <span class="btn-text">Добавить в корзину</span>
+                        <span class="spinner-border spinner-border-sm d-none ms-2"></span>
+                    </button>
 
-                        <button th:if="${product.active}"
-                                type="submit"
-                                class="btn btn-primary btn-lg w-100 py-3 fw-bold">
-                            <i class="bi bi-cart-plus me-2"></i>Добавить в корзину
-                        </button>
-                    </form>
+                    <button th:if="${product.active != null and !product.active}"
+                            class="btn btn-secondary btn-lg w-100 py-3" disabled>
+                        <i class="bi bi-envelope me-2"></i> Уведомить о поступлении
+                    </button>
                 </div>
-            </div>
-
-                <button th:if="${product.active != null and !product.active}"
-                        class="btn btn-secondary btn-lg flex-grow-1" disabled>
-                    <i class="bi bi-envelope"></i> Уведомить о поступлении
-                </button>
             </div>
 
             <!-- Additional Actions -->
@@ -364,69 +552,283 @@
     </div>
 </main>
 
-<footer class="bg-dark text-light mt-5">
-    <div class="container py-4">
-        <div class="text-center">
-            <p class="mb-0">&copy; 2025 ToolsMarket. Все права защищены.</p>
-        </div>
-    </div>
-</footer>
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: #site-footer}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- И скрипт для автоматического скрытия: -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const alert = document.querySelector('.alert-success');
-        if (alert) {
-            setTimeout(() => {
-                alert.remove();
-            }, 3000);
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // Упрощенный JavaScript без классов
+
+    const productId = /*[[${product.id}]]*/ null;
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+    console.log('Product ID:', productId);
+
+    async function cartRequest(endpoint, data = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+
+        if (csrfToken && csrfHeader) {
+            headers[csrfHeader] = csrfToken;
         }
-    });
-</script>
 
-<script>
-    function changeQuantity(delta) {
-        const input = document.getElementById('quantityInput');
-        let value = parseInt(input.value) + delta;
-        const min = parseInt(input.min) || 1;
+        try {
+            const response = await fetch(`/api/cart${endpoint}`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(data)
+            });
 
-        if (value < min) value = min;
-        input.value = value;
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-        // Также обновляем видимое значение если нужно
-        const displayInput = document.getElementById('quantity');
-        if (displayInput) displayInput.value = value;
+            return await response.json();
+        } catch (error) {
+            console.error('Cart request error:', error);
+            showNotification(error.message || 'Ошибка запроса', 'danger');
+            throw error;
+        }
     }
 
-    // Убираем старую функцию addToCart и добавляем обработчик для формы
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form[th\\:action="@{/cart/add}"]');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                const button = document.getElementById('addToCartBtn');
-                const originalText = button.innerHTML;
+    async function addToCart(button) {
+        console.log('addToCart clicked');
 
-                // Визуальный feedback
-                button.innerHTML = '<i class="bi bi-check"></i> Добавлено в корзину';
-                button.classList.remove('btn-primary');
-                button.classList.add('btn-success');
-                button.disabled = true;
-
-                // Продолжаем отправку формы
-                // Форма сама отправится, не нужно e.preventDefault()
-
-                // Через 2 секунды возвращаем исходный вид (на случай если страница не перезагрузилась)
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-primary');
-                    button.disabled = false;
-                }, 2000);
-            });
+        if (!productId) {
+            showNotification('ID товара не найден', 'danger');
+            return;
         }
+
+        // Показать загрузку
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        button.disabled = true;
+
+        try {
+            const result = await cartRequest('/add', { productId, quantity: 1 });
+            console.log('Add result:', result);
+            updateCartUI(result);
+            showNotification('Товар добавлен в корзину', 'success');
+        } finally {
+            // Восстановить кнопку
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    }
+
+    async function decreaseFromCart(button) {
+        console.log('decreaseFromCart clicked');
+
+        if (!productId) {
+            showNotification('ID товара не найден', 'danger');
+            return;
+        }
+
+        button.disabled = true;
+
+        try {
+            const result = await cartRequest('/decrease', { productId });
+            console.log('Decrease result:', result);
+            updateCartUI(result);
+
+            // Проверить, удален ли товар полностью
+            const quantity = result.quantities?.[productId] || 0;
+            if (quantity === 0) {
+                showNotification('Товар удален из корзины', 'info');
+            } else {
+                showNotification('Количество уменьшено', 'info');
+            }
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    async function removeFromCart(button) {
+        console.log('removeFromCart clicked');
+
+        if (!productId) {
+            showNotification('ID товара не найден', 'danger');
+            return;
+        }
+
+        if (!confirm('Удалить товар из корзины?')) return;
+
+        // Показать загрузку
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        button.disabled = true;
+
+        try {
+            const result = await cartRequest('/remove', { productId });
+            console.log('Remove result:', result);
+            updateCartUI(result);
+            showNotification('Товар удален из корзины', 'info');
+        } finally {
+            // Восстановить кнопку
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    }
+
+    function updateCartUI(result) {
+        console.log('Updating UI with:', result);
+
+        // Обновить счетчик в хедере
+        updateHeaderBadge(result.totalQuantity);
+
+        // Получить текущее количество товара
+        const quantity = result.quantities?.[productId] || 0;
+        console.log('Current quantity for product:', quantity);
+
+        // Найти элементы
+        const cartSection = document.getElementById('cart-management-section');
+        const addSection = document.getElementById('add-to-cart-section');
+        const quantityValue = document.getElementById('cartQuantityValue');
+
+        console.log('Found elements:', {
+            cartSection: !!cartSection,
+            addSection: !!addSection
+        });
+
+        // Обновить отображение количества
+        const quantityBadge = document.getElementById('cartQuantity');
+        const decreaseBtn = document.getElementById('decrease-btn');
+
+        if (quantityBadge) quantityBadge.textContent = quantity;
+        if (quantityValue) {
+            quantityValue.textContent = quantity;
+            // Анимация обновления числа
+            quantityValue.classList.add('updated');
+            setTimeout(() => quantityValue.classList.remove('updated'), 400);
+        }
+        if (decreaseBtn) decreaseBtn.disabled = quantity <= 1;
+
+        // Переключить видимость блоков с анимацией
+        if (quantity > 0) {
+            // Товар в корзине
+            if (cartSection) {
+                // Плавное появление
+                cartSection.style.display = 'block';
+                setTimeout(() => {
+                    cartSection.classList.add('fade-in');
+                    cartSection.classList.add('slide-down');
+                }, 10);
+                console.log('Showing cart section');
+            }
+            if (addSection) {
+                // Плавное исчезновение
+                addSection.classList.add('fade-out');
+                setTimeout(() => {
+                    addSection.style.display = 'none';
+                    addSection.classList.remove('fade-out');
+                }, 300);
+                console.log('Hiding add section');
+            }
+        } else {
+            // Товара нет в корзине
+            if (cartSection) {
+                // Плавное исчезновение
+                cartSection.classList.add('fade-out');
+                cartSection.classList.add('slide-up');
+                setTimeout(() => {
+                    cartSection.style.display = 'none';
+                    cartSection.classList.remove('fade-out', 'slide-up', 'fade-in', 'slide-down');
+                }, 300);
+                console.log('Hiding cart section');
+            }
+            if (addSection) {
+                // Плавное появление
+                addSection.style.display = 'block';
+                setTimeout(() => {
+                    addSection.classList.add('fade-in');
+                }, 10);
+                console.log('Showing add section');
+            }
+        }
+    }
+
+    function updateHeaderBadge(totalQuantity) {
+        let badge = document.getElementById('cart-badge');
+
+        if (totalQuantity > 0) {
+            if (!badge) {
+                // Создать бейдж если его нет
+                const container = document.querySelector('.cart-indicator a');
+                if (container) {
+                    badge = document.createElement('span');
+                    badge.id = 'cart-badge';
+                    badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                    container.appendChild(badge);
+                }
+            }
+            if (badge) {
+                badge.textContent = totalQuantity;
+                badge.style.display = 'inline-block';
+            }
+        } else if (badge) {
+            badge.style.display = 'none';
+        }
+    }
+
+    function showNotification(message, type = 'success') {
+        // Создать контейнер если его нет
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+            document.body.appendChild(container);
+        }
+
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show mb-2 shadow`;
+
+        const icon = type === 'success' ? 'check-circle' :
+            type === 'danger' ? 'exclamation-circle' : 'info-circle';
+
+        alert.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-${icon} fs-5 me-2"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        container.appendChild(alert);
+
+        // Авто-скрытие
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 1000);
+    }
+
+    // Загрузить начальное состояние корзины
+    async function loadCartState() {
+        try {
+            const response = await fetch('/api/cart/state');
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Initial cart state:', result);
+                updateCartUI(result);
+            }
+        } catch (error) {
+            console.error('Error loading cart state:', error);
+        }
+    }
+
+    // Инициализировать при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing cart...');
+        loadCartState();
     });
+    /*]]>*/
 </script>
 </body>
 </html>

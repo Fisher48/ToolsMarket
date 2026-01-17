@@ -79,8 +79,14 @@ public class CartController {
             session.setAttribute("anonymousSessionId", finalSessionId);
         }
 
+        // Рассчитываем общее количество товаров (сумма всех quantity)
+        int totalItemCount = items.stream()
+                .mapToInt(CartItemDto::getQuantity)
+                .sum();
+
         model.addAttribute("cart", cart);
         model.addAttribute("items", items);
+        model.addAttribute("totalItemCount", totalItemCount);
         model.addAttribute("totalAmount", totalAmount);
         model.addAttribute("totalWithDiscount", totalWithDiscount);
         model.addAttribute("totalDiscount", totalDiscount);

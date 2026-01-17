@@ -30,47 +30,9 @@
   </style>
 </head>
 <body>
+
 <!-- Header -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container">
-    <a class="navbar-brand fw-bold" th:href="@{/}">
-      <i class="bi bi-hammer"></i> ToolsMarket
-    </a>
-
-    <!-- Search -->
-    <form class="d-flex flex-grow-1 mx-4" th:action="@{/search}" method="get">
-      <div class="input-group">
-        <input class="form-control" type="search" name="q"
-               placeholder="Поиск инструментов..."
-               aria-label="Search">
-        <button class="btn btn-warning" type="submit">
-          <i class="bi bi-search"></i>
-        </button>
-      </div>
-    </form>
-
-    <!-- Действия пользователя -->
-    <div class="navbar-nav flex-row">
-      <a class="nav-link text-white mx-2" href="#">
-        <i class="bi bi-heart fs-5"></i>
-      </a>
-      <div class="cart-indicator">
-        <a th:href="@{/cart}" class="btn btn-outline-light position-relative">
-          <i class="bi bi-cart"></i>
-          Корзина
-          <span th:if="${session.cartItemCount != null and session.cartItemCount > 0}"
-                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                th:text="${session.cartItemCount}">0</span>
-        </a>
-      </div>
-      <a class="nav-link text-white mx-2" th:href="@{/profile}">
-        <i class="bi bi-person fs-5"></i>
-        <span th:if="${user.isPresent()}"> Привет, [[${user.get().username}]]!</span>
-        <span th:unless="${user.isPresent()}"> Войти</span>
-      </a>
-    </div>
-  </div>
-</nav>
+<div th:replace="~{fragments/header :: header}"></div>
 
 <main class="container my-4">
   <!-- Hero Section -->
@@ -163,13 +125,7 @@
 </main>
 
 <!-- Footer -->
-<footer class="bg-dark text-light mt-5">
-  <div class="container py-4">
-    <div class="text-center">
-      <p class="mb-0">&copy; 2025 ToolsMarket. Все права защищены.</p>
-    </div>
-  </div>
-</footer>
+<div th:replace="~{fragments/footer :: #site-footer}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

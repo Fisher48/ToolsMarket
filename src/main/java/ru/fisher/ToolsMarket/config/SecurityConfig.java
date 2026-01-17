@@ -44,7 +44,7 @@ public class SecurityConfig {
                         ).hasRole("ADMIN")
 
                         // Точки входа для пользователя
-                        .requestMatchers(
+                        .requestMatchers( "/api/**",
                                 "/order/**", "/cart/**",
                                 "/profile/**", "/api/user/**"
                         ).authenticated()
