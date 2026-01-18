@@ -6,23 +6,117 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+
         .status-badge { font-size: 0.85rem; }
-        .product-img {
-            width: 50px;
-            height: 50px;
+
+        .product-img-container {
+            width: 60px;
+            height: 60px;
             background: #f8f9fa;
-            border-radius: 6px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 1px solid #dee2e6;
+            overflow: hidden;
         }
+
+        .product-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
         .action-btn { transition: all 0.2s; }
         .action-btn:hover { transform: translateY(-1px); }
 
-        /* Стили для скидок */
-        .text-decoration-line-through {
+        .price-cell {
+            min-width: 120px;
+            text-align: right;
+        }
+
+        .quantity-cell {
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .total-cell {
+            min-width: 120px;
+            text-align: right;
+        }
+
+        /* Улучшенные стили для скидок */
+        .original-price {
             text-decoration: line-through;
-            opacity: 0.7;
+            color: #6c757d;
+            font-size: 0.85em;
+        }
+
+        .discount-badge {
+            font-size: 0.75em;
+            padding: 0.15em 0.5em;
+            vertical-align: middle;
+        }
+
+        .discount-amount {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        /* Стили для заголовков колонок */
+        .column-header {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #6c757d;
+            letter-spacing: 0.5px;
+        }
+
+        /* Улучшенные отступы для ячеек */
+        .list-group-item {
+            padding: 1rem 1.25rem;
+        }
+
+        .list-group-item .row {
+            align-items: center;
+        }
+
+        /* Уменьшаем размер иконок в быстрых ссылках */
+        .quick-links .badge {
+            font-size: 0.75rem;
+            padding: 0.35em 0.65em;
+        }
+
+        /* Улучшаем отображение номера заказа */
+        .order-number {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Source Code Pro', monospace;
+            letter-spacing: -0.5px;
+        }
+
+        /* Стили для мобильных устройств */
+        @media (max-width: 768px) {
+            .list-group-item .row > div {
+                margin-bottom: 0.5rem;
+            }
+
+            .list-group-item .row > div:last-child {
+                margin-bottom: 0;
+            }
+
+            .price-cell, .quantity-cell, .total-cell {
+                min-width: auto;
+                text-align: left !important;
+            }
+
+            .column-header {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -31,7 +125,7 @@
 <nav class="navbar navbar-dark bg-dark py-3">
     <div class="container">
         <a class="navbar-brand fw-bold" th:href="@{/admin/orders}">
-            <i class="bi bi-arrow-left me-2"></i>Заказ #<span th:text="${order.orderNumber}"></span>
+            <i class="bi bi-arrow-left me-2"></i>Заказ <span class="order-number" th:text="'#' + ${order.orderNumber}"></span>
         </a>
         <div>
             <a th:href="@{/admin/orders}" class="btn btn-outline-light btn-sm me-2">
@@ -63,10 +157,9 @@
                 <div class="card-body p-3">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h5 class="card-title mb-1">Заказ #
-                                <span th:text="${order.orderNumber}"></span>
+                            <h5 class="card-title mb-2">
+                                <span class="order-number" th:text="'Заказ #' + ${order.orderNumber}"></span>
                                 <span class="ms-3">
-                                    <!-- Сравниваем как строки -->
                                     <span th:if="${order.status.toString() == 'CREATED'}"
                                           class="badge bg-primary py-2 px-3">Создан</span>
                                     <span th:if="${order.status.toString() == 'PROCESSING'}"
@@ -80,9 +173,7 @@
                                 </span>
                             </h5>
 
-                            <br>
-
-                            <div class="d-flex flex-wrap gap-3">
+                            <div class="d-flex flex-wrap gap-3 mt-2">
                                 <span th:if="${order.user?.id}" class="d-flex align-items-center">
                                     <i class="bi bi-person me-1"></i>
                                     <span class="me-2">ID:</span>
@@ -107,7 +198,8 @@
                         </div>
                         <div class="col-auto">
                             <div class="h4 mb-0 text-primary"
-                                 th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}"></div>
+                                 th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                             .format(order.totalPrice) + ' ₽'}"></div>
                             <small class="text-muted">Сумма заказа</small>
                         </div>
                     </div>
@@ -144,42 +236,46 @@
         <!-- Товары -->
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="bi bi-box-seam text-primary me-2"></i>
                         Товары (<span th:text="${orderItems.size()}"></span>)
                         <span th:if="${hasDiscounts}" class="badge bg-success ms-2">
-                    <i class="bi bi-percent me-1"></i>Есть скидки
-                </span>
+                            <i class="bi bi-percent me-1"></i>Есть скидки
+                        </span>
                     </h6>
+                    <!-- Заголовки колонок (только для десктоп) -->
+                    <div class="d-none d-md-flex text-muted small">
+                        <div class="quantity-cell column-header me-4">Кол-во</div>
+                        <div class="price-cell column-header me-4">Цена</div>
+                        <div class="total-cell column-header">Сумма</div>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         <div th:each="item : ${orderItems}" class="list-group-item">
                             <div class="row align-items-center">
-                                <!-- Иконка товара со ссылкой -->
-                                <div class="col-2">
-                                    <div class="text-center">
+                                <!-- Изображение товара -->
+                                <div class="col-12 col-md-2 mb-2 mb-md-0">
+                                    <div class="product-img-container">
                                         <a th:href="@{'/product/' + ${item.productTitle}}"
                                            target="_blank"
-                                           class="d-inline-block position-relative">
+                                           class="d-block w-100 h-100">
                                             <th:block th:if="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
                                                 <img th:src="@{${item.productImageUrl}}"
                                                      th:alt="${item.productImageAlt != null ? item.productImageAlt : item.productName}"
-                                                     class="img-fluid rounded product-image-admin">
+                                                     class="product-img">
                                             </th:block>
                                             <th:block th:unless="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
-                                                <div class="product-image-container-admin">
-                                                    <i class="bi bi-tools text-muted" style="font-size: 1.5rem;"></i>
-                                                </div>
+                                                <i class="bi bi-tools text-muted" style="font-size: 1.5rem;"></i>
                                             </th:block>
                                         </a>
                                     </div>
                                 </div>
 
                                 <!-- Информация о товаре -->
-                                <div class="col-5">
-                                    <!-- Название товара со ссылкой -->
+                                <div class="col-12 col-md-4">
+                                    <!-- Название товара -->
                                     <h6 class="mb-1">
                                         <a th:href="@{'/product/' + ${item.productTitle}}"
                                            class="text-decoration-none text-dark hover-primary"
@@ -198,22 +294,24 @@
                                             Артикул: <span th:text="${item.productSku}"></span>
                                             <span th:if="${item.productId != null}"
                                                   class="ms-2 badge bg-light text-dark border">
-                                        ID: <span th:text="${item.productId}"></span>
-                                    </span>
+                                                ID: <span th:text="${item.productId}"></span>
+                                            </span>
                                         </div>
 
                                         <!-- Скидка если есть -->
                                         <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}"
                                              class="text-success small">
                                             <i class="bi bi-percent me-1"></i>
-                                            Скидка:
-                                            <span th:text="${#numbers.formatDecimal(item.discountPercentage, 1, 0)}"></span>%
-                                            (<span th:text="${#numbers.formatDecimal(item.discountAmount, 1, 2)}"></span> ₽)
+                                            Скидка: <span th:text="${item.discountPercentage}"></span>%
+                                            <span class="discount-amount">
+                                                (<span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                    .format(item.discountAmount)}"></span> ₽)
+                                            </span>
                                         </div>
                                     </div>
 
                                     <!-- Быстрые ссылки для админа -->
-                                    <div class="d-flex gap-1 flex-wrap">
+                                    <div class="quick-links d-flex gap-1 flex-wrap mt-2">
                                         <a th:href="@{'/admin/products/' + ${item.productId} + '/edit'}"
                                            class="badge bg-light text-dark border text-decoration-none"
                                            target="_blank"
@@ -226,46 +324,91 @@
                                            th:if="${item.productId != null and item.productTitle != null}">
                                             <i class="bi bi-eye me-1"></i> Просмотр
                                         </a>
-                                        <a th:href="@{'/admin/products?search=' + ${item.productSku}}"
-                                           class="badge bg-light text-dark border text-decoration-none"
-                                           target="_blank">
-                                            <i class="bi bi-search me-1"></i> Найти в базе
-                                        </a>
                                     </div>
                                 </div>
 
-                                <!-- Количество -->
-                                <div class="col-2 text-center">
-                            <span class="badge bg-light text-dark fs-6"
-                                  th:text="${item.quantity}"></span>
-                                    <div class="text-muted small mt-1">шт.</div>
+                                <!-- Количество (десктоп) -->
+                                <div class="col-md-2 text-center quantity-cell d-none d-md-block">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <span class="fs-5 fw-bold" th:text="${item.quantity}"></span>
+                                        <small class="text-muted">шт.</small>
+                                    </div>
                                 </div>
 
-                                <!-- Цена за единицу -->
-                                <div class="col-2 text-end">
+                                <!-- Цена за единицу (десктоп) -->
+                                <div class="col-md-2 price-cell d-none d-md-block">
                                     <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                        <div class="text-muted text-decoration-line-through small"
-                                             th:text="${#numbers.formatDecimal(item.originalPrice, 1, 2) + ' ₽'}"></div>
+                                        <div class="original-price mb-1"
+                                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(item.originalPrice) + ' ₽'}"></div>
                                         <div class="text-success fw-bold"
-                                             th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></div>
+                                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(item.unitPrice) + ' ₽'}"></div>
                                     </div>
                                     <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
                                         <div class="fw-bold"
-                                             th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2) + ' ₽'}"></div>
+                                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(item.unitPrice) + ' ₽'}"></div>
                                     </div>
                                 </div>
 
-                                <!-- Итоговая сумма -->
-                                <div class="col-2 text-end">
+                                <!-- Итоговая сумма (десктоп) -->
+                                <div class="col-md-2 total-cell d-none d-md-block">
                                     <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                        <div class="text-muted text-decoration-line-through small"
-                                             th:text="${#numbers.formatDecimal(item.totalWithoutDiscount, 1, 2) + ' ₽'}"></div>
+                                        <div class="original-price mb-1"
+                                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(item.totalWithoutDiscount) + ' ₽'}"></div>
                                         <div class="text-danger fw-bold fs-5"
-                                             th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></div>
+                                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(item.subtotal) + ' ₽'}"></div>
                                     </div>
                                     <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
                                         <div class="fw-bold fs-5"
-                                             th:text="${#numbers.formatDecimal(item.subtotal, 1, 2) + ' ₽'}"></div>
+                                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(item.subtotal) + ' ₽'}"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Мобильная версия: количество, цена и сумма -->
+                                <div class="col-12 d-md-none mt-3">
+                                    <div class="row border-top pt-3">
+                                        <div class="col-4 text-center">
+                                            <div class="text-muted small mb-1">Кол-во</div>
+                                            <div class="fw-bold fs-5" th:text="${item.quantity}"></div>
+                                            <div class="text-muted small">шт.</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="text-muted small mb-1">Цена</div>
+                                            <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                                <div class="original-price small mb-1"
+                                                     th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                         .format(item.originalPrice) + ' ₽'}"></div>
+                                                <div class="text-success fw-bold"
+                                                     th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                         .format(item.unitPrice) + ' ₽'}"></div>
+                                            </div>
+                                            <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                                <div class="fw-bold"
+                                                     th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                         .format(item.unitPrice) + ' ₽'}"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="text-muted small mb-1">Сумма</div>
+                                            <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                                <div class="original-price small mb-1"
+                                                     th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                         .format(item.totalWithoutDiscount) + ' ₽'}"></div>
+                                                <div class="text-danger fw-bold fs-5"
+                                                     th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                         .format(item.subtotal) + ' ₽'}"></div>
+                                            </div>
+                                            <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                                <div class="fw-bold fs-5"
+                                                     th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                         .format(item.subtotal) + ' ₽'}"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -275,28 +418,30 @@
 
                 <!-- Итоги по заказу -->
                 <div class="card-footer bg-white border-top">
-                    <div class="row">
-                        <div class="col-8 text-end">
-                            <div class="mb-1">
+                    <div class="row justify-content-end">
+                        <div class="col-md-6 col-lg-5">
+                            <div class="mb-2 d-flex justify-content-between">
                                 <span class="text-muted">Итого без скидок:</span>
-                                <span class="fw-bold ms-2"
-                                      th:text="${#numbers.formatDecimal(originalTotal, 1, 2) + ' ₽'}"></span>
+                                <span class="fw-bold"
+                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(originalTotal) + ' ₽'}"></span>
                             </div>
-                            <div th:if="${hasDiscounts}" class="mb-1 text-success">
+                            <div th:if="${hasDiscounts}" class="mb-2 d-flex justify-content-between text-success">
                                 <span class="text-muted">Скидка:</span>
-                                <span class="fw-bold ms-2"
-                                      th:text="'-' + ${#numbers.formatDecimal(totalDiscount, 1, 2) + ' ₽'}"></span>
+                                <span class="fw-bold"
+                                      th:text="'-' + ${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(totalDiscount) + ' ₽'}"></span>
                             </div>
-                            <div class="h5 mb-0">
+                            <div class="pt-2 border-top d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Сумма заказа:</span>
-                                <span class="text-primary ms-2"
-                                      th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}"></span>
+                                <span class="h4 mb-0 text-primary"
+                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
+                                                 .format(order.totalPrice) + ' ₽'}"></span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
             <!-- Примечание -->
             <div th:if="${order.note}" class="card mt-3">
@@ -331,7 +476,7 @@
                     <table class="table table-sm mb-0">
                         <tr>
                             <td><small class="text-muted">Номер:</small></td>
-                            <td class="text-end">#<span th:text="${order.orderNumber}"></span></td>
+                            <td class="text-end order-number">#<span th:text="${order.orderNumber}"></span></td>
                         </tr>
                         <tr>
                             <td><small class="text-muted">Создан:</small></td>
@@ -397,7 +542,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Отменить заказ #<span th:text="${order.orderNumber}"></span>?</p>
+                <p>Отменить заказ #<span class="order-number" th:text="${order.orderNumber}"></span>?</p>
                 <div class="alert alert-danger small mb-0">
                     <i class="bi bi-exclamation-triangle me-1"></i>
                     Это действие нельзя отменить

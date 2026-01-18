@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="admin-panel" class="admin-sidebar-wrapper d-none d-md-block">
+    <div class="admin-sidebar">
+        <div class="position-sticky pt-3">
+            <!-- Заголовок -->
+            <div class="px-3 py-4">
+                <h5 class="text-white mb-0">
+                    <i class="bi bi-gear me-2"></i>
+                    Админ Панель
+                </h5>
+            </div>
+
+            <!-- Меню навигации -->
+            <ul class="nav flex-column mb-4">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/users">
+                        <i class="bi bi-people me-2"></i>
+                        Пользователи
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/discounts">
+                        <i class="bi bi-percent me-2"></i>
+                        Скидки
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/products">
+                        <i class="bi bi-box me-2"></i>
+                        Товары
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/categories">
+                        <i class="bi bi-folder me-2"></i>
+                        Категории
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/orders">
+                        <i class="bi bi-cart me-2"></i>
+                        Заказы
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Разделитель -->
+            <div class="px-3">
+                <h6 class="admin-sidebar-heading mb-2">Сайт</h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            На главную
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="bi bi-box-arrow-right me-2"></i>
+                            Выйти
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+</body>
+</html>
