@@ -21,8 +21,13 @@ public class CategoryService {
 
 
     // Методы для админки
+//    public List<Category> findAllEntities() {
+//        return categoryRepository.findAll();
+//    }
+
+    @Transactional(readOnly = true)
     public List<Category> findAllEntities() {
-        return categoryRepository.findAll();
+        return categoryRepository.findAllWithAttributes(); // ← Используйте метод с JOIN FETCH
     }
 
     public Optional<Category> findEntityById(Long id) {

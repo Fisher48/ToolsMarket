@@ -12,6 +12,8 @@ import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.service.AttributeService;
 import ru.fisher.ToolsMarket.service.CategoryService;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/admin/categories/{categoryId}/attributes")
 @RequiredArgsConstructor
@@ -24,8 +26,10 @@ public class AttributeAdminController {
         Category category = categoryService.findEntityById(categoryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        List<Attribute> attributes = attributeService.getAttributesByCategory(categoryId);
+
         model.addAttribute("category", category);
-        model.addAttribute("attributes", category.getAttributes());
+        model.addAttribute("attributes", attributes);
         return "admin/attributes/index";
     }
 
@@ -59,7 +63,10 @@ public class AttributeAdminController {
         Attribute attribute = attributeService.findById(attributeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        model.addAttribute("category", attribute.getCategory());
+        Category category = categoryService.findEntityById(categoryId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        model.addAttribute("category", category);
         model.addAttribute("attribute", attribute);
         model.addAttribute("attributeTypes", AttributeType.values());
         return "admin/attributes/edit";

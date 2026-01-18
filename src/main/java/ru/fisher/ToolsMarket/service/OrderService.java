@@ -150,11 +150,11 @@ public class OrderService {
         order.setTotalPrice(total);
 
         // Сохраняем информацию о скидке
-        if (totalDiscount.compareTo(BigDecimal.ZERO) > 0) {
-            String note = String.format("Скидка по заказу: %.2f RUB", totalDiscount);
-            order.setNote(order.getNote() != null ?
-                    order.getNote() + "\n" + note : note);
-        }
+//        if (totalDiscount.compareTo(BigDecimal.ZERO) > 0) {
+//            String note = String.format("Скидка по заказу: %.2f RUB", totalDiscount);
+//            order.setNote(order.getNote() != null ?
+//                    order.getNote() + "\n" + note : note);
+//        }
 
         Order saved = orderRepository.save(order);
 

@@ -50,6 +50,7 @@ public class AttributeService {
         return attributeRepository.findByCategoryIdAndRequiredTrue(categoryId);
     }
 
+    @Transactional
     public void saveProductAttributes(Product product, Map<Long, String> attributeValues) {
         log.info("Saving attributes for product {}: {}", product.getId(), attributeValues);
 

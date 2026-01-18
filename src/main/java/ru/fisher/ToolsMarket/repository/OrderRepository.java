@@ -25,7 +25,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {
             "orderItems",
             "orderItems.product",  // Загружаем продукт через цепочку
-            "orderItems.product.images"  // Если нужны изображения
+            "orderItems.product.images",  // Если нужны изображения
+            "user",  // Добавляем загрузку user
+            "user.userType"
     })
     @Query("SELECT o FROM Order o WHERE o.id = :id")
     Optional<Order> findByIdWithItemsAndProduct(@Param("id") Long id);
@@ -37,8 +39,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "ORDER BY o.createdAt DESC")
     List<Order> findByUserIdWithItems(@Param("userId") Long userId);
 
+    // 1. Для всех заказов
+    @EntityGraph(attributePaths = {"user", "user.userType", "orderItems"})
+    @Query("SELECT o FROM Order o ORDER BY o.createdAt DESC")
     List<Order> findAllByOrderByCreatedAtDesc();
 
+    // 2. Для заказов по статусу
+    @EntityGraph(attributePaths = {"user", "user.userType", "orderItems"})
+    @Query("SELECT o FROM Order o WHERE o.status = :status ORDER BY o.createdAt DESC")
     List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
 
     long countByStatus(OrderStatus status);
@@ -68,6 +76,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
 
     // Поиск заказов пользователя
+    @EntityGraph(attributePaths = {"user", "user.userType", "orderItems", "orderItems.product"})
     List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
 
     Optional<Order> findByIdAndUserId(Long id, Long userId);

@@ -38,6 +38,16 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
+    public List<Product> findAllWithCategories() {
+        return productRepository.findAllWithCategories();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Product> findByIdWithAllRelations(Long id) {
+        return productRepository.findByIdWithAllRelations(id);
+    }
+
     @Transactional
     public Product saveEntity(Product product) {
         return productRepository.save(product);

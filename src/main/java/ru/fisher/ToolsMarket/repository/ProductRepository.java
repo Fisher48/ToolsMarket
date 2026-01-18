@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.models.Product;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -44,11 +45,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByActiveTrue(Pageable pageable);
 
     // Метод с явной загрузкой всех связей для редактирования
-    @EntityGraph(attributePaths = {
-            "attributeValues",
-            "attributeValues.attribute"
-    })
-    @Query("SELECT p FROM Product p WHERE p.id = :id")
+    @Query("SELECT DISTINCT p FROM Product p " +
+            "LEFT JOIN FETCH p.categories c " +
+            "LEFT JOIN FETCH p.images " +
+            "LEFT JOIN FETCH c.attributes a " +
+            "LEFT JOIN FETCH p.attributeValues av " +
+            "LEFT JOIN FETCH av.attribute " +
+            "WHERE p.id = :id")
     Optional<Product> findWithDetailsById(@Param("id") Long id);
 
     // Метод для страницы характеристик
@@ -60,6 +63,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @EntityGraph(attributePaths = {"categories", "attributeValues", "attributeValues.attribute"})
     @Query("SELECT p FROM Product p WHERE p.title = :title")
     Optional<Product> findByTitleWithAttributes(@Param("title") String title);
+
+    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.categories ORDER BY p.createdAt DESC")
+    List<Product> findAllWithCategories();
+
+    @Query("SELECT DISTINCT p FROM Product p " +
+            "LEFT JOIN FETCH p.categories c " +
+            "LEFT JOIN FETCH c.parent " + // если нужны родители категорий
+            "LEFT JOIN FETCH p.images " +
+            "LEFT JOIN FETCH p.attributeValues av " +
+            "LEFT JOIN FETCH av.attribute a " +
+            "LEFT JOIN FETCH a.category " + // категория атрибута
+            "WHERE p.id = :id")
+    Optional<Product> findByIdWithAllRelations(@Param("id") Long id);
+
 
 //    @Query("SELECT p FROM Product p " +
 //            "WHERE p.active = true " +

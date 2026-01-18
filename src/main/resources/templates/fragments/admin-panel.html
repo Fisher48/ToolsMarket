@@ -56,11 +56,13 @@
                             На главную
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/logout">
-                            <i class="bi bi-box-arrow-right me-2"></i>
-                            Выйти
-                        </a>
+                    <li>
+                        <form th:action="@{/logout}" method="post" class="mb-0">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="bi bi-box-arrow-right me-2"></i> Выйти
+                            </button>
+                        </form>
                     </li>
                 </ul>
             </div>

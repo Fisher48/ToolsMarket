@@ -34,6 +34,7 @@ public class Category {
     private Category parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Category> children = new HashSet<>();
 
     @Column(columnDefinition = "TEXT")
@@ -54,6 +55,7 @@ public class Category {
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
+    @Builder.Default
     private Set<Attribute> attributes = new HashSet<>();
 
 }

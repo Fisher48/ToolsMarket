@@ -41,6 +41,11 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<User> findByIdWithOrders(Long id) {
+        return userRepository.findByIdWithOrders(id);
+    }
+
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
     }

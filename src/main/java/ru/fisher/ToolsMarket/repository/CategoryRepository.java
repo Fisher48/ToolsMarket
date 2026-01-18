@@ -2,6 +2,7 @@ package ru.fisher.ToolsMarket.repository;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import ru.fisher.ToolsMarket.models.Category;
 
@@ -14,6 +15,14 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findByTitle(String title);
 
     List<Category> findByParentIsNullOrderBySortOrderAsc();
+
+    // Загрузка всех атрибутов и связанных категорий
+    @Query("SELECT DISTINCT c FROM Category c " +
+            "LEFT JOIN FETCH c.attributes " +
+            "LEFT JOIN FETCH c.parent " +
+            "LEFT JOIN FETCH c.children " +
+            "ORDER BY c.sortOrder, c.name")
+    List<Category> findAllWithAttributes();
 
     List<Category> findByParent_IdOrderBySortOrderAsc(Long parentId);
     boolean existsByTitle(String title);

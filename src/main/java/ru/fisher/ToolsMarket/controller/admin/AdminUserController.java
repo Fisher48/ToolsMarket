@@ -56,7 +56,7 @@ public class AdminUserController {
 
     @GetMapping("/{id}")
     public String viewUser(@PathVariable Long id, Model model) {
-        User user = userService.findById(id)
+        User user = userService.findByIdWithOrders(id)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
         // Получаем скидки, доступные для типа пользователя
@@ -75,7 +75,7 @@ public class AdminUserController {
 
     @GetMapping("/{id}/edit")
     public String editUserForm(@PathVariable Long id, Model model) {
-        User user = userService.findById(id)
+        User user = userService.findByIdWithOrders(id)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
         model.addAttribute("user", user);

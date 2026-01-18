@@ -209,38 +209,24 @@
                     <!-- Таймлайн статусов -->
                     <h6 class="mb-2">История статусов:</h6>
                     <div class="order-timeline">
-                        <div th:class="${order.status == 'CREATED'} ? 'timeline-item active' : 'timeline-item'">
-                            <small class="text-muted">Заказ создан</small><br>
-                            <small th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></small>
-                        </div>
-
-                        <th:block th:if="${order.paidAt}">
-                            <div th:class="${order.status == 'PAID'} ? 'timeline-item active' : 'timeline-item'">
-                                <small class="text-muted">Оплачен</small><br>
-                                <small th:text="${#temporals.format(order.paidAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            <div th:class="${order.status.toString() == 'CREATED' ? 'timeline-item active' : 'timeline-item'}">
+                                <h6 class="mb-1">Создан</h6>
+                                <p class="text-muted small mb-0">Заказ создан и ожидает обработки</p>
+                                <small class="text-muted"
+                                       th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></small>
                             </div>
-                        </th:block>
-
-                        <th:block th:if="${order.shippedAt}">
-                            <div th:class="${order.status == 'SHIPPED'} ? 'timeline-item active' : 'timeline-item'">
-                                <small class="text-muted">Отправлен</small><br>
-                                <small th:text="${#temporals.format(order.shippedAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            <div th:class="${order.status.toString() == 'PAID' ? 'timeline-item active' : 'timeline-item'}">
+                                <h6 class="mb-1">Оплачен</h6>
+                                <p class="text-muted small mb-0">Заказ оплачен клиентом</p>
                             </div>
-                        </th:block>
-
-                        <th:block th:if="${order.deliveredAt}">
-                            <div th:class="${order.status == 'DELIVERED'} ? 'timeline-item active' : 'timeline-item'">
-                                <small class="text-muted">Доставлен</small><br>
-                                <small th:text="${#temporals.format(order.deliveredAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            <div th:class="${order.status.toString() == 'PROCESSING' ? 'timeline-item active' : 'timeline-item'}">
+                                <h6 class="mb-1">В обработке</h6>
+                                <p class="text-muted small mb-0">Заказ обрабатывается менеджером</p>
                             </div>
-                        </th:block>
-
-                        <th:block th:if="${order.cancelledAt}">
-                            <div th:class="${order.status == 'CANCELLED'} ? 'timeline-item active' : 'timeline-item'">
-                                <small class="text-muted">Отменен</small><br>
-                                <small th:text="${#temporals.format(order.cancelledAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            <div th:class="${order.status.toString() == 'COMPLETED' ? 'timeline-item active' : 'timeline-item'}">
+                                <h6 class="mb-1">Завершен</h6>
+                                <p class="text-muted small mb-0">Заказ выполнен и доставлен</p>
                             </div>
-                        </th:block>
                     </div>
                 </div>
             </div>
@@ -304,13 +290,8 @@
     </div>
 </main>
 
-<footer class="bg-dark text-light mt-5">
-    <div class="container py-4">
-        <div class="text-center">
-            <p class="mb-0">&copy; 2025 ToolsMarket. Все права защищены.</p>
-        </div>
-    </div>
-</footer>
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: #site-footer}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>

@@ -35,14 +35,14 @@ public class ProductAdminController {
     // Список
     @GetMapping
     public String index(Model model) {
-        model.addAttribute("products", productService.findAllEntities());
+        model.addAttribute("products", productService.findAllWithCategories());
         return "admin/products/index";
     }
 
     // Просмотр
     @GetMapping("/{id}")
     public String show(@PathVariable Long id, Model model) {
-        Product product = productService.findEntityById(id)
+        Product product = productService.findByIdWithAllRelations(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
         // Загружаем значения атрибутов
@@ -218,7 +218,7 @@ public class ProductAdminController {
         log.info("New images count: {}", newImages != null ? newImages.size() : 0);
         log.info("Delete image IDs: {}", deleteImageIds);
 
-        Product existing = productService.findEntityById(id)
+        Product existing = productService.findWithDetailsById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
         // Обновляем основные поля
@@ -361,7 +361,7 @@ public class ProductAdminController {
                                      @RequestParam Map<String, String> allParams,
                                      RedirectAttributes redirectAttributes) {
         try {
-            Product product = productService.findEntityById(id)
+            Product product = productService.findWithDetailsById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
             // Фильтруем только параметры атрибутов

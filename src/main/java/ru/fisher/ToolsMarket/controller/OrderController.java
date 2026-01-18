@@ -42,8 +42,10 @@ public class OrderController {
         try {
             Long userId = getCurrentUserId(authentication);
             Order order;
+            User currentUser = null;
 
             if (userId != null) {
+                currentUser = userService.findById(userId).orElse(null);
                 order = orderService.getOrderWithProducts(orderId);
 
                 if (!order.getUser().getId().equals(userId)) {
@@ -77,6 +79,7 @@ public class OrderController {
             model.addAttribute("order", order);
             model.addAttribute("orderItems", orderItemDtos);
             model.addAttribute("canCancel", canCancel);
+            model.addAttribute("currentUser", currentUser);
             model.addAttribute("isAuthenticated", userId != null);
             model.addAttribute("isPublicView", true);
             model.addAttribute("originalTotal", originalTotal);
@@ -158,7 +161,7 @@ public class OrderController {
         model.addAttribute("totalDiscount", totalDiscount);
         model.addAttribute("hasDiscounts", hasDiscounts);
         model.addAttribute("isAuthenticated", userId != null);
-        model.addAttribute("user", user);
+        model.addAttribute("currentUser", user);
 
         if (user != null) {
             model.addAttribute("userTypeDisplay", user.getUserType().getDisplayName());
