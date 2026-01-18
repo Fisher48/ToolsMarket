@@ -8,6 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.fisher.ToolsMarket.exceptions.ValidationException;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.AttributeService;
 import ru.fisher.ToolsMarket.service.CategoryService;
@@ -345,6 +347,7 @@ public class ProductAdminController {
                         av -> av.getAttribute().getId(),
                         ProductAttributeValue::getValue
                 ));
+        log.info("Current values: {}", currentValues);
 
         model.addAttribute("product", product);
         model.addAttribute("attributes", allAttributes);
@@ -355,19 +358,39 @@ public class ProductAdminController {
 
     @PostMapping("/{id}/specifications")
     public String saveSpecifications(@PathVariable Long id,
-                                     @RequestParam Map<String, String> allParams) {
-        Product product = productService.findEntityById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                                     @RequestParam Map<String, String> allParams,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            Product product = productService.findEntityById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // Фильтруем только параметры атрибутов
-        Map<Long, String> attributeValues = allParams.entrySet().stream()
-                .filter(entry -> entry.getKey().startsWith("attr_"))
-                .collect(Collectors.toMap(
-                        entry -> Long.parseLong(entry.getKey().substring(5)),
-                        Map.Entry::getValue
-                ));
+            // Фильтруем только параметры атрибутов
+            Map<Long, String> attributeValues = allParams.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith("attr_"))
+                    .collect(Collectors.toMap(
+                            entry -> Long.parseLong(entry.getKey().substring(5)),
+                            Map.Entry::getValue
+                    ));
 
-        attributeService.saveProductAttributes(product, attributeValues);
+            attributeService.saveProductAttributes(product, attributeValues);
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Характеристики товара успешно сохранены");
+
+        } catch (ValidationException e) {
+            // Возвращаем на форму с ошибкой
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+
+            // Также сохраняем введенные значения для повторного отображения
+            redirectAttributes.addFlashAttribute("submittedValues", allParams);
+
+            return "redirect:/admin/products/" + id + "/specifications";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Ошибка при сохранении характеристик: " + e.getMessage());
+        }
+
         return "redirect:/admin/products/" + id;
     }
 
