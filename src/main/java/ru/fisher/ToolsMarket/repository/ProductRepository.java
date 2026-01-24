@@ -4,12 +4,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.models.Product;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +19,8 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Optional<Product> findByTitle(String title);
+
+    Optional<Product> findBySku(String sku);
 
     @Query("SELECT p FROM Product p " +
             "JOIN p.categories c " +
@@ -76,6 +80,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "LEFT JOIN FETCH a.category " + // категория атрибута
             "WHERE p.id = :id")
     Optional<Product> findByIdWithAllRelations(@Param("id") Long id);
+
+    @Modifying
+    @Query("""
+        UPDATE Product p
+        SET p.price = :price
+        WHERE p.sku = :sku
+    """)
+    int updatePriceByArticle(
+            @Param("sku") String sku,
+            @Param("price") BigDecimal price
+    );
 
 
 //    @Query("SELECT p FROM Product p " +
