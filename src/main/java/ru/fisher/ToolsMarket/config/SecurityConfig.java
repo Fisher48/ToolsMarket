@@ -4,7 +4,6 @@ package ru.fisher.ToolsMarket.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -24,8 +23,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(Customizer.withDefaults())
+        http.csrf(csrf ->
+                        csrf.ignoringRequestMatchers("/actuator/**"))
                 .authorizeHttpRequests(auth -> auth
+
+                        // Actuator
+                        .requestMatchers(
+                                "/actuator/prometheus",
+                                "/actuator/health"
+                        ).permitAll()
+
                         // Публичные
                         .requestMatchers( "/",
                                 "/css/**", "/js/**", "/images/**",
@@ -40,7 +47,7 @@ public class SecurityConfig {
 
                         // Точки входа для админа
                         .requestMatchers(
-                                "/admin/**", "api/admin/**"
+                                "/admin/**", "api/admin/**", "/grafana/**"
                         ).hasRole("ADMIN")
 
                         // Точки входа для пользователя
