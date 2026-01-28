@@ -26,7 +26,7 @@ public class PriceImportController {
     public String importPage(Model model) {
         model.addAttribute("result", null);
         model.addAttribute("dryRun", false);
-        return "/admin/prices/import";
+        return "admin/prices/import_prices";
     }
 
     @PostMapping("/import")
@@ -40,13 +40,13 @@ public class PriceImportController {
         // Валидация файла
         if (file.isEmpty()) {
             model.addAttribute("error", "Файл пустой");
-            return "/admin/prices/import";
+            return "admin/prices/import_prices";
         }
 
         if (!isValidExcelFile(file)) {
             model.addAttribute("error",
                     "Поддерживаются только файлы Excel (.xlsx, .xls)");
-            return "/admin/prices/import";
+            return "admin/prices/import_prices";
         }
 
         try {
@@ -79,7 +79,7 @@ public class PriceImportController {
                     "Ошибка обработки файла: " + e.getMessage());
         }
 
-        return "admin/prices/import";
+        return "admin/prices/import_prices";
     }
 
     /**
