@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .order-header { background: #f8f9fa; padding: 20px; border-radius: 5px; }
+        .order-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .order-table th { background: #007bff; color: white; padding: 10px; }
+        .order-table td { padding: 10px; border-bottom: 1px solid #ddd; }
+        .discount { color: #28a745; font-weight: bold; }
+        .total { font-size: 18px; font-weight: bold; color: #dc3545; }
+    </style>
+</head>
+<body>
+<div class="order-header">
+    <h2>🛠️ Новый заказ инструментов</h2>
+    <p><strong>Номер заказа:</strong> <span th:text="${order.orderNumber}"></span></p>
+    <p><strong>Email клиента:</strong> <span th:text="${order.customerEmail}"></span></p>
+    <p><strong>Дата:</strong> <span th:text="${formattedDate}"></span></p>
+</div>
+
+<table class="order-table">
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Наименование</th>
+        <th>Артикул</th>
+        <th>Кол-во</th>
+        <th>Цена (₽)</th>
+        <th>Сумма (₽)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item, stat : ${items}">
+        <td th:text="${stat.count}"></td>
+        <td th:text="${item.productName}"></td>
+        <td th:text="${item.productSku}"></td>
+        <td th:text="${item.quantity}"></td>
+        <td>
+            <span th:text="${item.unitPrice}"></span>
+            <span th:if="${item.hasDiscount}" class="discount">
+                        * (скидка <span th:text="${item.discountPercentage}"></span>%)
+                    </span>
+        </td>
+        <td th:text="${item.subtotal}"></td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="total">
+    <p><strong>Общая сумма заказа:</strong> <span th:text="${total}"></span> ₽</p>
+</div>
+
+<p>Заказ ожидает обработки в панели администратора.</p>
+</body>
+</html>

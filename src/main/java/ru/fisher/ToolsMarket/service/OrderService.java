@@ -2,9 +2,11 @@ package ru.fisher.ToolsMarket.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import ru.fisher.ToolsMarket.dto.OrderCreatedEvent;
 import ru.fisher.ToolsMarket.dto.OrderSummaryDto;
 import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
@@ -36,6 +38,7 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final DiscountService discountService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Создание заказа из корзины пользователя
@@ -163,6 +166,15 @@ public class OrderService {
 
         log.info("Заказ создан: id={}, номер={}, цена={}, скидка={}",
                 order.getId(), order.getOrderNumber(), order.getTotalPrice(), totalDiscount);
+
+        eventPublisher.publishEvent(new OrderCreatedEvent(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getOrderItems().stream().toList(),
+                order.getTotalPrice(),
+                order.getUser().getEmail()
+        ));
+
         return saved;
     }
 
