@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import ru.fisher.ToolsMarket.dto.OrderCreatedEvent;
+import ru.fisher.ToolsMarket.dto.OrderItemDto;
 import ru.fisher.ToolsMarket.dto.OrderSummaryDto;
 import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
@@ -170,7 +171,8 @@ public class OrderService {
         eventPublisher.publishEvent(new OrderCreatedEvent(
                 order.getId(),
                 order.getOrderNumber(),
-                order.getOrderItems().stream().toList(),
+                order.getOrderItems().stream()
+                        .map(OrderItemDto::fromEntity).toList(),
                 order.getTotalPrice(),
                 order.getUser().getEmail()
         ));
