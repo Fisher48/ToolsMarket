@@ -60,7 +60,7 @@ class CartControllerTest {
         when(cartService.getCartItems(any())).thenReturn(List.of());
 
         // when & then
-        mockMvc.perform(get("/cart"))
+        mockMvc.perform(get("/cart").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("sessionId"))
                 .andExpect(view().name("cart/index"));
@@ -100,7 +100,7 @@ class CartControllerTest {
         when(cartService.getCartItems(1L)).thenReturn(List.of());
 
         // when & then
-        mockMvc.perform(get("/cart"))
+        mockMvc.perform(get("/cart").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("cart/index"))
                 .andExpect(model().attributeExists("isAuthenticated"))

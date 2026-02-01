@@ -236,7 +236,7 @@ class ProductAdminControllerTest {
         Product existingProduct = createTestProductWithDetails();
         ProductImage newImage = createTestProductImage();
 
-        when(productService.findEntityById(1L)).thenReturn(Optional.of(existingProduct));
+        when(productService.findWithDetailsById(1L)).thenReturn(Optional.of(existingProduct));
         when(imageStorageService.isImage(any())).thenReturn(true);
         when(imageStorageService.saveImage(any(), anyString())).thenReturn(newImage);
 
@@ -270,7 +270,7 @@ class ProductAdminControllerTest {
         ProductImage imageToDelete = createTestProductImage();
         existingProduct.getImages().add(imageToDelete);
 
-        when(productService.findEntityById(1L)).thenReturn(Optional.of(existingProduct));
+        when(productService.findWithDetailsById(1L)).thenReturn(Optional.of(existingProduct));
         doNothing().when(imageStorageService).deleteImage(anyString());
 
         // When & Then
@@ -298,7 +298,7 @@ class ProductAdminControllerTest {
 
         existingProduct.getImages().add(existingImage);
 
-        when(productService.findEntityById(1L)).thenReturn(Optional.of(existingProduct));
+        when(productService.findWithDetailsById(1L)).thenReturn(Optional.of(existingProduct));
         when(imageStorageService.isImage(any())).thenReturn(true);
         when(imageStorageService.saveImage(any(), anyString())).thenReturn(newImage);
         doNothing().when(imageStorageService).deleteImage(anyString());
@@ -315,7 +315,8 @@ class ProductAdminControllerTest {
                         .param("price", "1099.99")
                         .param("currency", "RUB")
                         .param("active", "true")
-                        .param("deleteImageIds", "1"))
+                        .param("deleteImageIds", "1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/products"));
 
@@ -337,10 +338,10 @@ class ProductAdminControllerTest {
     void index_ShouldReturnProductsList() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
-        when(productService.findAllEntities()).thenReturn(List.of(product));
+        when(productService.findAllWithCategories()).thenReturn(List.of(product));
 
         // When & Then
-        mockMvc.perform(get("/admin/products"))
+        mockMvc.perform(get("/admin/products").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/products/index"))
                 .andExpect(model().attributeExists("products"))
@@ -352,14 +353,19 @@ class ProductAdminControllerTest {
     void show_WhenProductExists_ShouldReturnProductView() throws Exception {
         // Given
         Product product = createTestProductWithDetails();
-        when(productService.findEntityById(1L)).thenReturn(Optional.of(product));
+        Map<Attribute, String> mockAttributes = Map.of();
+
+        when(productService.findByIdWithAllRelations(1L)).thenReturn(Optional.of(product));
+        when(attributeService.getProductAttributes(product)).thenReturn(mockAttributes);
 
         // When & Then
-        mockMvc.perform(get("/admin/products/1"))
+        mockMvc.perform(get("/admin/products/1").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/products/show"))
                 .andExpect(model().attributeExists("product"))
-                .andExpect(model().attribute("product", product));
+                .andExpect(model().attributeExists("productAttributes"))
+                .andExpect(model().attribute("product", product))
+                .andExpect(model().attribute("productAttributes", mockAttributes));
     }
 
     @Test
@@ -432,7 +438,7 @@ class ProductAdminControllerTest {
     void update_ShouldUpdateProductAndRedirect() throws Exception {
         // Given
         Product existingProduct = createTestProductWithDetails();
-        when(productService.findEntityById(1L)).thenReturn(Optional.of(existingProduct));
+        when(productService.findWithDetailsById(1L)).thenReturn(Optional.of(existingProduct));
         when(productService.saveEntity(any(Product.class))).thenReturn(existingProduct);
 
         // When & Then
@@ -503,7 +509,7 @@ class ProductAdminControllerTest {
         Long productId = 1L;
         Product product = Product.builder().id(productId).name("Дрель PRO").build();
 
-        when(productService.findEntityById(productId)).thenReturn(Optional.of(product));
+        when(productService.findWithDetailsById(productId)).thenReturn(Optional.of(product));
 
         // Act & Assert
         mockMvc.perform(post("/admin/products/{id}/specifications", productId)

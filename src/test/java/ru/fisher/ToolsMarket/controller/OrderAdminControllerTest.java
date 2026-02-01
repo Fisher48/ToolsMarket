@@ -14,10 +14,7 @@ import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
-import ru.fisher.ToolsMarket.models.Order;
-import ru.fisher.ToolsMarket.models.OrderItem;
-import ru.fisher.ToolsMarket.models.OrderStatus;
-import ru.fisher.ToolsMarket.models.User;
+import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.OrderService;
 import ru.fisher.ToolsMarket.service.UserService;
 
@@ -63,7 +60,7 @@ class OrderAdminControllerTest {
         when(orderService.countOrdersByStatus(OrderStatus.COMPLETED)).thenReturn(0L);
         when(orderService.countOrdersByStatus(OrderStatus.CANCELLED)).thenReturn(0L);
 
-        mockMvc.perform(get("/admin/orders"))
+        mockMvc.perform(get("/admin/orders").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/orders/index"))
                 .andExpect(model().attributeExists("orders", "newOrdersCount", "paidOrdersCount"))
@@ -80,7 +77,7 @@ class OrderAdminControllerTest {
         when(orderService.getOrdersByStatus(OrderStatus.PAID)).thenReturn(paidOrders);
         when(orderService.countOrdersByStatus(any())).thenReturn(0L);
 
-        mockMvc.perform(get("/admin/orders")
+        mockMvc.perform(get("/admin/orders").with(csrf())
                         .param("status", "PAID"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/orders/index"))
@@ -98,7 +95,7 @@ class OrderAdminControllerTest {
         when(orderService.findByOrderNumber(orderNumber)).thenReturn(foundOrder);
         when(orderService.countOrdersByStatus(any())).thenReturn(0L);
 
-        mockMvc.perform(get("/admin/orders")
+        mockMvc.perform(get("/admin/orders").with(csrf())
                         .param("search", orderNumber.toString()))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("orders", List.of(foundOrder)));
@@ -113,7 +110,7 @@ class OrderAdminControllerTest {
         when(orderService.searchOrders(sku)).thenReturn(foundOrders);
         when(orderService.countOrdersByStatus(any())).thenReturn(0L);
 
-        mockMvc.perform(get("/admin/orders")
+        mockMvc.perform(get("/admin/orders").with(csrf())
                         .param("search", sku))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("orders", foundOrders));
@@ -125,7 +122,7 @@ class OrderAdminControllerTest {
         when(orderService.getAllOrders()).thenReturn(List.of());
         when(orderService.countOrdersByStatus(any(OrderStatus.class))).thenReturn(0L);
 
-        mockMvc.perform(get("/admin/orders"))
+        mockMvc.perform(get("/admin/orders").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("orders", is(Matchers.empty())));
     }
@@ -137,9 +134,8 @@ class OrderAdminControllerTest {
     void adminOrderDetailReturnsOrderWithItems() throws Exception {
         Long orderId = 1L;
         Order order = createOrder(orderId, "CREATED");
-        order.setOrderItems(Set.of(new OrderItem()));
 
-        when(orderService.getOrder(orderId)).thenReturn(order);
+        when(orderService.getOrderWithProducts(orderId)).thenReturn(order);
 
         mockMvc.perform(get("/admin/orders/{id}", orderId).with(csrf()))
                 .andExpect(status().isOk())
@@ -387,6 +383,23 @@ class OrderAdminControllerTest {
         user.setFirstName("John");
         user.setLastName("Doe");
         order.setUser(user);
+
+        // Создаем OrderItems с заполненными полями
+        OrderItem orderItem = new OrderItem();
+        orderItem.setId(1L);
+        orderItem.setQuantity(2);
+        orderItem.setUnitPrice(BigDecimal.valueOf(500));
+        orderItem.setProductName("Тестовый товар");
+
+        // Если нужно связать с Product
+        Product product = new Product();
+        product.setId(1L);
+        product.setName("Тестовый товар");
+        product.setPrice(BigDecimal.valueOf(500));
+        orderItem.setProduct(product);
+
+        order.setOrderItems(Set.of(orderItem));
+
         return order;
     }
 

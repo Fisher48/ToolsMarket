@@ -61,7 +61,7 @@ class CategoryAdminControllerTest {
         when(categoryService.findEntityById(1L)).thenReturn(Optional.of(category));
 
         // When & Then
-        mockMvc.perform(get("/admin/categories/1"))
+        mockMvc.perform(get("/admin/categories/1").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/categories/show"))
                 .andExpect(model().attributeExists("category"))

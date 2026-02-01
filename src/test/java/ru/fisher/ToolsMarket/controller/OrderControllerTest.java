@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -107,7 +108,7 @@ class OrderControllerTest {
     void viewNonExistentOrderReturns404() throws Exception {
         Long nonExistentOrderId = 999L;
 
-        when(orderService.getOrder(nonExistentOrderId))
+        when(orderService.getOrderWithProducts(nonExistentOrderId))
                 .thenThrow(new OrderNotFoundException(nonExistentOrderId));
 
         mockMvc.perform(get("/order/{id}", nonExistentOrderId).with(csrf()))
@@ -118,47 +119,56 @@ class OrderControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
-    void checkoutWithEmptyCartRedirectsToCart() throws Exception {
-        String sessionId = "abc";
+    void checkout_AuthenticatedUserWithEmptyCart_ShowsEmptyCheckout() throws Exception {
+        // Arrange
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("testuser");
+        user.setUserType(UserType.REGULAR);
 
-        Cart cart = new Cart();
-        cart.setId(10L);
+        when(userService.findByUsername("testuser")).thenReturn(Optional.of(user));
+        when(userService.findById(1L)).thenReturn(Optional.of(user));
+        when(cartService.getUserCartItems(1L)).thenReturn(List.of());
 
-        when(cartService.getOrCreateCart(null, sessionId)).thenReturn(cart);
-        when(cartService.getCartItems(10L)).thenReturn(List.of());
-
-        mockMvc.perform(get("/order/checkout")
-                        .cookie(new Cookie("sessionId", sessionId)))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/cart?error=empty"));
+        // Act & Assert
+        mockMvc.perform(get("/order/checkout").with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("order/checkout"))
+                .andExpect(model().attribute("items", hasSize(0)))
+                .andExpect(model().attribute("totalAmount", BigDecimal.ZERO))
+                .andExpect(model().attribute("isAuthenticated", true));
     }
 
     @Test
-    @WithMockUser(username = "testuser")
-    void checkoutWithNonEmptyCartShowsCheckoutPage() throws Exception {
-        String sessionId = "abc";
-
+    void checkoutWithNonEmptyCartShowsCheckoutPage_Unauthenticated() throws Exception {
+        // 1. Создаем корзину
         Cart cart = new Cart();
         cart.setId(10L);
 
-        // Создаем элементы корзины
+        // 2. Создаем товары в корзине
         CartItemDto item = new CartItemDto();
         item.setProductId(1L);
         item.setProductName("Тестовый товар");
-        item.setQuantity(1);
+        item.setQuantity(2); // 2 штуки
         item.setUnitPrice(new BigDecimal("100.00"));
+        item.setTotalPriceWithDiscount(new BigDecimal("180.00")); // Со скидкой 10%
 
         List<CartItemDto> items = List.of(item);
 
-        when(cartService.getOrCreateCart(null, sessionId)).thenReturn(cart);
+        // 3. Мокаем сервисы (для НЕАВТОРИЗОВАННОГО пользователя)
+        when(cartService.getOrCreateCart(null, null)).thenReturn(cart); // ← sessionId не используется!
         when(cartService.getCartItems(10L)).thenReturn(items);
 
-        mockMvc.perform(get("/order/checkout")
-                        .cookie(new Cookie("sessionId", sessionId)))
+        // 4. Выполняем запрос БЕЗ авторизации
+        mockMvc.perform(get("/order/checkout"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("order/checkout"))
-                .andExpect(model().attribute("cart", cart))
-                .andExpect(model().attribute("items", items));
+                .andExpect(model().attributeExists("items"))
+                .andExpect(model().attribute("items", items))
+                .andExpect(model().attribute("totalAmount", new BigDecimal("200.00"))) // 2 * 100
+                .andExpect(model().attribute("totalWithDiscount", new BigDecimal("180.00")))
+                .andExpect(model().attribute("totalDiscount", new BigDecimal("20.00")))
+                .andExpect(model().attribute("isAuthenticated", false));
     }
 
     @Test
@@ -289,13 +299,6 @@ class OrderControllerTest {
                 .andExpect(redirectedUrl("/order/" + orderId))
                 .andExpect(flash().attribute("errorMessage",
                         "Невозможно изменить статус заказа: заказ уже завершен"));
-    }
-
-    @Test
-    @WithMockUser(username = "testuser")
-    void checkoutWithoutSessionCookieReturnsBadRequest() throws Exception {
-        mockMvc.perform(get("/order/checkout"))
-                .andExpect(status().isBadRequest());
     }
 
     @Test
