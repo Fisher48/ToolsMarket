@@ -56,7 +56,7 @@ public class UserService {
 
     @Transactional
     public User registerUser(String username, String email, String password,
-                             String firstName, String lastName) {
+                             String firstName, String lastName, String phone) {
 
         if (existsByUsername(username)) {
             throw new IllegalArgumentException("Пользователь с таким именем уже существует");
@@ -72,6 +72,7 @@ public class UserService {
                 .password(passwordEncoder.encode(password))
                 .firstName(firstName)
                 .lastName(lastName)
+                .phone(phone)
                 .enabled(true)
                 .roles(new HashSet<>())
                 .createdAt(Instant.now())
@@ -91,7 +92,7 @@ public class UserService {
     }
 
     public User createAdminUser(String username, String email, String password) {
-        User admin = registerUser(username, email, password, "Admin", "Admin");
+        User admin = registerUser(username, email, password, "Admin", "Admin", "89006009470");
 
         Role adminRole = roleRepository.findByName(Role.ROLE_ADMIN)
                 .orElseGet(() -> createRole(Role.ROLE_ADMIN, "Администратор"));
