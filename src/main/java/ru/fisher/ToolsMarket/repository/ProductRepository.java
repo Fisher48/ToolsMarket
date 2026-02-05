@@ -28,8 +28,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findActiveByCategory(@Param("categoryId") Long categoryId, Pageable pageable);
 
     @Query("SELECT p FROM Product p " +
-            "WHERE p.active = true " +
-            "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
+            "WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
             "OR LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', :q, '%')) " +
             "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :q, '%')) " +
             "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :q, '%'))) " +
@@ -37,7 +36,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT(:q, '%')) THEN 1 " +
             "     WHEN LOWER(p.sku) = LOWER(:q) THEN 2 " +
             "     ELSE 3 END, p.name")
-    Page<Product> searchActive(@Param("q") String q, Pageable pageable);
+    Page<Product> searchProduct(@Param("q") String q, Pageable pageable);
 
     boolean existsByTitle(String title);
 

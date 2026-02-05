@@ -16,8 +16,6 @@ import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 
 @Service
@@ -103,7 +101,7 @@ public class ProductService {
         if (query == null || query.trim().isEmpty()) {
             return Page.empty();
         }
-        return productRepository.searchActive(query.trim(), pageable)
+        return productRepository.searchProduct(query.trim(), pageable)
                 .map(productMapperService::toListDto);
     }
 
@@ -189,7 +187,7 @@ public class ProductService {
      * Поиск с учетом скидок
      */
     public Page<ProductListDto> searchWithDiscounts(String query, User user, Pageable pageable) {
-        Page<Product> products = productRepository.searchActive(query.trim(), pageable);
+        Page<Product> products = productRepository.searchProduct(query.trim(), pageable);
 
         return products.map(product -> {
             ProductListDto dto = productMapperService.toListDto(product, user);
