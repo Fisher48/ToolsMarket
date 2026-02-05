@@ -20,7 +20,7 @@ services:
       - app-network
 
   app:
-    image: ghcr.io/fisher48/tools-market-app:latest
+    image: fisher48/tools-market-app:latest
     container_name: tools-market-app
     restart: unless-stopped
     depends_on:

@@ -1,18 +1,16 @@
-name: Deploy
+name: Deploy with Docker Hub
 
 on:
   push:
     branches: [main]
-    tags: ['v*']  # Опционально: для релизов
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: tools-market-app
+  REGISTRY: docker.io
+  IMAGE_NAME: fisher48/tools-market-app  # ← Твой Docker Hub логин/репозиторий
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
@@ -34,36 +32,25 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}  # Можно и GHCR_TOKEN
+          username: ${{ secrets.DOCKER_USERNAME }}  # ← Твой логин Docker Hub
+          password: ${{ secrets.DOCKER_PASSWORD }}   # ← Твой пароль/токен Docker Hub
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch  # main -> ghcr.io/...:main
-            type=ref,event=tag     # v1.0.0 -> ghcr.io/...:v1.0.0
-            type=sha               # ghcr.io/...:sha-abc123
-
-      - name: Build and push
+      - name: Build and push Docker image
         run: |
-          # Просто собираем и пушим
-          docker build -t ghcr.io/fisher48/tools-market-app:latest .
-          docker push ghcr.io/fisher48/tools-market-app:latest
+          # Собираем и пушим в Docker Hub
+          docker build -t ${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.IMAGE_NAME }}:latest
+          
+          # Также пушим с тегом по коммиту (опционально)
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
 
     steps:
       - name: Setup SSH
@@ -74,12 +61,6 @@ jobs:
       - name: Add server to known hosts
         run: ssh-keyscan -H ${{ secrets.TOOLSMARKET_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Copy configs to server
-        run: |
-          # Копируем только конфиги
-          scp docker-compose.yml ${{ secrets.TOOLSMARKET_SERVER_USER }}@${{ secrets.TOOLSMARKET_SERVER_HOST }}:~/toolsmarket/
-          scp -r nginx/ ${{ secrets.TOOLSMARKET_SERVER_USER }}@${{ secrets.TOOLSMARKET_SERVER_HOST }}:~/toolsmarket/nginx/
-
       - name: Deploy application
         run: |
           ssh ${{ secrets.TOOLSMARKET_SERVER_USER }}@${{ secrets.TOOLSMARKET_SERVER_HOST }} "
@@ -88,25 +69,12 @@ jobs:
           
             echo '=== Начинаем деплой ==='
           
-            # Логинимся в GHCR
-            echo '${{ secrets.GITHUB_TOKEN }}' | docker login ${{ env.REGISTRY }} \
-              -u '${{ github.repository_owner }}' \
-              --password-stdin
-            echo '✅ Логин в GHCR успешен'
+            # Логинимся в Docker Hub (если нужно)
+            # echo '${{ secrets.DOCKER_PASSWORD }}' | docker login \
+            #   -u '${{ secrets.DOCKER_USERNAME }}' \
+            #   --password-stdin
           
-            # Определяем какой образ тянуть
-            if [[ '${{ github.ref }}' == 'refs/tags/'* ]]; then
-              # Если релизный тег
-              TAG='${{ github.ref_name }}'
-            else
-              # Если обычный пуш в main
-              TAG='latest'
-            fi
-          
-            IMAGE='${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG'
-            echo \"Используем образ: \$IMAGE\"
-          
-            # Обновляем образ
+            # Обновляем образ (Docker Hub публичный, логин не нужен)
             echo 'Обновляем Docker образ...'
             docker compose pull app
             echo '✅ Образ обновлен'
@@ -118,11 +86,12 @@ jobs:
           
             # Проверяем
             echo 'Проверяем здоровье приложения...'
-            sleep 15
+            sleep 20
             if curl -f http://localhost:8080/actuator/health; then
               echo '✅ Приложение работает'
             else
               echo '❌ Ошибка health check'
+              docker compose logs app --tail=20
               exit 1
             fi
           
@@ -133,5 +102,4 @@ jobs:
             echo '✅ Очистка завершена'
           
             echo '🎉 Деплой успешно завершен!'
-            echo \"Приложение доступно по: https://toolsmarket48.ru\"
           "
