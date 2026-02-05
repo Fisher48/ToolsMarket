@@ -55,14 +55,10 @@ jobs:
             type=sha               # ghcr.io/...:sha-abc123
 
       - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          # Просто собираем и пушим
+          docker build -t ghcr.io/fisher48/tools-market-app:latest .
+          docker push ghcr.io/fisher48/tools-market-app:latest
 
   deploy:
     needs: build-and-push
