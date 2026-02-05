@@ -56,9 +56,10 @@ jobs:
 
       - name: Build and push
         run: |
-          # Будет: ghcr.io/fisher48/tools-market-app:latest
-          docker build -t ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+          # Формат: ghcr.io/OWNER/REPO_NAME:latest
+          IMAGE="ghcr.io/${{ github.repository_owner }}/$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]'):latest"
+          docker build -t $IMAGE .
+          docker push $IMAGE
 
   deploy:
     needs: build-and-push
