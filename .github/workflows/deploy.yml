@@ -95,12 +95,12 @@ jobs:
           
             # Обновляем образ (Docker Hub публичный, логин не нужен)
             echo 'Обновляем Docker образ...'
-            docker-compose pull app
+            docker compose pull app
             echo '✅ Образ обновлен'
           
             # Запускаем
             echo 'Запускаем сервисы...'
-            docker-compose up -d --remove-orphans
+            docker compose up -d --remove-orphans
             echo '✅ Сервисы запущены'
           
             # Проверяем
@@ -110,7 +110,7 @@ jobs:
               echo '✅ Приложение работает'
             else
               echo '❌ Ошибка health check'
-              docker-compose logs app --tail=20
+              docker compose logs app --tail=20
               exit 1
             fi
           
