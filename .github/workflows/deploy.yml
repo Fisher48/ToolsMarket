@@ -33,11 +33,17 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKER_USERNAME }}  # ← Твой логин Docker Hub
-          password: ${{ secrets.DOCKER_PASSWORD }}   # ← Твой пароль/токен Docker Hub
+        run: |
+          # Явно проверяем и логинимся
+          if [ -z "${{ secrets.DOCKER_USERNAME }}" ] || [ -z "${{ secrets.DOCKER_PASSWORD }}" ]; then
+            echo "❌ Секреты не настроены!"
+            exit 1
+          fi
+          
+          echo "${{ secrets.DOCKER_PASSWORD }}" | \
+          docker login docker.io \
+            -u "${{ secrets.DOCKER_USERNAME }}" \
+            --password-stdin
 
       - name: Build and push Docker image
         run: |
