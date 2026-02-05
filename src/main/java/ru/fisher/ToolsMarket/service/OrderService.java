@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import ru.fisher.ToolsMarket.dto.OrderCreatedEvent;
 import ru.fisher.ToolsMarket.dto.OrderItemDto;
-import ru.fisher.ToolsMarket.dto.OrderSummaryDto;
 import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
@@ -344,25 +343,6 @@ public class OrderService {
 
     public List<Order> findOrdersByUserId(Long userId) {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
-    }
-
-    // Добавляем новый метод для получения заказа с расчетом скидок
-    public OrderSummaryDto getOrderSummary(Long orderId, Long userId) {
-        Order order = getUserOrder(orderId, userId);
-
-        BigDecimal totalDiscount = order.getOrderItems().stream()
-                .map(item -> {
-                    BigDecimal originalPrice = item.getProduct().getPrice()
-                            .multiply(BigDecimal.valueOf(item.getQuantity()));
-                    return originalPrice.subtract(item.getSubtotal());
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return OrderSummaryDto.builder()
-                .order(order)
-                .totalDiscount(totalDiscount)
-                .originalTotal(order.getTotalPrice().add(totalDiscount))
-                .build();
     }
 
 }
