@@ -20,7 +20,7 @@ services:
       - app-network
 
   app:
-    build: .
+    image: ghcr.io/fisher48/toolsmarket:latest
     container_name: tools-market-app
     restart: unless-stopped
     depends_on:
@@ -50,7 +50,8 @@ services:
       JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
     volumes:
       - ./logs:/app/logs  # ✅ Логи сохраняются на хост машине
-      - ./uploads:/app/uploads
+#      - ./uploads:/app/uploads
+      - uploads:/app/uploads
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 10s
@@ -60,7 +61,7 @@ services:
       - app-network
 
   nginx:
-    image: nginx:latest
+    image: nginx:alpine
     container_name: tools-market-nginx
     restart: unless-stopped
     ports:
