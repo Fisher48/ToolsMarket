@@ -62,6 +62,14 @@ jobs:
       - name: Add server to known hosts
         run: ssh-keyscan -H ${{ secrets.TOOLSMARKET_SERVER_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Copy files to server
+        run: |
+          SERVER="${{ secrets.TOOLSMARKET_SERVER_USER }}@${{ secrets.TOOLSMARKET_SERVER_HOST }}"
+          TARGET_DIR="~/toolsmarket"
+            
+          scp docker-compose.yml $SERVER:$TARGET_DIR/docker-compose.yml
+          scp nginx/nginx.conf $SERVER:$TARGET_DIR/nginx/nginx.conf
+
       - name: Deploy application
         run: |
           ssh ${{ secrets.TOOLSMARKET_SERVER_USER }}@${{ secrets.TOOLSMARKET_SERVER_HOST }} "
