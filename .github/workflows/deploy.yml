@@ -75,7 +75,7 @@ jobs:
           scp docker-compose.yml $SERVER:~/toolsmarket/docker-compose.yml
 
           # 👉 Копируем ВСЮ папку conf.d
-          scp -r nginx/conf.d/* $SERVER:~/toolsmarket/nginx/conf.d/
+          scp -r nginx/conf.d $SERVER:~/toolsmarket/nginx/
 
       - name: Deploy application
         run: |
