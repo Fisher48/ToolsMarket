@@ -48,7 +48,7 @@ services:
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
 
       APP_UPLOAD_PATH: /app/uploads
-      APP_BASE_URL: http://localhost
+      APP_BASE_URL: https://toolsmarket48.ru
 
       # Дополнительные настройки
       JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
@@ -71,10 +71,24 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./uploads:/app/uploads:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+#      - ./uploads:/app/uploads:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro  # Для SSL сертификатов
+      - ./nginx/certbot:/var/www/certbot:ro     # Для обновления SSL
+      - uploads:/app/uploads:ro  # Доступ к изображениям
     depends_on:
       - app
+    networks:
+      - app-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: tools-market-certbot
+    restart: unless-stopped
+    volumes:
+      - ./nginx/ssl:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - app-network
 
@@ -140,5 +154,6 @@ networks:
 
 volumes:
   pgdata:
+  uploads:
   grafana-data:
   prometheus-data:
