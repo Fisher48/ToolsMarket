@@ -124,7 +124,7 @@ jobs:
             # Проверяем
             echo 'Проверяем здоровье приложения...'
             sleep 30
-            if curl -f http://localhost:8080/actuator/health; then
+            if docker exec tools-market-app curl -f http://localhost:8080/actuator/health; then
               echo '✅ Приложение работает'
             else
               echo '❌ Ошибка health check'
