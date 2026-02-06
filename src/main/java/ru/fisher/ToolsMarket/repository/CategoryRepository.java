@@ -1,6 +1,7 @@
 package ru.fisher.ToolsMarket.repository;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -23,6 +24,10 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
             "LEFT JOIN FETCH c.children " +
             "ORDER BY c.sortOrder, c.name")
     List<Category> findAllWithAttributes();
+
+    // Или используем именованный EntityGraph
+    @EntityGraph(value = "Category.withChildrenAndParent")
+    Optional<Category> findCategoryWithRelationsById(Long id);
 
     List<Category> findByParent_IdOrderBySortOrderAsc(Long parentId);
     boolean existsByTitle(String title);
