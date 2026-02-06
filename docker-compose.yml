@@ -74,10 +74,8 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
 #      - ./uploads:/app/uploads:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro  # Для SSL сертификатов
-      - ./nginx/certbot:/var/www/certbot:ro     # Для обновления SSL
-      - certbot-etc:/etc/letsencrypt:ro  # Общий volume с certbot
-      - certbot-www:/var/www/certbot:ro  # Для верификации
+      - ./nginx/simple-certs:/etc/nginx/ssl:ro
+      - ./nginx/certbot:/var/www/certbot:ro
       - uploads:/app/uploads:ro  # Доступ к изображениям
     depends_on:
       - app
@@ -89,10 +87,8 @@ services:
     container_name: tools-market-certbot
     restart: unless-stopped
     volumes:
-      - ./nginx/ssl:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
-      - certbot-etc:/etc/letsencrypt      # Читаем и пишем
-      - certbot-www:/var/www/certbot      # Для верификации
+      - ./nginx/simple-certs:/etc/nginx/ssl:ro
+      - ./nginx/certbot:/var/www/certbot:ro
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - app-network
@@ -162,5 +158,3 @@ volumes:
   uploads:
   grafana-data:
   prometheus-data:
-  certbot-etc:
-  certbot-www:
