@@ -69,10 +69,15 @@ jobs:
         run: |
           SERVER="${{ secrets.TOOLSMARKET_SERVER_USER }}@${{ secrets.TOOLSMARKET_SERVER_HOST }}"
 
-          ssh $SERVER "mkdir -p ~/toolsmarket/nginx/conf.d"
+          # Даем права пользователю на папку
+          ssh $SERVER "sudo mkdir -p ~/toolsmarket/nginx/conf.d && sudo chown -R ${{ secrets.TOOLSMARKET_SERVER_USER }} ~/toolsmarket"
 
-          # 👉 Копируем compose
           scp docker-compose.yml $SERVER:~/toolsmarket/docker-compose.yml
+          
+          # Копируем nginx конфиг
+          echo "Проверяем локальные файлы nginx:"
+          ls -la nginx/
+          ls -la nginx/conf.d/ 2>/dev/null || echo "Папка conf.d пуста или не существует"
 
           # 👉 КОПИРУЕМ ВСЮ ПАПКУ
           scp -r nginx $SERVER:~/toolsmarket/
@@ -118,7 +123,7 @@ jobs:
           
             # Проверяем
             echo 'Проверяем здоровье приложения...'
-            sleep 20
+            sleep 30
             if curl -f http://localhost:8080/actuator/health; then
               echo '✅ Приложение работает'
             else
