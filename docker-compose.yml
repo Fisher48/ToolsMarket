@@ -47,6 +47,9 @@ services:
       EMAIL_ADMIN: ${EMAIL_ADMIN}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
 
+      RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY}
+      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
+
       APP_UPLOAD_PATH: /app/uploads
       APP_BASE_URL: https://toolsmarket48.ru
 
