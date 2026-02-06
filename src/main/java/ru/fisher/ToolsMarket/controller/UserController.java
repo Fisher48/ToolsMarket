@@ -282,9 +282,16 @@ public class UserController {
         try {
             OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
             List<Order> orders = orderService.getUserOrdersByStatus(userId, orderStatus);
+
+            // Получаем текущего пользователя (добавлено)
+            User currentUser = userService.findById(userId).orElseThrow();
+
+            // Добавляем те же атрибуты, что и в userOrders (добавлено)
             model.addAttribute("orders", orders);
             model.addAttribute("status", orderStatus);
-            model.addAttribute("user", userService.findById(userId).orElse(null));
+            model.addAttribute("user", currentUser);
+            model.addAttribute("currentUser", currentUser);  // Добавлено
+            model.addAttribute("isAuthenticated", true);  // Добавлено
 
             return "profile/orders";
 
