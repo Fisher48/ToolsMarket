@@ -95,8 +95,6 @@ jobs:
             echo 'Текущая структура:'
             ls -la ~/
           
-            cd toolsmarket
-          
             echo '=== Начинаем деплой ==='
           
             # Логинимся в Docker Hub (если нужно)
