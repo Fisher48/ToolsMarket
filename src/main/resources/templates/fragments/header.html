@@ -41,13 +41,15 @@
             <!-- Профиль пользователя -->
             <div class="nav-item dropdown">
                 <!-- Если пользователь авторизован -->
-                <th:block th:if="${isAuthenticated}">
+                <th:block th:if="${isAuthenticated != null and isAuthenticated}">  <!-- Простая проверка -->
                     <a class="nav-link text-white mx-2 dropdown-toggle d-flex align-items-center"
                        href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle fs-5 me-1"></i>
-                        <span th:if="${currentUser != null and currentUser.isEnabled()}">
-                            Привет, [[${currentUser.username}]]!</span>
-                        <span th:unless="${currentUser != null and currentUser.isEnabled()}"> Войти</span>
+                        <!-- Упрощенная проверка -->
+                        <span th:if="${currentUser != null}">
+                            Привет, [[${currentUser.username}]]!
+                        </span>
+                        <span th:unless="${currentUser != null}">Профиль</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li>
@@ -73,7 +75,7 @@
                 </th:block>
 
                 <!-- Если пользователь не авторизован -->
-                <th:block th:unless="${isAuthenticated}">
+                <th:block th:unless="${isAuthenticated != null and isAuthenticated}">
                     <a class="nav-link text-white mx-2 d-flex align-items-center"
                        th:href="@{/auth/login}">
                         <i class="bi bi-box-arrow-in-right fs-5 me-1"></i>

@@ -73,15 +73,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
     List<Object[]> countByStatusGroup();
 
+    // Новый метод для заказов по статусу
     @EntityGraph(attributePaths = {
             "user",
             "user.userType",
             "orderItems",
-            "orderItems.product",
-            "orderItems.product.category"  // если product связан с category
+            "orderItems.product"
     })
-    @Query("SELECT DISTINCT o FROM Order o WHERE o.user.id = :userId ORDER BY o.createdAt DESC")
-    List<Order> findByUserIdWithFullDetails(@Param("userId") Long userId);
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "WHERE o.user.id = :userId AND o.status = :status " +
+            "ORDER BY o.createdAt DESC")
+    List<Order> findByUserIdAndStatusWithProducts(@Param("userId") Long userId,
+                                                  @Param("status") OrderStatus status);
 
 
     // Поиск заказов пользователя

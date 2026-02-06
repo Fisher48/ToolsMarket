@@ -56,7 +56,7 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public List<Order> getUserOrders(Long userId) {
-        return orderRepository.findByUserIdWithFullDetails(userId);
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
     /**
@@ -84,7 +84,7 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public List<Order> getUserOrdersByStatus(Long userId, OrderStatus status) {
-        return orderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, status);
+        return orderRepository.findByUserIdAndStatusWithProducts(userId, status);
     }
 
     @Transactional
