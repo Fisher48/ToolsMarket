@@ -31,7 +31,7 @@ public class CategoryService {
     }
 
     public Optional<Category> findEntityById(Long id) {
-        return categoryRepository.findCategoryWithRelationsById(id);
+        return categoryRepository.findByIdWithRelations(id);
     }
 
     @Transactional

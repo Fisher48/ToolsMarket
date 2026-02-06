@@ -4,6 +4,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.fisher.ToolsMarket.models.Category;
 
@@ -25,9 +26,9 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
             "ORDER BY c.sortOrder, c.name")
     List<Category> findAllWithAttributes();
 
-    // Или используем именованный EntityGraph
-    @EntityGraph(value = "Category.withChildrenAndParent")
-    Optional<Category> findCategoryWithRelationsById(Long id);
+    @EntityGraph(attributePaths = {"parent", "children"})
+    @Query("SELECT c FROM Category c WHERE c.id = :id")
+    Optional<Category> findByIdWithRelations(@Param("id") Long id);
 
     List<Category> findByParent_IdOrderBySortOrderAsc(Long parentId);
     boolean existsByTitle(String title);
