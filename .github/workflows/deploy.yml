@@ -97,6 +97,10 @@ jobs:
           
             echo '=== Начинаем деплой ==='
           
+            # Останавливаем и удаляем старые контейнеры
+            echo 'Останавливаем старые контейнеры...'
+            docker compose down || true  # Игнорируем ошибки если нет контейнеров
+          
             # Логинимся в Docker Hub (если нужно)
             # echo '${{ secrets.DOCKER_PASSWORD }}' | docker login \
             #   -u '${{ secrets.DOCKER_USERNAME }}' \
