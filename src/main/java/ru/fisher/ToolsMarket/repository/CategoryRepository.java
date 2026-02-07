@@ -26,7 +26,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
             "ORDER BY c.sortOrder, c.name")
     List<Category> findAllWithAttributes();
 
-    @EntityGraph(attributePaths = {"parent", "children"})
+    @EntityGraph(attributePaths = {"attributes", "parent", "children"})
     @Query("SELECT c FROM Category c WHERE c.id = :id")
     Optional<Category> findByIdWithRelations(@Param("id") Long id);
 
