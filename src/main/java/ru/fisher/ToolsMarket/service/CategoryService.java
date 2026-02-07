@@ -55,6 +55,12 @@ public class CategoryService {
                 .toList();
     }
 
+    // Метод для получения только родительских категорий для главной страницы
+    public List<CategoryDto> getParentCategoriesForHome() {
+        List<Category> parentCategories = categoryRepository.findByParentIsNullOrderBySortOrderAsc();
+        return categoryMapperService.toDtoList(parentCategories);
+    }
+
 //    public List<Category> getParentCategories() {
 //        return categoryRepository.findByParentIsNullOrderBySortOrderAsc();
 //    }
