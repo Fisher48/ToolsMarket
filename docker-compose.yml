@@ -79,7 +79,7 @@ services:
       - "80:80"
       - "443:443" # Для SSL
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
 #      - ./uploads:/app/uploads:ro
       - ./nginx/simple-certs:/etc/nginx/ssl:ro
       - ./nginx/certbot:/var/www/certbot:ro
@@ -123,13 +123,25 @@ services:
       - "3000"
     volumes:
       - grafana-data:/var/lib/grafana
+     # - ./grafana/provisioning:/etc/grafana/provisioning:ro  # для дашбордов
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_DOMAIN: toolsmarket48.ru
       GF_SERVER_ROOT_URL: https://toolsmarket48.ru/grafana/
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      # Важные настройки для работы под прокси
+      GF_SERVER_ENABLE_GZIP: "true"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"  # если нужно встраивание
+      GF_SECURITY_COOKIE_SAMESITE: "none"
+      GF_SECURITY_COOKIE_SECURE: "true"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - app-network
 
