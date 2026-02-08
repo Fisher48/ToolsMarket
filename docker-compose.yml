@@ -131,11 +131,6 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_SERVER_ROOT_URL: https://toolsmarket48.ru/grafana/
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
-      # Важные настройки для работы под прокси
-      GF_SERVER_ENABLE_GZIP: "true"
-      GF_SECURITY_ALLOW_EMBEDDING: "true"  # если нужно встраивание
-      GF_SECURITY_COOKIE_SAMESITE: "none"
-      GF_SECURITY_COOKIE_SECURE: "true"
     healthcheck:
       test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1" ]
       interval: 30s
