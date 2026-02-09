@@ -7,7 +7,7 @@ public enum UserType {
     SETY("Сети"),
     PARTNER("Партнер"),
     MAXIMUM("ПартнерМакс"),
-    REGULAR("Обычный"); // Добавил для стандартных пользователей
+    REGULAR("Обычный");
 
     private final String displayName;
 
