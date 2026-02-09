@@ -8,6 +8,42 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-sidebar.css}">
+    <style>
+        /* Стили для сортировки */
+        .drag-handle {
+            cursor: move;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .drag-handle:hover {
+            opacity: 1;
+        }
+
+        .sortable-ghost {
+            opacity: 0.4;
+        }
+
+        .sortable-chosen {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .sortable-drag {
+            opacity: 0.8;
+            transform: rotate(5deg);
+        }
+
+        .image-sortable-item {
+            transition: transform 0.3s ease;
+        }
+
+        /* Для мобильных устройств */
+        @media (max-width: 768px) {
+            .drag-handle {
+                font-size: 1.2em;
+            }
+        }
+    </style>
 </head>
 <body>
 <div class="container-fluid">
@@ -132,7 +168,7 @@
                                             </small>
                                         </label>
                                     </div>
-                                    <div th:if="${categories.empty}" class="text-muted">
+                                    <div th:if="${categories.isEmpty()}" class="text-muted">
                                         Категории не найдены
                                     </div>
                                 </div>
@@ -213,66 +249,75 @@
 
                             <!-- СЕКЦИЯ НОВЫХ ИЗОБРАЖЕНИЙ -->
                             <div class="mb-3">
-                                <label class="form-label">Добавить новые изображения</label>
-                                <div id="images-container">
-                                    <!-- Убедитесь, что name="newImages" (во множественном числе) -->
-                                    <div class="image-upload-item mb-3 border rounded p-3">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <label class="form-label">Файл изображения</label>
-                                                <input type="file" class="form-control" name="newImages" accept="image/*" multiple>
-                                                <!-- Добавьте multiple если хотите несколько файлов -->
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label">Описание (alt)</label>
-                                                <input type="text" class="form-control" name="newImageAlts" placeholder="Описание">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="form-label">Порядок</label>
-                                                <input type="number" class="form-control" name="newImageSortOrders" value="0" min="0">
-                                            </div>
+                                <label class="form-label">Добавить новое изображение</label>
+                                <div class="border rounded p-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Файл изображения</label>
+                                            <input type="file" class="form-control" name="newImages" accept="image/*">
                                         </div>
-                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2 remove-image-btn">
-                                            <i class="fas fa-trash"></i> Удалить поле
-                                        </button>
-                                    </div>
-                                </div>
-                                <button type="button" id="add-image-btn" class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-plus"></i> Добавить поле для изображения
-                                </button>
-                            </div>
-
-                            <!-- СЕКЦИЯ УДАЛЕНИЯ СУЩЕСТВУЮЩИХ ИЗОБРАЖЕНИЙ -->
-                            <div th:if="${product.images != null and not product.images.empty}" class="mb-4">
-                                <label class="form-label">Текущие изображения (отметьте для удаления)</label>
-                                <div class="row">
-                                    <div th:each="image : ${product.images}" class="col-md-4 mb-3">
-                                        <div class="card">
-                                            <div class="card-body text-center">
-                                                <img th:src="${image.url}" th:alt="${image.alt}"
-                                                     class="img-thumbnail mb-2" style="max-height: 150px;">
-
-                                                <div class="mb-2">
-                                                    <small class="text-muted" th:text="${image.alt} ?: 'Без описания'"></small>
-                                                    <br>
-                                                    <small class="text-muted" th:text="'Порядок: ' + ${image.sortOrder}"></small>
-                                                </div>
-
-                                                <div class="form-check">
-                                                    <!-- Убедитесь, что name="deleteImageIds" -->
-                                                    <input class="form-check-input" type="checkbox"
-                                                           th:id="'deleteImage_' + ${image.id}"
-                                                           th:value="${image.id}"
-                                                           name="deleteImageIds">
-                                                    <label class="form-check-label" th:for="'deleteImage_' + ${image.id}">
-                                                        Удалить это изображение
-                                                    </label>
-                                                </div>
-                                            </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Описание (alt)</label>
+                                            <input type="text" class="form-control" name="newImageAlts" placeholder="Описание">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Порядок</label>
+                                            <input type="number" class="form-control" name="newImageSortOrders" value="0" min="0">
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- СЕКЦИЯ РЕДАКТИРОВАНИЯ ИЗОБРАЖЕНИЙ -->
+                            <div class="mb-4">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-images me-2"></i>Изображения товара
+                                </h5>
+
+                                <!-- Существующие изображения -->
+                                <div th:if="${product.images != null and not product.images.isEmpty()}" class="mb-4">
+                                    <label class="form-label">Текущие изображения</label>
+
+                                    <div class="row">
+                                        <div th:each="image, stat : ${product.images}" class="col-md-3 mb-3">
+                                            <div class="card h-100">
+                                                <div class="card-body text-center">
+                                                    <img th:src="${image.url}" th:alt="${image.alt}"
+                                                         class="img-thumbnail mb-2" style="max-height: 120px; object-fit: contain;">
+
+                                                    <div class="mb-2">
+                                                        <label class="small">Описание:</label>
+                                                        <input type="text"
+                                                               th:name="'imageAlt_' + ${image.id}"
+                                                               th:value="${image.alt}"
+                                                               class="form-control form-control-sm mb-1"
+                                                               placeholder="Описание">
+
+                                                        <label class="small">Порядок:</label>
+                                                        <input type="number"
+                                                               th:name="'imageOrder_' + ${image.id}"
+                                                               th:value="${image.sortOrder}"
+                                                               class="form-control form-control-sm"
+                                                               min="1">
+                                                    </div>
+
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox"
+                                                               th:id="'deleteImage_' + ${image.sortOrder}"
+                                                               th:value="${image.id}"
+                                                               name="deleteImageIds">
+                                                        <label class="form-check-label" th:for="'deleteImage_' + ${image.sortOrder}">
+                                                            Удалить
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
 
                             <!-- Статус -->
                             <div class="mb-3">
@@ -301,5 +346,46 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Кнопка для добавления нового поля изображения
+        const addBtn = document.getElementById('addNewImageBtn');
+        const container = document.getElementById('newImagesContainer');
+
+        if (addBtn && container) {
+            addBtn.addEventListener('click', function() {
+                const newItem = document.createElement('div');
+                newItem.className = 'border rounded p-3 mb-3 new-image-item';
+                newItem.innerHTML = `
+                <div class="row">
+                    <div class="col-md-5">
+                        <label class="form-label">Файл изображения *</label>
+                        <input type="file" class="form-control" name="newImages" accept="image/*" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Описание (alt)</label>
+                        <input type="text" class="form-control" name="newImageAlts" placeholder="Описание">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Порядок</label>
+                        <input type="number" class="form-control" name="newImageOrders" value="0" min="0">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger mt-2 remove-image-btn">
+                    <i class="fas fa-trash me-1"></i> Удалить это поле
+                </button>
+            `;
+
+                container.appendChild(newItem);
+
+                // Добавляем обработчик для кнопки удаления
+                const removeBtn = newItem.querySelector('.remove-image-btn');
+                removeBtn.addEventListener('click', function() {
+                    newItem.remove();
+                });
+            });
+        }
+    });
+</script>
 </body>
 </html>
