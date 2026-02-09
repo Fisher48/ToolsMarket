@@ -1,10 +1,12 @@
 package ru.fisher.ToolsMarket.models;
 
 public enum UserType {
-    WHOLESALER("Оптовик"),
-    VIP("VIP"),
-    MAXIMUM("Максимальная"),
+    DISTRIBUTOR("Дистрибьютор"),
+    WHOLESALER("ОПТ"),
+    VIP("ВИП"),
+    SETY("Сети"),
     PARTNER("Партнер"),
+    PARTNER_MAX("ПартнерМакс"),
     REGULAR("Обычный"); // Добавил для стандартных пользователей
 
     private final String displayName;
