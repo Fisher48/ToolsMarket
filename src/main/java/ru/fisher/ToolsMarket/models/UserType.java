@@ -6,7 +6,7 @@ public enum UserType {
     VIP("ВИП"),
     SETY("Сети"),
     PARTNER("Партнер"),
-    PARTNER_MAX("ПартнерМакс"),
+    MAXIMUM("ПартнерМакс"),
     REGULAR("Обычный"); // Добавил для стандартных пользователей
 
     private final String displayName;
