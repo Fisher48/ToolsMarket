@@ -195,8 +195,107 @@ public class ProductAdminController {
 //    }
 
     // Обновляем метод редактирования товара
-    @PostMapping("/{id}")
-    public String update(
+//    @PostMapping("/{id}")
+//    public String update(
+//            @PathVariable Long id,
+//            @RequestParam String name,
+//            @RequestParam String title,
+//            @RequestParam(required = false) String shortDescription,
+//            @RequestParam(required = false) String description,
+//            @RequestParam(required = false) String sku,
+//            @RequestParam BigDecimal price,
+//            @RequestParam String currency,
+//            @RequestParam(defaultValue = "true") boolean active,
+//            @RequestParam(required = false) List<Long> categoryIds,
+//
+//            // Параметры для изображений
+//            @RequestParam(required = false) List<MultipartFile> newImages,
+//            @RequestParam(required = false) List<String> newImageAlts,
+//            @RequestParam(required = false) List<Integer> newImageOrders,
+//            @RequestParam(required = false) List<Long> deleteImageIds,
+//
+//            // Все остальные параметры для alt и order
+//            @RequestParam Map<String, String> allParams,
+//
+//            RedirectAttributes redirectAttributes) {
+//
+//        try {
+//            log.info("=== ОБНОВЛЕНИЕ ТОВАРА {} ===", id);
+//
+//            // 1. Находим товар
+//            Product product = productService.findWithDetailsById(id)
+//                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
+//
+//            // 2. Обновляем основные поля
+//            product.setName(name);
+//            product.setTitle(title);
+//            product.setShortDescription(shortDescription);
+//            product.setDescription(description);
+//            product.setSku(sku);
+//            product.setPrice(price);
+//            product.setCurrency(currency);
+//            product.setActive(active);
+//            product.setUpdatedAt(Instant.now());
+//
+//            // 3. Обновляем категории
+//            if (categoryIds != null && !categoryIds.isEmpty()) {
+//                Set<Category> categories = new HashSet<>(categoryService.findByIds(categoryIds));
+//                product.setCategories(categories);
+//            }
+//
+//            // 4. ОБРАБОТКА СУЩЕСТВУЮЩИХ ИЗОБРАЖЕНИЙ
+//            if (product.getImages() != null) {
+//                // 4.1. Обновляем alt и order для существующих изображений
+//                for (ProductImage image : product.getImages()) {
+//                    String altKey = "imageAlt_" + image.getId();
+//                    String orderKey = "imageOrder_" + image.getId();
+//
+//                    if (allParams.containsKey(altKey)) {
+//                        image.setAlt(allParams.get(altKey));
+//                    }
+//
+//                    if (allParams.containsKey(orderKey)) {
+//                        try {
+//                            int order = Integer.parseInt(allParams.get(orderKey));
+//                            image.setSortOrder(Math.max(1, order)); // Минимум 1
+//                        } catch (NumberFormatException e) {
+//                            log.warn("Неверный формат порядка для изображения {}: {}",
+//                                    image.getId(), allParams.get(orderKey));
+//                        }
+//                    }
+//                }
+//
+//                // 4.2. Удаляем отмеченные изображения
+//                if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
+//                    removeImages(product, deleteImageIds);
+//                }
+//            }
+//
+//            // 5. ДОБАВЛЕНИЕ НОВЫХ ИЗОБРАЖЕНИЙ
+//            if (newImages != null && !newImages.isEmpty()) {
+//                log.info("Добавление {} новых изображений", newImages.size());
+//                addNewImages(product, newImages, newImageAlts, newImageOrders);
+//            }
+//
+//            // 6. Сохраняем товар (изображения сохранятся каскадно)
+//            productService.saveEntity(product);
+//
+//            log.info("=== ТОВАР УСПЕШНО ОБНОВЛЕН ===");
+//            redirectAttributes.addFlashAttribute("successMessage", "Товар успешно обновлен");
+//
+//        } catch (Exception e) {
+//            log.error("Ошибка при обновлении товара", e);
+//            redirectAttributes.addFlashAttribute("errorMessage",
+//                    "Ошибка при обновлении товара: " + e.getMessage());
+//            return "redirect:/admin/products/" + id + "/edit";
+//        }
+//
+//        return "redirect:/admin/products/" + id;
+//    }
+
+    // ============ ОБНОВЛЕНИЕ ОСНОВНОЙ ИНФОРМАЦИИ (БЕЗ MULTIPART) ============
+    @PostMapping("/{id}/update-info")
+    public String updateProductInfo(
             @PathVariable Long id,
             @RequestParam String name,
             @RequestParam String title,
@@ -207,26 +306,16 @@ public class ProductAdminController {
             @RequestParam String currency,
             @RequestParam(defaultValue = "true") boolean active,
             @RequestParam(required = false) List<Long> categoryIds,
-
-            // Параметры для изображений
-            @RequestParam(required = false) List<MultipartFile> newImages,
-            @RequestParam(required = false) List<String> newImageAlts,
-            @RequestParam(required = false) List<Integer> newImageOrders,
-            @RequestParam(required = false) List<Long> deleteImageIds,
-
-            // Все остальные параметры для alt и order
-            @RequestParam Map<String, String> allParams,
-
+            @RequestParam(required = false) ProductType productType,
             RedirectAttributes redirectAttributes) {
 
         try {
-            log.info("=== ОБНОВЛЕНИЕ ТОВАРА {} ===", id);
+            log.info("=== ОБНОВЛЕНИЕ ОСНОВНОЙ ИНФОРМАЦИИ ТОВАРА {} ===", id);
 
-            // 1. Находим товар
             Product product = productService.findWithDetailsById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
 
-            // 2. Обновляем основные поля
+            // Обновляем основные поля
             product.setName(name);
             product.setTitle(title);
             product.setShortDescription(shortDescription);
@@ -235,62 +324,105 @@ public class ProductAdminController {
             product.setPrice(price);
             product.setCurrency(currency);
             product.setActive(active);
+            product.setProductType(productType);
             product.setUpdatedAt(Instant.now());
 
-            // 3. Обновляем категории
+            // Обновляем категории
             if (categoryIds != null && !categoryIds.isEmpty()) {
                 Set<Category> categories = new HashSet<>(categoryService.findByIds(categoryIds));
                 product.setCategories(categories);
+            } else {
+                product.setCategories(new HashSet<>());
             }
 
-            // 4. ОБРАБОТКА СУЩЕСТВУЮЩИХ ИЗОБРАЖЕНИЙ
-            if (product.getImages() != null) {
-                // 4.1. Обновляем alt и order для существующих изображений
-                for (ProductImage image : product.getImages()) {
-                    String altKey = "imageAlt_" + image.getId();
-                    String orderKey = "imageOrder_" + image.getId();
+            productService.saveEntity(product);
 
+            redirectAttributes.addFlashAttribute("message", "Основная информация товара успешно обновлена");
+
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении информации товара", e);
+            redirectAttributes.addFlashAttribute("error", "Ошибка: " + e.getMessage());
+        }
+
+        return "redirect:/admin/products/" + id + "#main-info";
+    }
+
+    // ============ ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ (С MULTIPART) ============
+    @PostMapping("/{id}/update-images")
+    public String updateProductImages(
+            @PathVariable Long id,
+
+            // Новые изображения
+            @RequestParam(required = false) List<MultipartFile> newImages,
+            @RequestParam(required = false) List<String> newImageAlts,
+            @RequestParam(required = false) List<Integer> newImageOrders,
+
+            // Существующие изображения (alt и order)
+            @RequestParam(required = false) Map<String, String> allParams,
+
+            // ID для удаления
+            @RequestParam(required = false) List<Long> deleteImageIds,
+
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            log.info("=== ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ ТОВАРА {} ===", id);
+            log.info("Новых изображений: {}", newImages != null ? newImages.size() : 0);
+            log.info("Удаление изображений: {}", deleteImageIds);
+
+            Product product = productService.findWithDetailsById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
+
+            // 1. УДАЛЯЕМ ОТМЕЧЕННЫЕ ИЗОБРАЖЕНИЯ
+            if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
+                removeImages(product, deleteImageIds);
+            }
+
+            // 2. ОБНОВЛЯЕМ ALT И ORDER СУЩЕСТВУЮЩИХ ИЗОБРАЖЕНИЙ
+            if (allParams != null && product.getImages() != null) {
+                for (ProductImage image : product.getImages()) {
+                    // Обновляем alt
+                    String altKey = "imageAlt_" + image.getId();
                     if (allParams.containsKey(altKey)) {
-                        image.setAlt(allParams.get(altKey));
+                        String newAlt = allParams.get(altKey);
+                        image.setAlt(newAlt);
+                        log.info("Изображение {}: alt обновлен на '{}'", image.getId(), newAlt);
                     }
 
+                    // Обновляем order
+                    String orderKey = "imageOrder_" + image.getId();
                     if (allParams.containsKey(orderKey)) {
                         try {
-                            int order = Integer.parseInt(allParams.get(orderKey));
-                            image.setSortOrder(Math.max(1, order)); // Минимум 1
+                            int newOrder = Integer.parseInt(allParams.get(orderKey));
+                            image.setSortOrder(newOrder);
+                            log.info("Изображение {}: order обновлен на {}", image.getId(), newOrder);
                         } catch (NumberFormatException e) {
-                            log.warn("Неверный формат порядка для изображения {}: {}",
+                            log.warn("Неверный формат order для изображения {}: {}",
                                     image.getId(), allParams.get(orderKey));
                         }
                     }
                 }
-
-                // 4.2. Удаляем отмеченные изображения
-                if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
-                    removeImages(product, deleteImageIds);
-                }
             }
 
-            // 5. ДОБАВЛЕНИЕ НОВЫХ ИЗОБРАЖЕНИЙ
+            // 3. ДОБАВЛЯЕМ НОВЫЕ ИЗОБРАЖЕНИЯ
             if (newImages != null && !newImages.isEmpty()) {
-                log.info("Добавление {} новых изображений", newImages.size());
                 addNewImages(product, newImages, newImageAlts, newImageOrders);
             }
 
-            // 6. Сохраняем товар (изображения сохранятся каскадно)
+            // Сохраняем товар (изменения в изображениях сохранятся каскадно)
             productService.saveEntity(product);
 
-            log.info("=== ТОВАР УСПЕШНО ОБНОВЛЕН ===");
-            redirectAttributes.addFlashAttribute("successMessage", "Товар успешно обновлен");
+            redirectAttributes.addFlashAttribute("message",
+                    String.format("Изображения обновлены. Добавлено: %d, Удалено: %d",
+                            newImages != null ? newImages.stream().filter(f -> !f.isEmpty()).count() : 0,
+                            deleteImageIds != null ? deleteImageIds.size() : 0));
 
         } catch (Exception e) {
-            log.error("Ошибка при обновлении товара", e);
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Ошибка при обновлении товара: " + e.getMessage());
-            return "redirect:/admin/products/" + id + "/edit";
+            log.error("Ошибка при обновлении изображений товара", e);
+            redirectAttributes.addFlashAttribute("error", "Ошибка при обновлении изображений: " + e.getMessage());
         }
 
-        return "redirect:/admin/products/" + id;
+        return "redirect:/admin/products/" + id + "#images";
     }
 
     // МЕТОД ДЛЯ УДАЛЕНИЯ ИЗОБРАЖЕНИЙ
@@ -409,17 +541,17 @@ public class ProductAdminController {
         }
     }
 
-    private void deleteProductImages(Product product, List<Long> imageIds) {
-        // Используем итератор для безопасного удаления
-        Iterator<ProductImage> iterator = product.getImages().iterator();
-        while (iterator.hasNext()) {
-            ProductImage image = iterator.next();
-            if (imageIds.contains(image.getId())) {
-                imageStorageService.deleteImage(image.getUrl());
-                iterator.remove(); // Удаляем через итератор
-            }
-        }
-    }
+//    private void deleteProductImages(Product product, List<Long> imageIds) {
+//        // Используем итератор для безопасного удаления
+//        Iterator<ProductImage> iterator = product.getImages().iterator();
+//        while (iterator.hasNext()) {
+//            ProductImage image = iterator.next();
+//            if (imageIds.contains(image.getId())) {
+//                imageStorageService.deleteImage(image.getUrl());
+//                iterator.remove(); // Удаляем через итератор
+//            }
+//        }
+//    }
 
     @GetMapping("/{id}/specifications")
     public String specificationsForm(@PathVariable Long id, Model model) {

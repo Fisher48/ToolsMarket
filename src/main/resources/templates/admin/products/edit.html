@@ -9,39 +9,37 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-sidebar.css}">
     <style>
-        /* Стили для сортировки */
         .drag-handle {
             cursor: move;
             opacity: 0.7;
             transition: opacity 0.2s;
         }
-
         .drag-handle:hover {
             opacity: 1;
         }
-
         .sortable-ghost {
             opacity: 0.4;
         }
-
         .sortable-chosen {
             background-color: rgba(0, 123, 255, 0.1);
         }
-
         .sortable-drag {
             opacity: 0.8;
             transform: rotate(5deg);
         }
-
         .image-sortable-item {
             transition: transform 0.3s ease;
         }
-
-        /* Для мобильных устройств */
         @media (max-width: 768px) {
             .drag-handle {
                 font-size: 1.2em;
             }
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .tab-content {
+            padding: 20px 0;
         }
     </style>
 </head>
@@ -86,102 +84,265 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
 
-                <!-- Content -->
-                <div class="card">
-                    <div class="card-body">
-                        <form th:action="@{/admin/products/{id}(id=${product.id})}" method="post" enctype="multipart/form-data">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <!-- Основная информация -->
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="name" class="form-label">Название товара *</label>
-                                    <input type="text" class="form-control" id="name" name="name"
-                                           th:value="${product.name}" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="title" class="form-label">URL-адрес (title) *</label>
-                                    <input type="text" class="form-control" id="title" name="title"
-                                           th:value="${product.title}" required>
-                                    <div class="form-text">Человеко-читаемый URL</div>
-                                </div>
-                            </div>
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="main-info-tab" data-bs-toggle="tab"
+                                data-bs-target="#main-info" type="button" role="tab">
+                            <i class="fas fa-info-circle me-1"></i>Основная информация
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="images-tab" data-bs-toggle="tab"
+                                data-bs-target="#images" type="button" role="tab">
+                            <i class="fas fa-images me-1"></i>Изображения
+                            <span th:if="${product.images != null and not product.images.isEmpty()}"
+                                  class="badge bg-secondary" th:text="${product.images.size()}"></span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="specifications-tab" data-bs-toggle="tab"
+                                data-bs-target="#specifications" type="button" role="tab">
+                            <i class="fas fa-list-check me-1"></i>Характеристики
+                        </button>
+                    </li>
+                </ul>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="sku" class="form-label">Артикул (SKU)</label>
-                                    <input type="text" class="form-control" id="sku" name="sku"
-                                           th:value="${product.sku}">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="price" class="form-label">Цена *</label>
-                                    <input type="number" class="form-control" id="price" name="price"
-                                           th:value="${product.price}" step="0.01" min="0" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="currency" class="form-label">Валюта</label>
-                                    <select class="form-select" id="currency" name="currency">
-                                        <option value="RUB" th:selected="${product.currency == 'RUB'}">RUB</option>
-                                        <option value="USD" th:selected="${product.currency == 'USD'}">USD</option>
-                                        <option value="EUR" th:selected="${product.currency == 'EUR'}">EUR</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="productType" class="form-label">Тип товара</label>
-                                    <select class="form-select" id="productType" name="productType">
-                                        <option value="">-- Выберите тип --</option>
-                                        <option th:each="type : ${allProductTypes}"
-                                                th:value="${type}"
-                                                th:text="${type.displayName ?: type.name()}"
-                                                th:selected="${product.productType != null and product.productType == type}">
-                                        </option>
-                                    </select>
-                                    <div class="form-text">Для расчета скидок</div>
-                                </div>
-                            </div>
+                <!-- Tab Content -->
+                <div class="tab-content" id="productTabsContent">
 
-                            <!-- Описания -->
-                            <div class="mb-3">
-                                <label for="shortDescription" class="form-label">Краткое описание</label>
-                                <textarea class="form-control" id="shortDescription" name="shortDescription"
-                                          rows="3" th:text="${product.shortDescription}"></textarea>
-                            </div>
+                    <!-- ============ ТАБ 1: ОСНОВНАЯ ИНФОРМАЦИЯ (БЕЗ MULTIPART) ============ -->
+                    <div class="tab-pane fade show active" id="main-info" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <form th:action="@{'/admin/products/' + ${product.id} + '/update-info'}"
+                                      method="post">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-                            <div class="mb-3">
-                                <label for="description" class="form-label">Полное описание</label>
-                                <textarea class="form-control" id="description" name="description"
-                                          rows="6" th:text="${product.description}"></textarea>
-                            </div>
-
-                            <!-- Категории -->
-                            <div class="mb-3">
-                                <label class="form-label">Категории</label>
-                                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
-                                    <div th:each="category : ${categories}" class="form-check">
-                                        <input class="form-check-input" type="checkbox"
-                                               name="categoryIds"
-                                               th:value="${category.id}"
-                                               th:id="'category_' + ${category.id}">
-                                        <label class="form-check-label" th:for="'category_' + ${category.id}">
-                                            <span th:text="${category.name}"></span>
-                                            <small class="text-muted" th:if="${category.parent}">
-                                                (родитель: <span th:text="${category.parent.name}"></span>)
-                                            </small>
-                                        </label>
+                                    <!-- Основная информация -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="name" class="form-label">Название товара *</label>
+                                            <input type="text" class="form-control" id="name" name="name"
+                                                   th:value="${product.name}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="title" class="form-label">URL-адрес (title) *</label>
+                                            <input type="text" class="form-control" id="title" name="title"
+                                                   th:value="${product.title}" required>
+                                            <div class="form-text">Человеко-читаемый URL</div>
+                                        </div>
                                     </div>
-                                    <div th:if="${categories.isEmpty()}" class="text-muted">
-                                        Категории не найдены
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Секция характеристик для просмотра -->
-                            <div class="mb-4">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="sku" class="form-label">Артикул (SKU)</label>
+                                            <input type="text" class="form-control" id="sku" name="sku"
+                                                   th:value="${product.sku}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="price" class="form-label">Цена *</label>
+                                            <input type="number" class="form-control" id="price" name="price"
+                                                   th:value="${product.price}" step="0.01" min="0" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="currency" class="form-label">Валюта</label>
+                                            <select class="form-select" id="currency" name="currency">
+                                                <option value="RUB" th:selected="${product.currency == 'RUB'}">RUB</option>
+                                                <option value="USD" th:selected="${product.currency == 'USD'}">USD</option>
+                                                <option value="EUR" th:selected="${product.currency == 'EUR'}">EUR</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="productType" class="form-label">Тип товара</label>
+                                            <select class="form-select" id="productType" name="productType">
+                                                <option value="">-- Выберите тип --</option>
+                                                <option th:each="type : ${allProductTypes}"
+                                                        th:value="${type}"
+                                                        th:text="${type.displayName ?: type.name()}"
+                                                        th:selected="${product.productType != null and product.productType == type}">
+                                                </option>
+                                            </select>
+                                            <div class="form-text">Для расчета скидок</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check form-switch mt-4">
+                                                <input class="form-check-input" type="checkbox" role="switch"
+                                                       id="active" name="active" th:checked="${product.active}">
+                                                <label class="form-check-label" for="active">Активный товар</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Описания -->
+                                    <div class="mb-3">
+                                        <label for="shortDescription" class="form-label">Краткое описание</label>
+                                        <textarea class="form-control" id="shortDescription" name="shortDescription"
+                                                  rows="3" th:text="${product.shortDescription}"></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Полное описание</label>
+                                        <textarea class="form-control" id="description" name="description"
+                                                  rows="6" th:text="${product.description}"></textarea>
+                                    </div>
+
+                                    <!-- Категории -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Категории</label>
+                                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                            <div th:each="category : ${categories}" class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="categoryIds"
+                                                       th:value="${category.id}"
+                                                       th:id="'category_' + ${category.id}"
+                                                       th:checked="${product.categories?.contains(category)}">
+                                                <label class="form-check-label" th:for="'category_' + ${category.id}">
+                                                    <span th:text="${category.name}"></span>
+                                                    <small class="text-muted" th:if="${category.parent}">
+                                                        (родитель: <span th:text="${category.parent.name}"></span>)
+                                                    </small>
+                                                </label>
+                                            </div>
+                                            <div th:if="${categories.isEmpty()}" class="text-muted">
+                                                Категории не найдены
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Кнопки -->
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i> Сохранить основную информацию
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============ ТАБ 2: ИЗОБРАЖЕНИЯ (С MULTIPART) ============ -->
+                    <div class="tab-pane fade" id="images" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
+                                <form th:action="@{'/admin/products/' + ${product.id} + '/update-images'}"
+                                      method="post"
+                                      enctype="multipart/form-data">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                                    <!-- СЕКЦИЯ НОВЫХ ИЗОБРАЖЕНИЙ -->
+                                    <div class="mb-4">
+                                        <h5 class="mb-3">
+                                            <i class="fas fa-plus-circle me-2"></i>Добавить новые изображения
+                                        </h5>
+                                        <div id="new-images-container">
+                                            <div class="image-upload-item mb-3 border rounded p-3 bg-light">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Файл изображения</label>
+                                                        <input type="file" class="form-control"
+                                                               name="newImages" accept="image/*" multiple>
+                                                        <small class="text-muted">Можно выбрать несколько файлов</small>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-bold">Описание (alt)</label>
+                                                        <input type="text" class="form-control"
+                                                               name="newImageAlts" placeholder="Описание изображения">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <label class="form-label fw-bold">Порядок</label>
+                                                        <input type="number" class="form-control"
+                                                               name="newImageOrders" value="0" min="0">
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger mt-2 remove-new-image-btn">
+                                                    <i class="fas fa-trash"></i> Удалить это поле
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button type="button" id="add-new-image-btn" class="btn btn-outline-primary btn-sm mt-2">
+                                            <i class="fas fa-plus"></i> Добавить поле для загрузки
+                                        </button>
+                                    </div>
+
+                                    <!-- СЕКЦИЯ СУЩЕСТВУЮЩИХ ИЗОБРАЖЕНИЙ -->
+                                    <div th:if="${product.images != null and not product.images.isEmpty()}" class="mb-4">
+                                        <h5 class="mb-3">
+                                            <i class="fas fa-images me-2"></i>Текущие изображения
+                                        </h5>
+
+                                        <div class="row">
+                                            <div th:each="image : ${product.images}" class="col-md-3 mb-3">
+                                                <div class="card h-100">
+                                                    <div class="card-body text-center">
+                                                        <img th:src="${image.url}" th:alt="${image.alt}"
+                                                             class="img-thumbnail mb-2"
+                                                             style="max-height: 120px; object-fit: contain;">
+
+                                                        <div class="mb-2">
+                                                            <label class="small text-muted">Описание:</label>
+                                                            <input type="text"
+                                                                   th:name="'imageAlt_' + ${image.id}"
+                                                                   th:value="${image.alt}"
+                                                                   class="form-control form-control-sm mb-2"
+                                                                   placeholder="Описание изображения">
+                                                        </div>
+
+                                                        <div class="mb-2">
+                                                            <label class="small text-muted">Порядок:</label>
+                                                            <input type="number"
+                                                                   th:name="'imageOrder_' + ${image.id}"
+                                                                   th:value="${image.sortOrder}"
+                                                                   class="form-control form-control-sm"
+                                                                   min="1" step="1">
+                                                        </div>
+
+                                                        <div class="form-check mt-2">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                   th:id="'deleteImage_' + ${image.id}"
+                                                                   th:value="${image.id}"
+                                                                   name="deleteImageIds">
+                                                            <label class="form-check-label text-danger small"
+                                                                   th:for="'deleteImage_' + ${image.id}">
+                                                                <i class="fas fa-trash"></i> Удалить
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div th:unless="${product.images != null and not product.images.isEmpty()}"
+                                         class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        У этого товара пока нет изображений. Добавьте их выше.
+                                    </div>
+
+                                    <!-- Кнопка сохранения изображений -->
+                                    <div class="d-flex gap-2 mt-3">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i> Сохранить изменения изображений
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============ ТАБ 3: ХАРАКТЕРИСТИКИ ============ -->
+                    <div class="tab-pane fade" id="specifications" role="tabpanel">
+                        <div class="card">
+                            <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="text-primary">
                                         <i class="fas fa-list-check me-2"></i>Характеристики товара
                                     </h5>
                                     <a th:href="@{/admin/products/{id}/specifications(id=${product.id})}"
-                                       class="btn btn-outline-primary btn-sm">
+                                       class="btn btn-primary">
                                         <i class="fas fa-edit me-1"></i> Редактировать характеристики
                                     </a>
                                 </div>
@@ -212,13 +373,13 @@
                                                            th:text="${attrValue.attribute.unit}"></small>
                                                 </td>
                                                 <td>
-    <span th:switch="${#strings.toUpperCase(attrValue.attribute.type)}">
-        <span th:case="'STRING'" class="badge bg-secondary">Текст</span>
-        <span th:case="'NUMBER'" class="badge bg-primary">Число</span>
-        <span th:case="'SELECT'" class="badge bg-success">Выбор</span>
-        <span th:case="'BOOLEAN'" class="badge bg-warning">Да/Нет</span>
-        <span th:case="*" class="badge bg-dark" th:text="${attrValue.attribute.type}"></span>
-    </span>
+                                                    <span th:switch="${#strings.toUpperCase(attrValue.attribute.type)}">
+                                                        <span th:case="'STRING'" class="badge bg-secondary">Текст</span>
+                                                        <span th:case="'NUMBER'" class="badge bg-primary">Число</span>
+                                                        <span th:case="'SELECT'" class="badge bg-success">Выбор</span>
+                                                        <span th:case="'BOOLEAN'" class="badge bg-warning">Да/Нет</span>
+                                                        <span th:case="*" class="badge bg-dark" th:text="${attrValue.attribute.type}"></span>
+                                                    </span>
                                                 </td>
                                             </tr>
                                             </tbody>
@@ -246,114 +407,7 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- СЕКЦИЯ НОВЫХ ИЗОБРАЖЕНИЙ -->
-                            <div class="mb-3">
-                                <label class="form-label">Добавить новые изображения</label>
-                                <div id="new-images-container">
-                                    <div class="image-upload-item mb-3 border rounded p-3">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <label class="form-label">Файл изображения</label>
-                                                <!-- ВАЖНО: name="newImages" с multiple -->
-                                                <input type="file" class="form-control"
-                                                       name="newImages" accept="image/*" multiple>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label">Описание (alt)</label>
-                                                <input type="text" class="form-control"
-                                                       name="newImageAlts" placeholder="Описание изображения">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="form-label">Порядок</label>
-                                                <input type="number" class="form-control"
-                                                       name="newImageOrders" value="0" min="0">
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2 remove-new-image-btn">
-                                            <i class="fas fa-trash"></i> Удалить
-                                        </button>
-                                    </div>
-                                </div>
-                                <button type="button" id="add-new-image-btn" class="btn btn-outline-primary btn-sm mt-2">
-                                    <i class="fas fa-plus"></i> Добавить изображение
-                                </button>
-                            </div>
-
-                            <!-- СЕКЦИЯ РЕДАКТИРОВАНИЯ ИЗОБРАЖЕНИЙ -->
-                            <div class="mb-4">
-                                <h5 class="mb-3">
-                                    <i class="fas fa-images me-2"></i>Изображения товара
-                                </h5>
-
-                                <!-- Существующие изображения -->
-                                <div th:if="${product.images != null and not product.images.isEmpty()}" class="mb-4">
-                                    <label class="form-label">Текущие изображения</label>
-
-                                    <div class="row">
-                                        <div th:each="image, stat : ${product.images}" class="col-md-3 mb-3">
-                                            <div class="card h-100">
-                                                <div class="card-body text-center">
-                                                    <img th:src="${image.url}" th:alt="${image.alt}"
-                                                         class="img-thumbnail mb-2" style="max-height: 120px; object-fit: contain;">
-
-                                                    <div class="mb-2">
-                                                        <label class="small">Описание:</label>
-                                                        <input type="text"
-                                                               th:name="'imageAlt_' + ${image.id}"
-                                                               th:value="${image.alt}"
-                                                               class="form-control form-control-sm mb-1"
-                                                               placeholder="Описание">
-
-                                                        <label class="small">Порядок:</label>
-                                                        <input type="number"
-                                                               th:name="'imageOrder_' + ${image.id}"
-                                                               th:value="${image.sortOrder}"
-                                                               class="form-control form-control-sm"
-                                                               min="1">
-                                                    </div>
-
-                                                    <div class="form-check mt-2">
-                                                        <input class="form-check-input" type="checkbox"
-                                                               th:id="'deleteImage_' + ${image.id}"
-                                                               th:value="${image.id}"
-                                                               name="deleteImageIds">
-                                                        <label class="form-check-label text-danger small"
-                                                               th:for="'deleteImage_' + ${image.id}">
-                                                            <i class="fas fa-trash"></i> Удалить
-                                                        </label>
-                                                    </div>
-
-                                                    <!-- Скрытое поле с ID изображения (на всякий случай) -->
-                                                    <input type="hidden" th:name="'imageId_' + ${image.id}" th:value="${image.id}">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-
-
-                            <!-- Статус -->
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch"
-                                           id="active" name="active" th:checked="${product.active}">
-                                    <label class="form-check-label" for="active">Активный товар</label>
-                                </div>
-                            </div>
-
-                            <!-- Кнопки -->
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-1"></i> Обновить
-                                </button>
-                                <a th:href="@{/admin/products/{id}(id=${product.id})}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times me-1"></i> Отмена
-                                </a>
-                            </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -364,13 +418,12 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // ИСПРАВЛЕНО: используем правильные ID из HTML
+        // ============ УПРАВЛЕНИЕ НОВЫМИ ИЗОБРАЖЕНИЯМИ ============
         const addBtn = document.getElementById('add-new-image-btn');
         const container = document.getElementById('new-images-container');
 
         if (addBtn && container) {
             addBtn.addEventListener('click', function() {
-                // Клонируем первый элемент вместо создания нового
                 const firstItem = container.querySelector('.image-upload-item');
                 if (firstItem) {
                     const newItem = firstItem.cloneNode(true);
@@ -389,7 +442,7 @@
             });
         }
 
-        // Удаление поля (делегирование событий)
+        // Удаление поля изображения
         if (container) {
             container.addEventListener('click', function(e) {
                 const deleteBtn = e.target.closest('.remove-new-image-btn');
@@ -414,6 +467,115 @@
                 }
             });
         }
+
+        // ============ АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ URL ИЗ НАЗВАНИЯ ============
+        const nameInput = document.getElementById('name');
+        const titleInput = document.getElementById('title');
+
+        if (nameInput && titleInput) {
+            function transliterate(text) {
+                const cyrillicMap = {
+                    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+                    'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+                    'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts',
+                    'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+                    'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo', 'Ж': 'Zh',
+                    'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O',
+                    'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'Kh', 'Ц': 'Ts',
+                    'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Shch', 'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya'
+                };
+
+                return text.split('').map(char => cyrillicMap[char] || char).join('');
+            }
+
+            function createSlug(text) {
+                if (!text) return '';
+                let slug = transliterate(text);
+                slug = slug.replace(/[^a-zA-Z0-9\s-]/g, '')
+                    .replace(/\s+/g, '_')
+                    .replace(/-+/g, '_')
+                    .toLowerCase()
+                    .replace(/^_+|_+$/g, '')
+                    .replace(/_+/g, '_');
+                return slug;
+            }
+
+            // Если title пустой, генерируем из name
+            if (!titleInput.value.trim()) {
+                titleInput.value = createSlug(nameInput.value);
+            }
+
+            // Отслеживаем изменения в name
+            let isManualEdit = false;
+
+            titleInput.addEventListener('input', function() {
+                isManualEdit = true;
+            });
+
+            nameInput.addEventListener('input', function() {
+                if (!isManualEdit) {
+                    titleInput.value = createSlug(nameInput.value);
+                }
+            });
+
+            // Кнопка для генерации slug
+            const generateBtn = document.createElement('button');
+            generateBtn.type = 'button';
+            generateBtn.className = 'btn btn-outline-secondary btn-sm mt-1';
+            generateBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Сгенерировать из названия';
+            generateBtn.onclick = function() {
+                titleInput.value = createSlug(nameInput.value);
+                isManualEdit = false;
+            };
+            titleInput.parentElement.appendChild(generateBtn);
+        }
+
+        // ============ АКТИВАЦИЯ ВКЛАДОК ============
+        // Проверяем URL на наличие hash
+        if (window.location.hash) {
+            const tab = document.querySelector(`button[data-bs-target="${window.location.hash}"]`);
+            if (tab) {
+                new bootstrap.Tab(tab).show();
+            }
+        }
+
+        // Обновляем URL при переключении вкладок
+        const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabs.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function (e) {
+                const target = e.target.getAttribute('data-bs-target');
+                window.location.hash = target;
+            });
+        });
+    });
+</script>
+
+<!-- Добавляем поддержку SortableJS для перетаскивания изображений -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализация сортировки для изображений
+        const imagesRow = document.querySelector('.row:has(.card)');
+        if (imagesRow) {
+            new Sortable(imagesRow, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                onEnd: function() {
+                    // Здесь можно добавить обновление порядка через AJAX
+                }
+            });
+        }
+
+        // Добавляем иконку перетаскивания к каждому изображению
+        document.querySelectorAll('.card .card-body').forEach(card => {
+            const dragIcon = document.createElement('div');
+            dragIcon.className = 'drag-handle text-muted mb-2';
+            dragIcon.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+            card.insertBefore(dragIcon, card.firstChild);
+        });
     });
 </script>
 </body>
