@@ -249,23 +249,35 @@
 
                             <!-- СЕКЦИЯ НОВЫХ ИЗОБРАЖЕНИЙ -->
                             <div class="mb-3">
-                                <label class="form-label">Добавить новое изображение</label>
-                                <div class="border rounded p-3">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Файл изображения</label>
-                                            <input type="file" class="form-control" name="newImages" accept="image/*">
+                                <label class="form-label">Добавить новые изображения</label>
+                                <div id="new-images-container">
+                                    <div class="image-upload-item mb-3 border rounded p-3">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Файл изображения</label>
+                                                <!-- ВАЖНО: name="newImages" с multiple -->
+                                                <input type="file" class="form-control"
+                                                       name="newImages" accept="image/*" multiple>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Описание (alt)</label>
+                                                <input type="text" class="form-control"
+                                                       name="newImageAlts" placeholder="Описание изображения">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label">Порядок</label>
+                                                <input type="number" class="form-control"
+                                                       name="newImageOrders" value="0" min="0">
+                                            </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label">Описание (alt)</label>
-                                            <input type="text" class="form-control" name="newImageAlts" placeholder="Описание">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">Порядок</label>
-                                            <input type="number" class="form-control" name="newImageSortOrders" value="0" min="0">
-                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2 remove-new-image-btn">
+                                            <i class="fas fa-trash"></i> Удалить
+                                        </button>
                                     </div>
                                 </div>
+                                <button type="button" id="add-new-image-btn" class="btn btn-outline-primary btn-sm mt-2">
+                                    <i class="fas fa-plus"></i> Добавить изображение
+                                </button>
                             </div>
 
                             <!-- СЕКЦИЯ РЕДАКТИРОВАНИЯ ИЗОБРАЖЕНИЙ -->
