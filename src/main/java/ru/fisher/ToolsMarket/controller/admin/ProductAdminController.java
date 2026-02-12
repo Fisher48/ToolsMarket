@@ -589,6 +589,8 @@ public class ProductAdminController {
             // Фильтруем только параметры атрибутов
             Map<Long, String> attributeValues = allParams.entrySet().stream()
                     .filter(entry -> entry.getKey().startsWith("attr_"))
+                    .filter(entry ->
+                            entry.getValue() != null && !entry.getValue().trim().isEmpty()) // ← Игнорируем пустые
                     .collect(Collectors.toMap(
                             entry -> Long.parseLong(entry.getKey().substring(5)),
                             Map.Entry::getValue

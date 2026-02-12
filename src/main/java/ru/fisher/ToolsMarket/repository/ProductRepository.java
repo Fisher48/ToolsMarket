@@ -64,7 +64,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // ИСПРАВЛЕННЫЙ МЕТОД - загружаем только одну коллекцию
     @EntityGraph(attributePaths = {"categories", "attributeValues", "attributeValues.attribute"})
-    @Query("SELECT p FROM Product p WHERE p.title = :title")
+    @Query("SELECT p FROM Product p " +
+            "LEFT JOIN FETCH p.attributeValues av " +
+            "LEFT JOIN FETCH av.attribute a " +
+            "WHERE p.title = :title " +
+            "ORDER BY a.sortOrder ASC NULLS LAST")
     Optional<Product> findByTitleWithAttributes(@Param("title") String title);
 
     @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.categories ORDER BY p.createdAt DESC")
