@@ -7,6 +7,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Europe/Moscow
+    command: >
+      postgres
+      -c timezone=Europe/Moscow
     ports:
       - "5433:5432"
     healthcheck:
@@ -29,7 +33,7 @@ services:
     expose:
       - "8080"
     environment:
-      ТZ: "Europe/Moscow"
+      ТZ: Europe/Moscow
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
@@ -60,6 +64,7 @@ services:
 
       # Дополнительные настройки
       JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=Europe/Moscow"
     volumes:
       - ./logs:/app/logs  # ✅ Логи сохраняются на хост машине
 #      - ./uploads:/app/uploads
@@ -79,7 +84,10 @@ services:
     ports:
       - "80:80"
       - "443:443" # Для SSL
+    environment:
+      ТZ: Europe/Moscow
     volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       # - ./uploads:/app/uploads:ro
       - ./nginx/simple-certs:/etc/nginx/ssl:ro
@@ -105,6 +113,8 @@ services:
     image: prom/prometheus:v2.50.0
     container_name: prometheus
     restart: unless-stopped
+    environment:
+      TZ: Europe/Moscow
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -126,6 +136,8 @@ services:
       - grafana-data:/var/lib/grafana
      # - ./grafana/provisioning:/etc/grafana/provisioning:ro  # для дашбордов
     environment:
+      TZ: Europe/Moscow
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: Europe/Moscow
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
