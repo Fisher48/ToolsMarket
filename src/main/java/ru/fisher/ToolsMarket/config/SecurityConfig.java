@@ -45,7 +45,7 @@ public class SecurityConfig {
                         // Публичные
                         .requestMatchers( "/",
                                 "/css/**", "/js/**", "/images/**",
-                                "/webjars/**",
+                                "/webjars/**", "/search/**",
                                 "/error", "/catalog/**", "/product/**",
                                 "/category/**", "/api/public/**").permitAll()
 
