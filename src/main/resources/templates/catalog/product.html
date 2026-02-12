@@ -611,7 +611,11 @@
         images.forEach(img => {
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
-            slide.innerHTML = `<img src="${img.url}" alt="${img.alt}">`;
+            slide.innerHTML = `
+            <div class="swiper-zoom-container">
+                <img src="${img.url}" alt="${img.alt}">
+            </div>
+        `;
             wrapper.appendChild(slide);
         });
 
@@ -626,7 +630,7 @@
 
         // СОЗДАЁМ НОВЫЙ С УКАЗАННЫМ ИНДЕКСОМ
         modalSwiper = new Swiper('.modal-main-swiper', {
-        initialSlide: index,  // ← ВАЖНО: ставим нужный индекс
+            initialSlide: index,  // ← ВАЖНО: ставим нужный индекс
             slidesPerView: 1,
             spaceBetween: 0,
             loop: false,
