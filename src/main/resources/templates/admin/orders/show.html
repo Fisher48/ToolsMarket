@@ -190,6 +190,12 @@
                                     <span class="fw-semibold" th:text="${order.user?.firstName}"></span>
                                 </span>
 
+                                <span th:if="${order.user?.email}" class="d-flex align-items-center">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    <span class="me-2">Почта:</span>
+                                    <span class="fw-semibold" th:text="${order.user?.email}"></span>
+                                </span>
+
                                 <span th:if="${order.user?.phone}" class="d-flex align-items-center">
                                     <i class="bi bi-telephone me-1"></i>
                                     <span class="me-2">Телефон:</span>
