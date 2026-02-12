@@ -322,8 +322,8 @@
                         <div th:each="image, stat : ${product.images}" class="swiper-slide">
                             <img th:src="${image.url}"
                                  th:alt="${image.alt != null ? image.alt : product.name}"
-                                 th:data-index="${stat.index}"
-                                 onclick="openModalSwiper(/*[[${stat.index}]]*/ 0)">
+                                 th:attr="data-index=${stat.index}"
+                                 onclick="openModalSwiper(this.dataset.index)">
                         </div>
                     </div>
                     <div class="swiper-button-next"></div>
@@ -591,7 +591,9 @@
 
     // ===== ФУНКЦИИ МОДАЛКИ =====
     window.openModalSwiper = function(index) {
-        console.log('Opening modal at index:', index);
+        // Преобразуем строку в число
+        index = parseInt(index, 10);
+        console.log('📸 Открываем фото №', index + 1);
 
         const modal = document.getElementById('modalSwiper');
         const wrapper = document.getElementById('modalSwiperWrapper');
@@ -617,14 +619,14 @@
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
 
-        // Уничтожаем старый Swiper если есть
+        // Уничтожаем старый Swiper
         if (modalSwiper) {
             modalSwiper.destroy(true, true);
         }
 
-        // Создаем новый Swiper для модалки
+        // СОЗДАЁМ НОВЫЙ С УКАЗАННЫМ ИНДЕКСОМ
         modalSwiper = new Swiper('.modal-main-swiper', {
-            initialSlide: index,
+        initialSlide: index,  // ← ВАЖНО: ставим нужный индекс
             slidesPerView: 1,
             spaceBetween: 0,
             loop: false,
