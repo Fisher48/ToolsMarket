@@ -7,6 +7,7 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title th:text="${product.name} + ' - ToolStore'">Товар - ToolsMarket48</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <style>
@@ -606,6 +607,133 @@
                 font-size: 20px;
             }
         }
+
+        .swiper {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+
+        .swiper-slide {
+            text-align: center;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .swiper-slide img {
+            display: block;
+            width: 100%;
+            height: 400px;
+            object-fit: contain;
+            background-color: #f8f9fa;
+        }
+
+        .swiper-button-next,
+        .swiper-button-prev {
+            color: #0d6efd;
+            background: rgba(255, 255, 255, 0.9);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .swiper-button-next:after,
+        .swiper-button-prev:after {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .swiper-pagination-bullet-active {
+            background: #0d6efd;
+        }
+
+        /* Thumbnail swiper */
+        .thumb-swiper {
+            height: 80px;
+            margin-top: 10px;
+        }
+
+        .thumb-swiper .swiper-slide {
+            width: 70px;
+            height: 70px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            cursor: pointer;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+
+        .thumb-swiper .swiper-slide-thumb-active {
+            opacity: 1;
+            border-color: #0d6efd;
+        }
+
+        .thumb-swiper .swiper-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Модальное окно Swiper */
+        .swiper-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            display: none;
+        }
+
+        .swiper-modal .swiper {
+            height: 100vh;
+        }
+
+        .swiper-modal .swiper-slide img {
+            height: 100vh;
+            object-fit: contain;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            z-index: 10000;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .close-modal:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .swiper-slide img {
+                height: 300px;
+            }
+
+            .thumb-swiper {
+                height: 60px;
+            }
+
+            .thumb-swiper .swiper-slide {
+                width: 50px;
+                height: 50px;
+            }
+
+            .swiper-button-next,
+            .swiper-button-prev {
+                display: none; /* На мобилке только свайп */
+            }
+        }
     </style>
 </head>
 <body>
@@ -634,65 +762,45 @@
 
     <!-- Product Details -->
     <div class="row">
-        <!-- Product Images -->
+        <!-- Product Images - SWIPER -->
         <div class="col-md-6">
             <th:block th:if="${product.images != null and not #lists.isEmpty(product.images)}">
-                <div class="product-gallery-carousel" id="productCarousel">
-                    <!-- Основная карусель -->
-                    <div class="carousel-container" id="carouselContainer">
-                        <th:block th:each="image, stat : ${product.images}">
-                            <div class="carousel-slide" th:data-index="${stat.index}">
-                                <img th:src="${image.url}"
-                                     th:alt="${image.alt != null ? image.alt : product.name}"
-                                     class="main-image"
-                                     th:attr="onclick=|openImageModal(${stat.index})|">
-                            </div>
-                        </th:block>
+                <!-- Основной Swiper -->
+                <div class="swiper main-swiper">
+                    <div class="swiper-wrapper">
+                        <div th:each="image : ${product.images}" class="swiper-slide">
+                            <img th:src="${image.url}"
+                                 th:alt="${image.alt != null ? image.alt : product.name}"
+                                 onclick="openModalSwiper(this.src, ${imageStat.index})">
+                        </div>
                     </div>
 
-                    <!-- Кнопки навигации для основной карусели -->
-                    <button class="carousel-btn prev" onclick="prevSlide()" id="prevBtn">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <button class="carousel-btn next" onclick="nextSlide()" id="nextBtn">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
+                    <!-- Навигация (будут скрыты на мобилке через CSS) -->
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
 
-                    <!-- Индикаторы (превью) с собственной каруселью -->
-                    <div class="carousel-thumbnails-wrapper" id="thumbnailsWrapper">
-                        <!-- Кнопки навигации для превью -->
-                        <button class="thumbnail-btn prev" onclick="prevThumbnails()" id="thumbPrevBtn">
-                            <i class="bi bi-chevron-left"></i>
-                        </button>
+                    <!-- Пагинация точками -->
+                    <div class="swiper-pagination"></div>
+                </div>
 
-                        <div class="thumbnails-container" id="thumbnailsContainer">
-                            <div class="thumbnails-track" id="thumbnailsTrack">
-                                <th:block th:each="image, stat : ${product.images}">
-                                    <div class="thumbnail-item"
-                                         th:classappend="${stat.first} ? 'active' : ''"
-                                         th:data-index="${stat.index}"
-                                         th:attr="onclick=|goToSlide(${stat.index})|">
-                                        <img th:src="${image.url}"
-                                             th:alt="${image.alt != null ? image.alt : product.name}">
-                                    </div>
-                                </th:block>
-                            </div>
+                <!-- Thumbnail Swiper (миниатюры) -->
+                <div class="swiper thumb-swiper">
+                    <div class="swiper-wrapper">
+                        <div th:each="image, stat : ${product.images}" class="swiper-slide">
+                            <img th:src="${image.url}"
+                                 th:alt="${image.alt != null ? image.alt : product.name}">
                         </div>
-
-                        <button class="thumbnail-btn next" onclick="nextThumbnails()" id="thumbNextBtn">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
                     </div>
                 </div>
             </th:block>
 
-            <!-- Если изображений нет -->
+            <!-- Placeholder если нет фото -->
             <th:block th:if="${product.images == null or #lists.isEmpty(product.images)}">
-                <div class="text-center py-5">
+                <div class="text-center py-5 bg-light rounded">
                     <img src="/static/placeholder.jpg"
-                         class="img-fluid rounded border"
+                         class="img-fluid"
                          alt="No image"
-                         style="max-height: 400px;">
+                         style="max-height: 400px; object-fit: contain;">
                 </div>
             </th:block>
         </div>
@@ -938,368 +1046,118 @@
 <!-- Footer -->
 <div th:replace="~{fragments/footer :: #site-footer}"></div>
 
-<!-- Модальное окно для увеличенного изображения -->
-<div class="image-modal" id="imageModal">
-    <button class="modal-close" onclick="closeImageModal()">&times;</button>
-
-    <button class="modal-nav prev" onclick="modalPrevImage()" id="modalPrevBtn">
-        <i class="bi bi-chevron-left"></i>
-    </button>
-
-    <div class="modal-content">
-        <img id="modalImage" src="" alt="" onclick="toggleZoom()">
+<!-- Модальное окно с Swiper -->
+<div class="swiper-modal" id="modalSwiper">
+    <span class="close-modal" onclick="closeModalSwiper()">&times;</span>
+    <div class="swiper modal-main-swiper">
+        <div class="swiper-wrapper" id="modalSwiperWrapper">
+            <!-- Слайды будут добавляться динамически через JS -->
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination"></div>
     </div>
-
-    <button class="modal-nav next" onclick="modalNextImage()" id="modalNextBtn">
-        <i class="bi bi-chevron-right"></i>
-    </button>
-
-    <div class="image-counter" id="modalCounter"></div>
 </div>
-
+<!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
-    // Управление каруселью изображений
-    let currentSlide = 0;
-    let totalSlides = 0;
-    let images = [];
-    let thumbnailsPerView = 0; // Будет рассчитываться динамически
-    let currentThumbStart = 0;
-    let thumbnailWidth = 60; // Базовый размер миниатюры в пикселях
-    let thumbnailGap = 8; // Отступ между миниатюрами
-
-    // Инициализация при загрузке DOM
     document.addEventListener('DOMContentLoaded', function() {
-        // Собираем изображения из DOM
-        const imageElements = document.querySelectorAll('.carousel-slide img');
-        images = Array.from(imageElements).map(img => ({
-            url: img.src,
-            alt: img.alt
-        }));
-
-        totalSlides = images.length;
-
-        if (totalSlides > 0) {
-            initCarousel();
-            initThumbnails();
-            setupResponsiveThumbnails();
-        }
-    });
-
-    function initCarousel() {
-        if (totalSlides <= 1) {
-            // Скрыть кнопки навигации если всего 1 слайд
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            if (prevBtn) prevBtn.style.display = 'none';
-            if (nextBtn) nextBtn.style.display = 'none';
-            return;
-        }
-
-        updateCarousel();
-    }
-
-    function initThumbnails() {
-        calculateThumbnailsPerView();
-        updateThumbnailButtons();
-        updateThumbnails();
-    }
-
-    function calculateThumbnailsPerView() {
-        const container = document.getElementById('thumbnailsContainer');
-        if (!container) return;
-
-        // Получаем реальную ширину контейнера
-        const containerWidth = container.clientWidth;
-
-        // Рассчитываем сколько миниатюр поместится
-        const itemWidth = thumbnailWidth + thumbnailGap;
-        thumbnailsPerView = Math.floor(containerWidth / itemWidth);
-
-        // Минимум 3 миниатюры, максимум 8
-        thumbnailsPerView = Math.max(3, Math.min(thumbnailsPerView, 8));
-
-        console.log('Thumbnails per view:', thumbnailsPerView, 'Container width:', containerWidth);
-    }
-
-    function updateThumbnailButtons() {
-        const thumbPrevBtn = document.getElementById('thumbPrevBtn');
-        const thumbNextBtn = document.getElementById('thumbNextBtn');
-
-        // Всегда показываем кнопки, но делаем их видимыми только если нужно
-        if (thumbPrevBtn && thumbNextBtn) {
-            if (totalSlides <= thumbnailsPerView) {
-                // Все миниатюры помещаются, скрываем кнопки
-                thumbPrevBtn.classList.add('disabled');
-                thumbNextBtn.classList.add('disabled');
-                thumbPrevBtn.style.visibility = 'hidden';
-                thumbNextBtn.style.visibility = 'hidden';
-            } else {
-                // Есть что прокручивать, показываем кнопки
-                thumbPrevBtn.classList.remove('disabled');
-                thumbNextBtn.classList.remove('disabled');
-                thumbPrevBtn.style.visibility = 'visible';
-                thumbNextBtn.style.visibility = 'visible';
-                thumbPrevBtn.classList.add('visible');
-                thumbNextBtn.classList.add('visible');
-            }
-        }
-    }
-
-    function updateCarousel() {
-        const container = document.getElementById('carouselContainer');
-        const thumbnails = document.querySelectorAll('.thumbnail-item');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-
-        if (!container) return;
-
-        // Переместить основную карусель
-        container.style.transform = `translateX(-${currentSlide * 100}%)`;
-
-        // Обновить активную миниатюру
-        thumbnails.forEach((thumb, index) => {
-            if (index === currentSlide) {
-                thumb.classList.add('active');
-                // Прокрутить миниатюры чтобы активная была видна
-                ensureThumbnailVisible(index);
-            } else {
-                thumb.classList.remove('active');
+        // Инициализация основного Swiper
+        const mainSwiper = new Swiper('.main-swiper', {
+            slidesPerView: 1,
+            spaceBetween: 0,
+            loop: false,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            thumbs: {
+                swiper: new Swiper('.thumb-swiper', {
+                    slidesPerView: 'auto',
+                    spaceBetween: 8,
+                    freeMode: true,
+                    watchSlidesProgress: true,
+                    breakpoints: {
+                        320: { slidesPerView: 3 },
+                        480: { slidesPerView: 4 },
+                        768: { slidesPerView: 5 },
+                        1024: { slidesPerView: 6 }
+                    }
+                })
             }
         });
 
-        // Обновить состояние кнопок основной карусели
-        if (prevBtn) prevBtn.classList.toggle('disabled', currentSlide === 0);
-        if (nextBtn) nextBtn.classList.toggle('disabled', currentSlide === totalSlides - 1);
-    }
+        // Инициализация модального Swiper (пока пустой)
+        let modalSwiper = null;
 
-    function updateThumbnails() {
-        const thumbnailsTrack = document.getElementById('thumbnailsTrack');
-        const thumbPrevBtn = document.getElementById('thumbPrevBtn');
-        const thumbNextBtn = document.getElementById('thumbNextBtn');
+        // Функция открытия модалки
+        window.openModalSwiper = function(src, index) {
+            const modal = document.getElementById('modalSwiper');
+            const wrapper = document.getElementById('modalSwiperWrapper');
 
-        if (!thumbnailsTrack) return;
+            // Очищаем wrapper
+            wrapper.innerHTML = '';
 
-        // Переместить карусель миниатюр
-        const itemWidth = thumbnailWidth + thumbnailGap;
-        const translateX = -currentThumbStart * itemWidth;
-        thumbnailsTrack.style.transform = `translateX(${translateX}px)`;
+            // Получаем все изображения из DOM
+            const images = Array.from(document.querySelectorAll('.main-swiper .swiper-slide img')).map(img => ({
+                url: img.src,
+                alt: img.alt
+            }));
 
-        // Обновить состояние кнопок миниатюр
-        if (thumbPrevBtn) {
-            thumbPrevBtn.classList.toggle('disabled', currentThumbStart === 0);
-            thumbPrevBtn.disabled = currentThumbStart === 0;
-        }
+            // Добавляем слайды в модалку
+            images.forEach(img => {
+                const slide = document.createElement('div');
+                slide.className = 'swiper-slide';
+                slide.innerHTML = `<img src="${img.url}" alt="${img.alt}" style="width:100%; height:100%; object-fit: contain;">`;
+                wrapper.appendChild(slide);
+            });
 
-        if (thumbNextBtn) {
-            const maxStart = Math.max(0, totalSlides - thumbnailsPerView);
-            thumbNextBtn.classList.toggle('disabled', currentThumbStart >= maxStart);
-            thumbNextBtn.disabled = currentThumbStart >= maxStart;
-        }
-    }
-
-    function ensureThumbnailVisible(index) {
-        // Если миниатюра не в видимой области, прокрутить к ней
-        if (index < currentThumbStart) {
-            currentThumbStart = index;
-            updateThumbnails();
-        } else if (index >= currentThumbStart + thumbnailsPerView) {
-            currentThumbStart = index - thumbnailsPerView + 1;
-            updateThumbnails();
-        }
-    }
-
-    function setupResponsiveThumbnails() {
-        // Обработчик изменения размера окна
-        let resizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function() {
-                const oldThumbnailsPerView = thumbnailsPerView;
-                calculateThumbnailsPerView();
-
-                // Если количество видимых миниатюр изменилось, пересчитать позицию
-                if (oldThumbnailsPerView !== thumbnailsPerView) {
-                    updateThumbnailButtons();
-
-                    // Убедиться что текущий слайд все еще виден
-                    ensureThumbnailVisible(currentSlide);
-                    updateThumbnails();
-                }
-            }, 150); // Дебаунс 150ms
-        });
-
-        // Также обрабатываем изменения в контейнере (например, при повороте устройства)
-        const observer = new ResizeObserver(function() {
-            calculateThumbnailsPerView();
-            updateThumbnailButtons();
-            ensureThumbnailVisible(currentSlide);
-            updateThumbnails();
-        });
-
-        const container = document.getElementById('thumbnailsContainer');
-        if (container) {
-            observer.observe(container);
-        }
-    }
-
-    // Основная карусель
-    function prevSlide() {
-        if (currentSlide > 0) {
-            currentSlide--;
-            updateCarousel();
-        }
-    }
-
-    function nextSlide() {
-        if (currentSlide < totalSlides - 1) {
-            currentSlide++;
-            updateCarousel();
-        }
-    }
-
-    function goToSlide(index) {
-        currentSlide = index;
-        updateCarousel();
-    }
-
-    // Карусель миниатюр
-    function prevThumbnails() {
-        if (currentThumbStart > 0) {
-            currentThumbStart--;
-            updateThumbnails();
-        }
-    }
-
-    function nextThumbnails() {
-        const maxStart = Math.max(0, totalSlides - thumbnailsPerView);
-        if (currentThumbStart < maxStart) {
-            currentThumbStart++;
-            updateThumbnails();
-        }
-    }
-
-    // Просто флаг - увеличено или нет
-    let isZoomed = false;
-
-    // Функция переключения зума по клику на изображение
-    function toggleZoom() {
-        const modalImage = document.getElementById('modalImage');
-
-        if (isZoomed) {
-            // Возвращаем обратно
-            modalImage.style.transform = 'scale(1)';
-            modalImage.style.cursor = 'zoom-in';
-        } else {
-            // Увеличиваем
-            modalImage.style.transform = 'scale(1.5)';
-            modalImage.style.cursor = 'zoom-out';
-        }
-
-        isZoomed = !isZoomed;
-    }
-
-    // При открытии модального окна
-    function openImageModal(index) {
-        modalCurrentIndex = index;
-        isZoomed = false; // Сбрасываем зум
-
-        const modal = document.getElementById('imageModal');
-        const modalImage = document.getElementById('modalImage');
-        const modalCounter = document.getElementById('modalCounter');
-
-        if (images.length > 0 && index >= 0 && index < images.length) {
-            modalImage.src = images[index].url;
-            modalImage.alt = images[index].alt;
-            modalCounter.textContent = `${index + 1} / ${images.length}`;
-
-            // Сброс стилей
-            modalImage.style.transform = 'scale(1)';
-            modalImage.style.cursor = 'zoom-in';
-
+            // Показываем модалку
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
 
-            updateModalButtons();
-        }
-    }
+            // Если Swiper уже был, удаляем
+            if (modalSwiper) {
+                modalSwiper.destroy(true, true);
+            }
 
-    // При смене изображения тоже сбрасываем
-    function updateModalImage() {
-        const modalImage = document.getElementById('modalImage');
-        const modalCounter = document.getElementById('modalCounter');
-
-        modalImage.src = images[modalCurrentIndex].url;
-        modalImage.alt = images[modalCurrentIndex].alt;
-        modalCounter.textContent = `${modalCurrentIndex + 1} / ${images.length}`;
-
-        // Сброс зума
-        modalImage.style.transform = 'scale(1)';
-        modalImage.style.cursor = 'zoom-in';
-        isZoomed = false;
-
-        updateModalButtons();
-    }
-
-    function closeImageModal() {
-        const modal = document.getElementById('imageModal');
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
-    function modalPrevImage() {
-        if (modalCurrentIndex > 0) {
-            modalCurrentIndex--;
-            updateModalImage();
-        }
-    }
-
-    function modalNextImage() {
-        if (modalCurrentIndex < images.length - 1) {
-            modalCurrentIndex++;
-            updateModalImage();
-        }
-    }
-
-    function updateModalButtons() {
-        const modalPrevBtn = document.getElementById('modalPrevBtn');
-        const modalNextBtn = document.getElementById('modalNextBtn');
-
-        if (modalPrevBtn) {
-            modalPrevBtn.style.opacity = modalCurrentIndex === 0 ? '0.5' : '1';
-            modalPrevBtn.style.cursor = modalCurrentIndex === 0 ? 'not-allowed' : 'pointer';
-        }
-
-        if (modalNextBtn) {
-            modalNextBtn.style.opacity = modalCurrentIndex === images.length - 1 ? '0.5' : '1';
-            modalNextBtn.style.cursor = modalCurrentIndex === images.length - 1 ? 'not-allowed' : 'pointer';
-        }
-    }
-
-    // Обработчики событий
-    document.addEventListener('DOMContentLoaded', function() {
-        const modal = document.getElementById('imageModal');
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this || e.target.classList.contains('modal-close')) {
-                    closeImageModal();
+            // Создаем новый Swiper для модалки
+            modalSwiper = new Swiper('.modal-main-swiper', {
+                initialSlide: index,
+                slidesPerView: 1,
+                spaceBetween: 0,
+                loop: false,
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
                 }
             });
-        }
-    });
+        };
 
-    document.addEventListener('keydown', function(e) {
-        const modal = document.getElementById('imageModal');
-        if (modal && modal.style.display === 'block') {
-            if (e.key === 'Escape') {
-                closeImageModal();
-            } else if (e.key === 'ArrowLeft') {
-                modalPrevImage();
-            } else if (e.key === 'ArrowRight') {
-                modalNextImage();
+        // Функция закрытия модалки
+        window.closeModalSwiper = function() {
+            const modal = document.getElementById('modalSwiper');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        };
+
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('modalSwiper');
+            if (modal.style.display === 'block' && e.key === 'Escape') {
+                closeModalSwiper();
             }
-        }
+        });
     });
     /*]]>*/
 </script>
