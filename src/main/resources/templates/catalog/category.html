@@ -22,8 +22,16 @@
         }
 
         .product-image {
-            height: 200px;
-            object-fit: cover;
+            width: 100%;
+            height: auto; /* естественная высота */
+            aspect-ratio: 4/3; /* или 1/1, 16/9 - под дизайн */
+            object-fit: scale-down;
+        }
+
+        @media (max-width: 576px) {
+            .product-image {
+                aspect-ratio: 1/1; /* квадрат на телефонах */
+            }
         }
 
         /* Блок управления корзиной - ФИКСИРОВАННАЯ высота */
