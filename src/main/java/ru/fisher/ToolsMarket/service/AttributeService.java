@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.fisher.ToolsMarket.dto.AttributeOrderDto;
 import ru.fisher.ToolsMarket.exceptions.ValidationException;
 import ru.fisher.ToolsMarket.models.Attribute;
 import ru.fisher.ToolsMarket.models.Category;
@@ -131,5 +132,15 @@ public class AttributeService {
         }
 
         return filterOptions;
+    }
+
+    @Transactional
+    public void updateSortOrder(List<AttributeOrderDto> orderData) {
+        for (AttributeOrderDto dto : orderData) {
+            Attribute attribute = findById(dto.getId())
+                    .orElseThrow(() -> new RuntimeException("Attribute not found: " + dto.getId()));
+            attribute.setSortOrder(dto.getSortOrder());
+            save(attribute);
+        }
     }
 }

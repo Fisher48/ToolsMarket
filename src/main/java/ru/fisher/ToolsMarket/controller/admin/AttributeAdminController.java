@@ -2,10 +2,12 @@ package ru.fisher.ToolsMarket.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import ru.fisher.ToolsMarket.dto.AttributeOrderDto;
 import ru.fisher.ToolsMarket.models.Attribute;
 import ru.fisher.ToolsMarket.models.AttributeType;
 import ru.fisher.ToolsMarket.models.Category;
@@ -97,4 +99,17 @@ public class AttributeAdminController {
         attributeService.delete(attributeId);
         return "redirect:/admin/categories/" + categoryId + "/attributes";
     }
+
+    @PostMapping("/order")
+    @ResponseBody
+    public ResponseEntity<?> updateAttributesOrder(@PathVariable Long categoryId,
+                                                   @RequestBody List<AttributeOrderDto> orderData) {
+        try {
+            attributeService.updateSortOrder(orderData);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }
