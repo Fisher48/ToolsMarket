@@ -9,6 +9,23 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-sidebar.css}">
     <style>
+        .boolean-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .boolean-container select {
+            min-width: 150px;
+        }
+
+        /* Стиль для пустого значения */
+        select option[value=""] {
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+    <style>
         :root {
             --primary-color: #0d6efd;
             --success-color: #198754;
@@ -292,30 +309,18 @@
                                             </select>
                                         </div>
 
-                                        <!-- BOOLEAN -->
+                                        <!-- BOOLEAN - SELECT с тремя состояниями -->
                                         <div th:if="${attr.type.toString() == 'BOOLEAN'}">
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio"
-                                                       class="btn-check"
-                                                       th:id="'attr_' + ${attr.id} + '_yes'"
-                                                       th:name="'attr_' + ${attr.id}"
-                                                       value="Да"
-                                                       th:checked="${currentValue == 'Да'}">
-                                                <label class="btn btn-outline-success py-2"
-                                                       th:for="'attr_' + ${attr.id} + '_yes'">
-                                                    <i class="fas fa-check me-2"></i>Да
-                                                </label>
-
-                                                <input type="radio"
-                                                       class="btn-check"
-                                                       th:id="'attr_' + ${attr.id} + '_no'"
-                                                       th:name="'attr_' + ${attr.id}"
-                                                       value="Нет"
-                                                       th:checked="${currentValue == 'Нет'}">
-                                                <label class="btn btn-outline-danger py-2"
-                                                       th:for="'attr_' + ${attr.id} + '_no'">
-                                                    <i class="fas fa-times me-2"></i>Нет
-                                                </label>
+                                            <select th:id="'attr_' + ${attr.id}"
+                                                    th:name="'attr_' + ${attr.id}"
+                                                    class="form-select form-select-lg">
+                                                <option value="">— Не выбрано —</option>
+                                                <option value="Да" th:selected="${currentValue == 'Да'}">Да</option>
+                                                <option value="Нет" th:selected="${currentValue == 'Нет'}">Нет</option>
+                                            </select>
+                                            <div class="mt-2 text-muted small">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Выберите "Да", "Нет" или оставьте пустым
                                             </div>
                                         </div>
 
