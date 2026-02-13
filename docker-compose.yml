@@ -89,9 +89,10 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd
+      - ./nginx/letsencrypt:/etc/letsencrypt
+      - ./nginx/certbot:/var/www/certbot
       # - ./uploads:/app/uploads:ro
-      - ./nginx/simple-certs:/etc/nginx/ssl:ro
-      - ./nginx/certbot:/var/www/certbot:ro
       - uploads:/app/uploads:ro  # Доступ к изображениям
     depends_on:
       - app
@@ -103,9 +104,16 @@ services:
     container_name: tools-market-certbot
     restart: unless-stopped
     volumes:
-      - ./nginx/simple-certs:/etc/nginx/ssl:ro
-      - ./nginx/certbot:/var/www/certbot:ro
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+      - ./nginx/letsencrypt:/etc/letsencrypt
+      - ./nginx/certbot:/var/www/certbot
+    entrypoint: >
+      sh -c "
+        trap exit TERM;
+        while :; do
+          certbot renew --webroot -w /var/www/certbot --deploy-hook 'kill -HUP 1';
+          sleep 12h & wait $${!};
+        done
+      "
     networks:
       - app-network
 
