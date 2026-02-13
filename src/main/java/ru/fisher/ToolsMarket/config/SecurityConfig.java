@@ -25,6 +25,7 @@ public class SecurityConfig {
 
     private final UserDetailServiceImpl userDetailsService;
     private final RecaptchaValidationFilter recaptchaValidationFilter;
+    private final CustomAuthenticationFailureHandler failureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -72,7 +73,8 @@ public class SecurityConfig {
                         .loginPage("/auth/login")
                         .loginProcessingUrl("/auth/login")
                         .defaultSuccessUrl("/", true)
-                        .failureUrl("/auth/login?error=true")
+                        .failureHandler(failureHandler)
+                        //.failureUrl("/auth/login?error=true")
                         .permitAll()
                 )
                 .logout(logout -> logout
