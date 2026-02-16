@@ -3,12 +3,14 @@ package ru.fisher.ToolsMarket.controller.admin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.fisher.ToolsMarket.dto.ImageOrderDto;
 import ru.fisher.ToolsMarket.exceptions.ValidationException;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.AttributeService;
@@ -428,6 +430,20 @@ public class ProductAdminController {
         }
 
         return "redirect:/admin/products/" + id + "#images";
+    }
+
+    @PostMapping("/{id}/images/order")
+    @ResponseBody
+    public ResponseEntity<?> updateImagesOrder(@PathVariable Long id,
+                                               @RequestBody List<ImageOrderDto> orderData) {
+        try {
+            log.info("Обновление порядка изображений для товара {}: {}", id, orderData);
+            imageStorageService.updateImageOrder(orderData);
+            return ResponseEntity.ok().body(Map.of("success", true, "message", "Порядок изображений обновлен"));
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении порядка изображений", e);
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
     }
 
     // МЕТОД ДЛЯ УДАЛЕНИЯ ИЗОБРАЖЕНИЙ

@@ -5,8 +5,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import ru.fisher.ToolsMarket.dto.ImageOrderDto;
 import ru.fisher.ToolsMarket.models.ProductImage;
+import ru.fisher.ToolsMarket.repository.ProductImageRepository;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,6 +29,8 @@ public class ImageStorageService {
 
     @Value("${app.base.url:http://localhost:8080}")
     private String baseUrl;
+
+    private final ProductImageRepository productImageRepository;
 
     public ProductImage saveImage(MultipartFile file, String productTitle) {
         log.info("Attempting to save image: {}, size: {}, type: {}",
@@ -64,6 +69,19 @@ public class ImageStorageService {
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to save image: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public void updateImageOrder(List<ImageOrderDto> orderData) {
+        log.info("Обновление порядка сортировки изображений: {}", orderData);
+
+        for (ImageOrderDto dto : orderData) {
+            ProductImage image = productImageRepository.findById(dto.getId())
+                    .orElseThrow(() -> new RuntimeException("Изображение не найдено: " + dto.getId()));
+
+            image.setSortOrder(dto.getSortOrder());
+            productImageRepository.save(image);
         }
     }
 
