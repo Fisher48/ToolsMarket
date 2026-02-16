@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fisher.ToolsMarket.dto.*;
@@ -16,6 +17,7 @@ import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @Service
@@ -44,6 +46,68 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Optional<Product> findByIdWithAllRelations(Long id) {
         return productRepository.findByIdWithAllRelations(id);
+    }
+
+    public Page<ProductAdminDto> search(
+            String name,
+            String sku,
+            Long categoryId,
+            Boolean active,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Pageable pageable) {
+
+        Specification<Product> spec =
+                (root, query, cb) -> cb.conjunction();
+
+        if (name != null && !name.isBlank()) {
+            spec = spec.and(ProductSpecification.nameLike(name));
+        }
+
+        if (sku != null && !sku.isBlank()) {
+            spec = spec.and(ProductSpecification.skuLike(sku));
+        }
+
+        if (categoryId != null) {
+            spec = spec.and(ProductSpecification.hasCategory(categoryId));
+        }
+
+        if (active != null) {
+            spec = spec.and(ProductSpecification.hasStatus(active));
+        }
+
+        if (minPrice != null) {
+            spec = spec.and(ProductSpecification.minPrice(minPrice));
+        }
+
+        if (maxPrice != null) {
+            spec = spec.and(ProductSpecification.maxPrice(maxPrice));
+        }
+
+        Page<Product> productPage =
+                productRepository.findAll(spec, pageable);
+
+        return productPage.map(this::mapToDto);
+    }
+
+    private ProductAdminDto mapToDto(Product product) {
+
+        List<String> categories = product.getCategories()
+                .stream()
+                .map(Category::getName)
+                .toList();
+
+        return new ProductAdminDto(
+                product.getId(),
+                product.getName(),
+                product.getTitle(),
+                product.getSku(),
+                product.getPrice(),
+                product.isActive(),
+                product.getProductType().getDisplayName(),
+                categories,
+                product.getCreatedAt()
+        );
     }
 
     @Transactional

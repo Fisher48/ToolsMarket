@@ -2,6 +2,10 @@ package ru.fisher.ToolsMarket.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -11,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.fisher.ToolsMarket.dto.ImageOrderDto;
+import ru.fisher.ToolsMarket.dto.ProductAdminDto;
 import ru.fisher.ToolsMarket.exceptions.ValidationException;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.AttributeService;
@@ -36,8 +41,32 @@ public class ProductAdminController {
 
     // Список
     @GetMapping
-    public String index(Model model) {
-        model.addAttribute("products", productService.findAllWithCategories());
+    public String index(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,asc") String sort,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String sku,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            Model model) {
+
+        String[] sortParams = sort.split(",");
+        Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
+        Sort sorting = Sort.by(direction, sortParams[0]);
+
+        Pageable pageable = PageRequest.of(page, size, sorting);
+
+        Page<ProductAdminDto> productPage = productService.search(
+                name, sku, categoryId, active, minPrice, maxPrice, pageable);
+
+        // Добавляем категории для выпадающего списка
+        model.addAttribute("categories", categoryService.findAllCategories());
+        model.addAttribute("productPage", productPage);
+        model.addAttribute("currentSort", sort);
+
         return "admin/products/index";
     }
 
