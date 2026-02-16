@@ -142,6 +142,11 @@ public class ProductAdminController {
         Product product = productService.findByIdWithAllRelations(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
+        // Получаем ID категорий товара
+        Set<Long> productCategoryIds = product.getCategories().stream()
+                .map(Category::getId)
+                .collect(Collectors.toSet());
+
         // Получаем текущие значения характеристик
         Map<Long, String> currentValues = product.getAttributeValues().stream()
                 .collect(Collectors.toMap(
@@ -152,6 +157,8 @@ public class ProductAdminController {
         // Отладочный вывод
         log.debug("=== DEBUG EDIT PRODUCT ===");
         log.debug("Product ID: " + product.getId());
+        log.debug("Product categories count: " + product.getCategories().size());
+        log.debug("Product category IDs: " + productCategoryIds);
         log.debug("Attribute values count: " + product.getAttributeValues().size());
         log.debug("CurrentValues map: " + currentValues);
         product.getAttributeValues().forEach(av ->
@@ -160,6 +167,7 @@ public class ProductAdminController {
 
         model.addAttribute("product", product);
         model.addAttribute("categories", categoryService.findAllCategories());
+        model.addAttribute("productCategoryIds", productCategoryIds);
         model.addAttribute("currentValues", currentValues);
         model.addAttribute("allProductTypes", ProductType.values());
 

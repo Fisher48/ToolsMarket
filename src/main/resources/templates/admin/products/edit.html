@@ -199,7 +199,7 @@
                                                        name="categoryIds"
                                                        th:value="${category.id}"
                                                        th:id="'category_' + ${category.id}"
-                                                       th:checked="${product.categories?.contains(category)}">
+                                                       th:checked="${productCategoryIds != null and productCategoryIds.contains(category.id)}">
                                                 <label class="form-check-label" th:for="'category_' + ${category.id}">
                                                     <span th:text="${category.name}"></span>
                                                     <small class="text-muted" th:if="${category.parent}">
