@@ -139,23 +139,23 @@ public class ProductAdminController {
     @GetMapping("/{id}/edit")
     public String edit(@PathVariable Long id, Model model) {
         // Используем метод с полной загрузкой
-        Product product = productService.findWithDetailsById(id)
+        Product product = productService.findByIdWithAllRelations(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
         // Получаем текущие значения характеристик
         Map<Long, String> currentValues = product.getAttributeValues().stream()
                 .collect(Collectors.toMap(
                         av -> av.getAttribute().getId(),
-                        ProductAttributeValue::getValue
-                ));
+                        ProductAttributeValue::getValue)
+                );
 
         // Отладочный вывод
-        System.out.println("=== DEBUG EDIT PRODUCT ===");
-        System.out.println("Product ID: " + product.getId());
-        System.out.println("Attribute values count: " + product.getAttributeValues().size());
-        System.out.println("CurrentValues map: " + currentValues);
+        log.debug("=== DEBUG EDIT PRODUCT ===");
+        log.debug("Product ID: " + product.getId());
+        log.debug("Attribute values count: " + product.getAttributeValues().size());
+        log.debug("CurrentValues map: " + currentValues);
         product.getAttributeValues().forEach(av ->
-                System.out.println("Attr: " + av.getAttribute().getName() + " = " + av.getValue())
+                log.debug("Attr: " + av.getAttribute().getName() + " = " + av.getValue())
         );
 
         model.addAttribute("product", product);
@@ -312,7 +312,7 @@ public class ProductAdminController {
         try {
             log.info("=== ОБНОВЛЕНИЕ ОСНОВНОЙ ИНФОРМАЦИИ ТОВАРА {} ===", id);
 
-            Product product = productService.findWithDetailsById(id)
+            Product product = productService.findByIdWithAllRelations(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
 
             // Обновляем основные поля
@@ -328,12 +328,9 @@ public class ProductAdminController {
             product.setUpdatedAt(Instant.now());
 
             // Обновляем категории
-            if (categoryIds != null && !categoryIds.isEmpty()) {
-                Set<Category> categories = new HashSet<>(categoryService.findByIds(categoryIds));
-                product.setCategories(categories);
-            } else {
-                product.setCategories(new HashSet<>());
-            }
+            Set<Category> newCategories = new HashSet<>(categoryService.findByIds(categoryIds));
+            product.getCategories().clear();
+            product.getCategories().addAll(newCategories);
 
             productService.saveEntity(product);
 
@@ -370,7 +367,7 @@ public class ProductAdminController {
             log.info("Новых изображений: {}", newImages != null ? newImages.size() : 0);
             log.info("Удаление изображений: {}", deleteImageIds);
 
-            Product product = productService.findWithDetailsById(id)
+            Product product = productService.findByIdWithAllRelations(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
 
             // 1. УДАЛЯЕМ ОТМЕЧЕННЫЕ ИЗОБРАЖЕНИЯ
