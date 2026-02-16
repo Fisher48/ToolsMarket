@@ -32,6 +32,42 @@ public class AttributeService {
         return attributeRepository.save(attribute);
     }
 
+    @Transactional
+    public Attribute createAttribute(Attribute attribute) {
+        Long categoryId = attribute.getCategory().getId();
+
+        int maxSort = attributeRepository.findMaxSortOrderByCategoryId(categoryId);
+        attribute.setSortOrder(maxSort + 1);
+
+        return attributeRepository.save(attribute);
+    }
+
+    @Transactional
+    public void deleteAttribute(Long attributeId) {
+        Attribute attribute = attributeRepository.findById(attributeId)
+                .orElseThrow(() -> new RuntimeException("Attribute not found"));
+
+        Long categoryId = attribute.getCategory().getId();
+
+        // удаляем значения
+        valueRepository.deleteByAttributeId(attributeId);
+
+        // удаляем сам атрибут
+        attributeRepository.delete(attribute);
+
+        // нормализуем порядок
+        normalizeSortOrder(categoryId);
+    }
+
+    private void normalizeSortOrder(Long categoryId) {
+        List<Attribute> attributes =
+                attributeRepository.findByCategoryIdOrderBySortOrder(categoryId);
+
+        for (int i = 0; i < attributes.size(); i++) {
+            attributes.get(i).setSortOrder(i + 1);
+        }
+    }
+
     public void delete(Long id) {
         // Сначала удаляем значения атрибутов у товаров
         valueRepository.deleteByAttributeId(id);
@@ -136,11 +172,18 @@ public class AttributeService {
 
     @Transactional
     public void updateSortOrder(List<AttributeOrderDto> orderData) {
-        for (AttributeOrderDto dto : orderData) {
-            Attribute attribute = findById(dto.getId())
-                    .orElseThrow(() -> new RuntimeException("Attribute not found: " + dto.getId()));
-            attribute.setSortOrder(dto.getSortOrder());
-            save(attribute);
+
+        Map<Long, Integer> orderMap = orderData.stream()
+                .collect(Collectors.toMap(
+                        AttributeOrderDto::getId,
+                        AttributeOrderDto::getSortOrder
+                ));
+
+        List<Attribute> attributes =
+                attributeRepository.findAllById(orderMap.keySet());
+
+        for (Attribute attribute : attributes) {
+            attribute.setSortOrder(orderMap.get(attribute.getId()));
         }
     }
 }

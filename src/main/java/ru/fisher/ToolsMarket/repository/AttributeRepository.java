@@ -14,6 +14,13 @@ public interface AttributeRepository extends JpaRepository<Attribute, Long> {
 
     List<Attribute> findByCategoryIdOrderBySortOrder(Long categoryId);
 
+    @Query("""
+       SELECT COALESCE(MAX(a.sortOrder), 0)
+       FROM Attribute a
+       WHERE a.category.id = :categoryId
+       """)
+    int findMaxSortOrderByCategoryId(@Param("categoryId") Long categoryId);
+
     List<Attribute> findByCategoryIdAndFilterableTrueOrderBySortOrder(Long categoryId);
 
     List<Attribute> findByCategoryIdAndRequiredTrue(Long categoryId);

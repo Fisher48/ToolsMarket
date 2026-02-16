@@ -53,7 +53,7 @@ public class AttributeAdminController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         attribute.setCategory(category);
-        attributeService.save(attribute);
+        attributeService.createAttribute(attribute);
 
         return "redirect:/admin/categories/" + categoryId + "/attributes";
     }
@@ -85,7 +85,7 @@ public class AttributeAdminController {
         existing.setUnit(attribute.getUnit());
         existing.setType(attribute.getType());
         existing.setOptions(attribute.getOptions());
-        existing.setSortOrder(attribute.getSortOrder());
+       // existing.setSortOrder(attribute.getSortOrder());
         existing.setRequired(attribute.isRequired());
         existing.setFilterable(attribute.isFilterable());
 
@@ -96,7 +96,7 @@ public class AttributeAdminController {
     @PostMapping("/{attributeId}/delete")
     public String deleteAttribute(@PathVariable Long categoryId,
                                   @PathVariable Long attributeId) {
-        attributeService.delete(attributeId);
+        attributeService.deleteAttribute(attributeId);
         return "redirect:/admin/categories/" + categoryId + "/attributes";
     }
 
