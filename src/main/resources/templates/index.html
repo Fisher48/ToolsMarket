@@ -3,68 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ToolsMarket48 - Интернет-магазин инструментов</title>
+  <title>ToolsMarket48 — Интернет-магазин инструментов</title>
+
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Swiper для баннеров -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
   <style>
+    /* ========== BLACK CORAL С КРАСНЫМ АКЦЕНТОМ ========== */
     :root {
+      /* Основные цвета Black Coral */
       --black-coral: #546E7A;
       --black-coral-dark: #455A64;
       --black-coral-light: #78909C;
+
+      /* Красный акцент */
+      --accent: #E63946;        /* ярко-красный */
+      --accent-light: #FF6B7B;  /* светлый красный */
+      --accent-dark: #B71C1C;    /* темно-красный */
+
+      /* Текст и фон */
+      --text: #2C3E50;
+      --text-light: #5F6B7A;
+      --bg: #FFFFFF;
+      --bg-alt: #F5F7FA;
+      --card-bg: #FFFFFF;
+      --border: #E0E7ED;
+
+      /* Тени */
+      --shadow-sm: 0 2px 8px rgba(84, 110, 122, 0.08);
+      --shadow-md: 0 4px 16px rgba(84, 110, 122, 0.12);
+      --shadow-lg: 0 8px 24px rgba(84, 110, 122, 0.15);
+
+      /* Анимации */
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .category-card {
-      transition: transform 0.2s, box-shadow 0.2s;
-      height: 100%;
-      cursor: pointer;
-    }
-    .category-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    /* Black Coral hero section */
-    .hero-section {
-      /* Вариант 1: Простой Black Coral */
-      background-color: #546E7A;
-
-      /* Вариант 2: Градиент Black Coral */
-      background: linear-gradient(135deg, #455A64 0%, #546E7A 50%, #78909C 100%);
-
-      /* Вариант 3: Текстурированный Black Coral */
-      /* background-color: #546E7A;
-      background-image: radial-gradient(circle at 10% 20%, rgba(84, 110, 122, 0.9) 0%, rgba(69, 90, 100, 0.9) 100%); */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
     }
 
-    .category-card img {
-      transition: transform 0.3s ease;
-    }
-    .category-card:hover img {
-      transform: scale(1.05);
-    }
-    .category-icon-placeholder {
-      background: #f8f9fa;
-      border-radius: 0.375rem;
-    }
-
-    /* Стили для кликабельной карточки */
-    .category-card-link {
-      text-decoration: none;
-      color: inherit;
-    }
-    .category-card-link:hover {
-      color: inherit;
+    /* ========== HEADER С КРАСНЫМ АКЦЕНТОМ ========== */
+    .navbar.bg-dark {
+      background: linear-gradient(135deg, var(--black-coral-dark) 0%, var(--black-coral) 100%) !important;
+      box-shadow: var(--shadow-md);
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 16px 0;
     }
 
-    /* Дополнительные стили для улучшения вида */
-    .hero-section {
-      border-radius: 1rem;
+    .navbar-brand {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: white !important;
+      letter-spacing: -0.02em;
+    }
+
+    .navbar-brand i {
+      color: var(--accent);
+      margin-right: 8px;
+    }
+
+    /* Кнопки в header - белые с красным при наведении */
+    .navbar .btn-outline-light {
+      border-radius: 50px;
+      padding: 8px 20px;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      background: transparent;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .navbar .btn-outline-light:hover {
+      background: white;
+      border-color: var(--accent);
+      color: var(--accent-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+    }
+
+    /* Иконки в header */
+    .nav-link.text-white {
+      color: rgba(255,255,255,0.9) !important;
+      transition: var(--transition);
+    }
+
+    .nav-link.text-white:hover {
+      color: var(--accent) !important;
+      transform: translateY(-2px);
+    }
+
+    .nav-link.text-white i {
+      transition: var(--transition);
+    }
+
+    .nav-link.text-white:hover i {
+      color: var(--accent);
+    }
+
+    /* Бейдж корзины */
+    .badge.bg-danger {
+      background: var(--accent) !important;
+      color: white;
+    }
+
+    /* ========== ПРЕМИАЛЬНЫЙ КОНТЕЙНЕР ========== */
+    .premium-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 40px;
       position: relative;
-      overflow: hidden;
     }
 
-    /* Легкий узор для текстуры */
-    .hero-section::before {
+    /* ========== HERO С КРАСНЫМ АКЦЕНТОМ ========== */
+    .hero-parallax {
+      position: relative;
+      min-height: 60vh;
+      display: flex;
+      align-items: center;
+      margin: 20px 0 40px;
+      border-radius: 32px;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--black-coral-dark) 0%, var(--black-coral) 100%);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .hero-parallax::before {
       content: '';
       position: absolute;
       top: 0;
@@ -73,41 +157,407 @@
       bottom: 0;
       background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
       opacity: 0.1;
+      animation: slide 20s linear infinite;
     }
 
     .hero-content {
       position: relative;
-      z-index: 1;
+      z-index: 2;
+      padding: 60px;
+      color: white;
     }
 
-    /* Тень для текста для лучшей читаемости на темном фоне */
-    .hero-section h1 {
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    .hero-section p {
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    .hero-content h1 {
+      font-size: 4.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
-    /* Стиль для кнопки на темном фоне */
-    .hero-section .btn-light {
-      background-color: rgba(255, 255, 255, 0.9);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      color: #333;
+    .hero-content .lead {
+      font-size: 1.5rem;
+      opacity: 0.95;
+      margin-bottom: 40px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* Кнопка в hero - белая с красным при наведении */
+    .hero-btn {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 50px;
+      padding: 16px 48px;
+      font-size: 1.2rem;
       font-weight: 600;
-      transition: all 0.3s ease;
+      color: white;
+      text-decoration: none;
+      display: inline-block;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
     }
 
-    .hero-section .btn-light:hover {
-      background-color: white;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-      border-color: white;
+    .hero-btn:hover {
+      background: white;
+      border-color: var(--accent);
+      color: var(--accent-dark);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(230, 57, 70, 0.4);
     }
 
-    /* Иконка инструментов */
-    .hero-section .bi-tools {
-      color: rgba(255, 255, 255, 0.8);
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    @keyframes slide {
+      from { background-position: 0 0; }
+      to { background-position: 100% 100%; }
+    }
+
+    /* ========== БАННЕР ========== */
+    .banner-premium {
+      margin: 40px 0;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .banner-swiper {
+      width: 100%;
+      height: 350px;
+    }
+
+    .banner-slide {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .banner-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 6s ease;
+    }
+
+    .banner-slide:hover img {
+      transform: scale(1.1);
+    }
+
+    .banner-slide::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, rgba(0,0,0,0.4) 0%, transparent 50%);
+    }
+
+    .banner-content {
+      position: absolute;
+      bottom: 40px;
+      left: 40px;
+      color: white;
+      z-index: 2;
+      max-width: 500px;
+    }
+
+    .banner-content h3 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Кнопки навигации баннера - красные */
+    .swiper-button-next, .swiper-button-prev {
+      color: white;
+      background: var(--accent);
+      width: 50px;
+      height: 50px;
+      border-radius: 25px;
+      opacity: 0.9;
+      transition: var(--transition);
+    }
+
+    .swiper-button-next:hover, .swiper-button-prev:hover {
+      background: var(--accent-dark);
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    /* ========== ЗАГОЛОВКИ С КРАСНЫМ ========== */
+    .section-header {
+      text-align: center;
+      margin: 60px 0 40px;
+    }
+
+    .section-header h2 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--black-coral-dark);
+      margin-bottom: 16px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .section-header h2::before {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--black-coral), var(--accent));
+      border-radius: 2px;
+    }
+
+    .section-header p {
+      color: var(--text-light);
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ========== КАРТОЧКИ КАТЕГОРИЙ ========== */
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-right: -15px;
+      margin-left: -15px;
+    }
+
+    .col-xl-3, .col-lg-4, .col-md-6 {
+      position: relative;
+      width: 100%;
+      padding-right: 15px;
+      padding-left: 15px;
+    }
+
+    @media (min-width: 768px) {
+      .col-md-6 { flex: 0 0 50%; max-width: 50%; }
+    }
+    @media (min-width: 992px) {
+      .col-lg-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+    }
+    @media (min-width: 1200px) {
+      .col-xl-3 { flex: 0 0 25%; max-width: 25%; }
+    }
+
+    .mb-4 { margin-bottom: 1.5rem; }
+
+    /* Карточка категории */
+    .category-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .category-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(230, 57, 70, 0.15); /* красная тень */
+    }
+
+    .category-card .border-0 {
+      border: 0 !important;
+    }
+
+    .category-card .shadow-sm {
+      box-shadow: var(--shadow-sm);
+    }
+
+    .category-card .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      word-wrap: break-word;
+      background-color: #fff;
+      background-clip: border-box;
+      border: 1px solid var(--border);
+      border-radius: 16px;  /* закругленные углы */
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .category-card:hover .card {
+      border-color: var(--accent-light);
+    }
+
+    .category-card .h-100 {
+      height: 100%;
+    }
+
+    .category-card .card-body {
+      flex: 1 1 auto;
+      min-height: 1px;
+      padding: 1.25rem;
+    }
+
+    .category-card .text-center {
+      text-align: center;
+    }
+
+    .category-card .mb-3 {
+      margin-bottom: 1rem;
+    }
+
+    .category-card .img-fluid {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .category-card .rounded {
+      border-radius: 0.25rem;
+    }
+
+    .category-card .category-icon-placeholder {
+      background: var(--bg-alt);
+      border-radius: 12px;
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .category-card .category-icon-placeholder i {
+      color: var(--accent);  /* красная иконка */
+      font-size: 3rem;
+    }
+
+    .category-card .card-title {
+      margin-bottom: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1.2;
+      color: var(--black-coral-dark);
+    }
+
+    .category-card:hover .card-title {
+      color: var(--accent-dark);
+    }
+
+    .category-card .text-decoration-none {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .category-card a:hover {
+      color: inherit;
+    }
+
+    .category-count {
+      color: var(--text-light);
+      font-size: 0.95rem;
+    }
+
+    /* ========== ПУСТОЕ СОСТОЯНИЕ ========== */
+    .empty-state-premium {
+      background: white;
+      border-radius: 24px;
+      padding: 80px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      margin: 40px 0;
+      border: 1px solid var(--border);
+    }
+
+    .empty-state-premium i {
+      font-size: 4rem;
+      color: var(--accent);
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    .empty-state-premium h3 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--black-coral-dark);
+      margin-bottom: 10px;
+    }
+
+    .empty-state-premium p {
+      color: var(--text-light);
+      font-size: 1.1rem;
+    }
+
+    /* ========== ФУТЕР ========== */
+    .bg-dark {
+      background: linear-gradient(135deg, var(--black-coral-dark), var(--black-coral)) !important;
+      margin-top: 60px;
+      padding: 40px 0 20px;
+    }
+
+    .bg-dark h5, .bg-dark h6 {
+      color: white;
+      font-weight: 600;
+      margin-bottom: 20px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .bg-dark h5::after, .bg-dark h6::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background: var(--accent);  /* красное подчеркивание */
+    }
+
+    .bg-dark p, .bg-dark li {
+      color: rgba(255,255,255,0.8);
+    }
+
+    .bg-dark a {
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .bg-dark a:hover {
+      color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    .bg-dark hr {
+      border-color: rgba(255,255,255,0.1);
+      margin: 30px 0;
+    }
+
+    /* ========== АДАПТАЦИЯ ========== */
+    @media (max-width: 992px) {
+      .hero-content h1 { font-size: 3rem; }
+      .section-header h2 { font-size: 2.2rem; }
+    }
+
+    @media (max-width: 768px) {
+      .hero-content h1 { font-size: 2.2rem; }
+      .hero-content { padding: 30px; }
+      .banner-content { left: 20px; bottom: 20px; }
+      .banner-content h3 { font-size: 1.5rem; }
+      .premium-container { padding: 0 20px; }
+    }
+
+    @media (max-width: 576px) {
+      .hero-content h1 { font-size: 1.8rem; }
+    }
+
+    /* Дополнительные красные акценты */
+    .text-primary {
+      color: var(--accent) !important;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
     }
   </style>
 </head>
@@ -116,70 +566,74 @@
 <!-- Header -->
 <div th:replace="~{fragments/header :: header}"></div>
 
-<main class="container my-4">
-  <!-- Hero Section -->
-  <section class="hero-section text-white rounded p-5 mb-5">
+<!-- ГЛАВНЫЙ КОНТЕЙНЕР -->
+<main class="premium-container">
+
+  <!-- HERO -->
+  <section class="hero-parallax">
     <div class="hero-content">
-      <div class="row align-items-center">
-        <div class="col-lg-8">
-          <h1 class="display-6 fw-bold mb-2">Профессиональные инструменты и оборудование</h1>
-          <p class="lead mb-4">Удобство и надежность, испытанное в самых тяжёлых условиях</p>
-          <a href="#categories" class="btn btn-light btn-lg">Смотреть категории</a>
-        </div>
-      </div>
+      <h1>Профессиональные инструменты и оборудование</h1>
+      <p class="lead">Удобство и надежность, испытанное в самых тяжёлых условиях</p>
+      <a href="#categories" class="hero-btn">
+        <i class="bi bi-arrow-down me-2"></i>Смотреть категории
+      </a>
     </div>
   </section>
 
-  <!-- All Categories -->
+  <!-- КАТЕГОРИИ -->
   <section id="categories">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="mb-0">Категории инструментов</h2>
+    <div class="section-header">
+      <h2>Категории инструментов</h2>
+      <p>Выберите нужную категорию для поиска инструмента</p>
     </div>
 
-    <!-- Categories Grid -->
-    <div class="row" th:if="${not #lists.isEmpty(allCategories)}">
+    <!-- ТВОИ ИЗНАЧАЛЬНЫЕ КАРТОЧКИ -->
+    <div th:if="${not #lists.isEmpty(allCategories)}" class="row">
       <div class="col-xl-3 col-lg-4 col-md-6 mb-4" th:each="category : ${allCategories}">
-        <div class="card category-card border-0 shadow-sm h-100">
-          <a th:href="@{/category/{title}(title=${category.title})}"
-             class="category-card-link text-decoration-none">
-            <div class="card-body d-flex flex-column">
-              <!-- Изображение категории -->
-              <div class="text-center mb-3" style="min-height: 150px; display: flex; align-items: center; justify-content: center;">
-                <div th:if="${category.thumbnailUrl != null and !category.thumbnailUrl.isEmpty()}">
-                  <img th:src="${category.thumbnailUrl}"
-                       th:alt="${category.name}"
-                       class="img-fluid rounded"
-                       style="max-width: 100%; max-height: 120px; object-fit: contain;">
-                </div>
-                <div th:if="${category.imageUrl != null and !category.imageUrl.isEmpty()
-                          and (category.thumbnailUrl == null or category.thumbnailUrl.isEmpty())}">
-                  <img th:src="${category.imageUrl}"
-                       th:alt="${category.name}"
-                       class="img-fluid rounded"
-                       style="max-width: 100%; max-height: 120px; object-fit: contain;">
-                </div>
-                <div th:if="${(category.thumbnailUrl == null or category.thumbnailUrl.isEmpty())
-                          and (category.imageUrl == null or category.imageUrl.isEmpty())}">
-                  <div class="category-icon-placeholder rounded d-flex align-items-center justify-content-center"
-                       style="width: 120px; height: 120px;">
-                    <i class="bi bi-folder-fill text-primary fs-1"></i>
+        <div class="category-card">
+          <a th:href="@{/category/{title}(title=${category.title})}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body d-flex flex-column">
+                <!-- Изображение категории -->
+                <div class="text-center mb-3" style="min-height: 150px; display: flex;
+                align-items: center; justify-content: center;">
+                  <div th:if="${category.thumbnailUrl != null and !category.thumbnailUrl.isEmpty()}">
+                    <img th:src="${category.thumbnailUrl}"
+                         th:alt="${category.name}"
+                         class="img-fluid rounded"
+                         style="max-width: 100%; max-height: 120px; object-fit: contain;">
+                  </div>
+                  <div th:if="${category.imageUrl != null and !category.imageUrl.isEmpty()
+                            and (category.thumbnailUrl == null or category.thumbnailUrl.isEmpty())}">
+                    <img th:src="${category.imageUrl}"
+                         th:alt="${category.name}"
+                         class="img-fluid rounded"
+                         style="max-width: 100%; max-height: 120px; object-fit: contain;">
+                  </div>
+                  <div th:if="${(category.thumbnailUrl == null or category.thumbnailUrl.isEmpty())
+                            and (category.imageUrl == null or category.imageUrl.isEmpty())}">
+                    <div class="category-icon-placeholder rounded d-flex align-items-center justify-content-center"
+                         style="width: 120px; height: 120px;">
+                      <i class="bi bi-folder-fill text-primary fs-1"></i>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Название категории -->
-              <h5 class="card-title text-center" th:text="${category.name}">Название категории</h5>
+                <!-- Название категории -->
+                <h5 class="card-title text-center"
+                    th:text="${category.name}">Название категории</h5>
+              </div>
             </div>
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Empty state -->
-    <div th:if="${#lists.isEmpty(allCategories)}" class="text-center py-5">
-      <i class="bi bi-inbox display-1 text-muted"></i>
-      <h3 class="text-muted mt-3">Категории пока не добавлены</h3>
-      <p class="text-muted">Администратор должен добавить категории товаров</p>
+    <!-- Пусто -->
+    <div th:if="${#lists.isEmpty(allCategories)}" class="empty-state-premium">
+      <i class="bi bi-grid"></i>
+      <h3>Категории пока не добавлены</h3>
+      <p>Администратор должен добавить категории товаров</p>
     </div>
   </section>
 </main>
@@ -187,6 +641,7 @@
 <!-- Footer -->
 <div th:replace="~{fragments/footer :: #site-footer}"></div>
 
+<!-- Скрипты -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

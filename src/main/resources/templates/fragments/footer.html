@@ -1,40 +1,210 @@
-<footer class="bg-dark text-light mt-5" id="site-footer">
-  <div class="container py-4">
-    <div class="row">
-      <div class="col-md-4 mb-3 mb-md-0">
-        <h5 class="fw-bold"></i>ToolsMarket48</h5>
-        <p class="small text-muted mb-0">Магазин профессиональных инструментов и оборудования</p>
+<footer class="premium-footer" id="site-footer">
+  <div class="container py-5">
+    <div class="row g-4">
+
+      <!-- Колонка 1: О магазине -->
+      <div class="col-lg-4 col-md-6">
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-tools me-2"></i>ToolsMarket48
+        </h5>
+        <p class="text-white-50 mb-4" style="line-height: 1.8;">
+          Магазин профессиональных инструментов и оборудования.
+        </p>
+        <div class="social-links d-flex gap-3">
+          <a href="https://t.me/toolsmarket48" class="social-link" title="Telegram">
+            <i class="bi bi-telegram"></i>
+          </a>
+          <a href="#" class="social-link" title="WhatsApp">
+            <i class="bi bi-whatsapp"></i>
+          </a>
+          <a href="#" class="social-link" title="VK">
+            <i class="bi bi-vk"></i>
+          </a>
+        </div>
       </div>
-      <div class="col-md-4 mb-3 mb-md-0">
-        <h6 class="fw-bold">Контакты</h6>
-        <ul class="list-unstyled small">
-          <li><i class="bi bi-telephone me-2"></i>+7 (900) 600-94-70</li>
-          <li><i class="bi bi-envelope me-2"></i>toolsmarket48@yandex.ru</li>
+
+      <!-- Колонка 2: Контакты -->
+      <div class="col-lg-4 col-md-6">
+        <h5 class="fw-bold mb-3">Контакты</h5>
+        <ul class="list-unstyled">
+          <li class="mb-3 d-flex align-items-center">
+            <i class="bi bi-telephone me-3" style="color: var(--accent);"></i>
+            <a href="tel:+79006009470" class="text-white-50 text-decoration-none">
+              +7 (900) 600-94-70
+            </a>
+          </li>
+          <li class="mb-3 d-flex align-items-center">
+            <i class="bi bi-envelope me-3" style="color: var(--accent);"></i>
+            <a href="mailto:toolsmarket48@yandex.ru" class="text-white-50 text-decoration-none">
+              toolsmarket48@yandex.ru
+            </a>
+          </li>
+          <li class="mb-3 d-flex align-items-center">
+            <i class="bi bi-clock me-3" style="color: var(--accent);"></i>
+            <div>
+              <div class="text-white-50">Пн-Пт: 9:00 - 20:00</div>
+              <div class="text-white-50">Сб-Вс: 10:00 - 18:00</div>
+            </div>
+          </li>
         </ul>
       </div>
-      <div class="col-md-4">
-        <h6 class="fw-bold">Часы работы</h6>
-        <ul class="list-unstyled small">
-          <li>Пн-Пт: 9:00 - 20:00</li>
-          <li>Сб-Вс: 10:00 - 18:00</li>
-        </ul>
-      </div>
-      <div>
-        <p class="small text-muted mb-1">Сведения о товарах и услугах на сайте toolsmarket48.ru
-          носят ознакомительный характер и не являются публичной офертой.
-          Оформление заказа доступно только зарегистрированным пользователям.
-          После оформления заказа вы получите на e‑mail счёт для оплаты с актуальными ценами и подтверждением наличия товара.
-          Мы работаем исключительно с юридическими лицами. Оплата — по безналичному расчёту; цена включает НДС.
-          Доставка осуществляется поставщиком со своего склада. Условия (сроки, стоимость) определяются:
-          в договоре поставки или после 100 % предоплаты и согласования условий с покупателем.
-          Гарантия действует в соответствии с условиями производителя.
-          Сроки, перечень гарантийных случаев и порядок предъявления требований регулируются ГК РФ
-          и Законом РФ «О защите прав потребителей».</p>
-      </div>
+
+      <!-- Колонка 3: Информация -->
+<!--      <div class="col-lg-4 col-md-6">-->
+<!--        <h5 class="fw-bold mb-3">Информация</h5>-->
+<!--        <ul class="list-unstyled">-->
+<!--          <li class="mb-2">-->
+<!--            <a th:href="@{/about}" class="text-white-50 text-decoration-none hover-link">-->
+<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
+<!--              О нас-->
+<!--            </a>-->
+<!--          </li>-->
+<!--          <li class="mb-2">-->
+<!--            <a th:href="@{/delivery}" class="text-white-50 text-decoration-none hover-link">-->
+<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
+<!--              Доставка-->
+<!--            </a>-->
+<!--          </li>-->
+<!--          <li class="mb-2">-->
+<!--            <a th:href="@{/payment}" class="text-white-50 text-decoration-none hover-link">-->
+<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
+<!--              Оплата-->
+<!--            </a>-->
+<!--          </li>-->
+<!--          <li class="mb-2">-->
+<!--            <a th:href="@{/returns}" class="text-white-50 text-decoration-none hover-link">-->
+<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
+<!--              Возврат-->
+<!--            </a>-->
+<!--          </li>-->
+<!--          <li class="mb-2">-->
+<!--            <a th:href="@{/contacts}" class="text-white-50 text-decoration-none hover-link">-->
+<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
+<!--              Контакты-->
+<!--            </a>-->
+<!--          </li>-->
+<!--        </ul>-->
+<!--      </div>-->
     </div>
-    <hr class="border-secondary my-3">
+
+    <!-- Юридическая информация -->
+    <div class="legal-info mt-5 p-4 rounded-3" style="background: rgba(255,255,255,0.05);">
+      <p class="small text-white-50 mb-0" style="line-height: 1.8;">
+        <i class="bi bi-info-circle me-2" style="color: var(--accent);"></i>
+        Сведения о товарах и услугах на сайте toolsmarket48.ru носят ознакомительный характер
+        и не являются публичной офертой. Оформление заказа доступно только зарегистрированным
+        пользователям. После оформления заказа вы получите на e‑mail счёт для оплаты с
+        актуальными ценами и подтверждением наличия товара. Мы работаем исключительно с
+        юридическими лицами. Оплата — по безналичному расчёту; цена включает НДС. Доставка
+        осуществляется поставщиком со своего склада. Условия (сроки, стоимость) определяются
+        в договоре поставки или после 100% предоплаты и согласования условий с покупателем.
+        Гарантия действует в соответствии с условиями производителя. Сроки, перечень
+        гарантийных случаев и порядок предъявления требований регулируются ГК РФ и Законом РФ
+        «О защите прав потребителей».
+      </p>
+    </div>
+
+    <!-- Копирайт -->
+    <hr class="border-white-10 my-4" style="opacity: 0.1;">
     <div class="text-center">
-      <p class="mb-0 small">&copy; 2026 ToolsMarket48. Все права защищены.</p>
+      <p class="small text-white-50 mb-0">
+        © 2026 ToolsMarket48. Все права защищены.
+      </p>
     </div>
   </div>
+
+  <style>
+    /* Стили для премиального футера */
+    .premium-footer {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      margin-top: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .premium-footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--primary), transparent);
+    }
+
+    .premium-footer h5 {
+      color: white;
+      font-weight: 600;
+      position: relative;
+      display: inline-block;
+      padding-bottom: 10px;
+    }
+
+    .premium-footer h5::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--primary));
+      border-radius: 2px;
+    }
+
+    .social-link {
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .social-link:hover {
+      background: var(--primary);
+      transform: translateY(-3px);
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(10,88,202,0.3);
+    }
+
+    .hover-link {
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+
+    .hover-link:hover {
+      color: var(--accent) !important;
+      transform: translateX(4px);
+    }
+
+    .border-white-10 {
+      border-color: rgba(255,255,255,0.1) !important;
+    }
+
+    .text-white-50 {
+      color: rgba(255,255,255,0.7) !important;
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+      .premium-footer {
+        text-align: center;
+      }
+
+      .premium-footer h5::after {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .social-links {
+        justify-content: center;
+      }
+    }
+  </style>
 </footer>

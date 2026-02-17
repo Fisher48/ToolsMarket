@@ -1,55 +1,295 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="header">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        /* Премиальные переменные */
+        :root {
+            --primary: #0d2e67;
+            --primary-dark: #084298;
+            --primary-light: #f4f5f6;
+            --accent: #f43300;
+            --text: #212d42;
+            --text-light: #64748b;
+            --bg-glass: rgba(255, 255, 255, 0.9);
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        /* Премиальный header */
+        .premium-header {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .premium-header.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        /* Логотип */
+        .premium-logo {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .premium-logo:hover {
+            transform: scale(1.02);
+        }
+
+        /* Поиск */
+        .premium-search {
+            position: relative;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 20px;
+        }
+
+        .premium-search .form-control {
+            border-radius: 50px;
+            border: 1px solid #e2e8f0;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            transition: all 0.3s ease;
+        }
+
+        .premium-search .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(10,88,202,0.1);
+            background: white;
+        }
+
+        .premium-search .btn {
+            border-radius: 50px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .premium-search .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(10,88,202,0.3);
+        }
+
+        /* Навигационные иконки */
+        .nav-icons {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-icon-link {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1.2rem;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 50px;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .nav-icon-link:hover {
+            color: var(--primary);
+            background: rgba(10,88,202,0.05);
+            transform: translateY(-2px);
+        }
+
+        .nav-icon-link .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--accent);
+            color: var(--text);
+            font-size: 0.7rem;
+            padding: 3px 6px;
+            border-radius: 20px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        /* Профиль */
+        .profile-dropdown {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .profile-dropdown:hover {
+            background: rgba(10,88,202,0.05);
+            color: var(--primary);
+        }
+
+        .profile-dropdown::after {
+            display: none;
+        }
+
+        .profile-dropdown i {
+            font-size: 1.2rem;
+        }
+
+        .dropdown-menu {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 8px;
+            margin-top: 10px;
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 10px 16px;
+            transition: all 0.2s ease;
+            color: var(--text);
+        }
+
+        .dropdown-item:hover {
+            background: rgba(10,88,202,0.05);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .dropdown-item.text-danger:hover {
+            background: rgba(220,53,69,0.05);
+            color: #dc3545 !important;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 992px) {
+            .premium-search {
+                max-width: 300px;
+            }
+            .nav-icon-link span {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .premium-header .container {
+                flex-wrap: wrap;
+            }
+            .premium-search {
+                order: 3;
+                max-width: 100%;
+                margin: 12px 0 0;
+            }
+        }
+    </style>
+</head>
 <body>
-<!-- Фрагмент хедера с выпадающим меню -->
-<nav th:fragment="header" class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
+
+<!-- Премиальный header -->
+<nav th:fragment="header" class="premium-header" x-data="{ scrolled: false }"
+     @scroll.window="scrolled = window.scrollY > 50"
+     :class="{ 'scrolled': scrolled }">
+
+    <div class="container d-flex align-items-center py-3">
+
         <!-- Логотип -->
-        <a class="navbar-brand fw-bold" th:href="@{/}"> ToolsMarket48
+        <a class="premium-logo" th:href="@{/}">
+            <i class="bi bi-tools me-2"></i>ToolsMarket48
         </a>
 
         <!-- Поиск -->
-        <form class="d-flex flex-grow-1 mx-4" th:action="@{/search}" method="get">
+        <form class="premium-search" th:action="@{/search}" method="get">
             <div class="input-group">
                 <input class="form-control" type="search" name="q"
-                       placeholder="Поиск инструментов..." aria-label="Search">
-                <button class="btn btn-warning" type="submit">
+                       placeholder="Введите название..."
+                       aria-label="Search"
+                       autocomplete="off">
+                <button class="btn" type="submit">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
         </form>
 
-        <!-- Правая часть -->
-        <div class="navbar-nav flex-row align-items-center">
+        <!-- Правая часть с иконками -->
+        <div class="nav-icons">
+
             <!-- Избранное -->
-            <a class="nav-link text-white mx-2" href="#" title="Избранное">
-                <i class="bi bi-heart fs-5"></i>
+            <a class="nav-icon-link" href="#" title="Избранное">
+                <i class="bi bi-heart"></i>
+                <span class="d-none d-lg-inline">Избранное</span>
             </a>
 
-            <!-- Корзина -->
-            <div class="cart-indicator">
-                <a th:href="@{/cart}" class="btn btn-outline-light position-relative">
-                    <i class="bi bi-cart"></i>
-                    Корзина
-                    <span th:if="${session.cartItemCount != null and session.cartItemCount > 0}"
-                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                          th:text="${session.cartItemCount}">0</span>
+            <!-- Корзина с Alpine.js -->
+            <div x-data="{
+    quantity: 0,
+    init() {
+        // Загружаем начальное состояние
+        this.loadCart();
+
+        // Слушаем событие обновления корзины
+        window.addEventListener('cart-updated', (e) => {
+            this.quantity = e.detail.totalQuantity;
+        });
+
+        // Также слушаем кастомное событие для совместимости
+        window.addEventListener('cartUpdated', (e) => {
+            this.quantity = e.detail.totalQuantity;
+        });
+    },
+    loadCart() {
+        fetch('/api/cart/state')
+            .then(res => res.json())
+            .then(data => {
+                this.quantity = data.totalQuantity || 0;
+            })
+            .catch(err => console.error('Error loading cart:', err));
+    }
+}" x-init="init()">
+                <a th:href="@{/cart}" class="nav-icon-link position-relative">
+                    <i class="bi bi-cart3"></i>
+                    <span class="d-none d-lg-inline">Корзина</span>
+                    <span class="badge" x-show="quantity > 0" x-text="quantity"
+                          x-cloak style="background: var(--accent); color: white;"></span>
                 </a>
             </div>
 
             <!-- Профиль пользователя -->
-            <div class="nav-item dropdown">
-                <!-- Если пользователь авторизован -->
-                <th:block th:if="${isAuthenticated != null and isAuthenticated}">  <!-- Простая проверка -->
-                    <a class="nav-link text-white mx-2 dropdown-toggle d-flex align-items-center"
-                       href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle fs-5 me-1"></i>
-                        <!-- Упрощенная проверка -->
-                        <span th:if="${currentUser != null}">
-                            Привет, [[${currentUser.username}]]!
+            <th:block th:if="${isAuthenticated != null and isAuthenticated}">
+                <div class="dropdown">
+                    <button class="profile-dropdown dropdown-toggle d-flex align-items-center"
+                            type="button" id="userDropdown"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle me-2"></i>
+                        <span th:if="${currentUser != null}" class="d-none d-lg-inline">
+                            [[${currentUser.username}]]
                         </span>
-                        <span th:unless="${currentUser != null}">Профиль</span>
-                    </a>
+                        <span th:unless="${currentUser != null}" class="d-none d-lg-inline">Профиль</span>
+                    </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li>
                             <a class="dropdown-item" th:href="@{/profile}">
@@ -71,19 +311,53 @@
                             </form>
                         </li>
                     </ul>
-                </th:block>
+                </div>
+            </th:block>
 
-                <!-- Если пользователь не авторизован -->
-                <th:block th:unless="${isAuthenticated != null and isAuthenticated}">
-                    <a class="nav-link text-white mx-2 d-flex align-items-center"
-                       th:href="@{/auth/login}">
-                        <i class="bi bi-box-arrow-in-right fs-5 me-1"></i>
-                        <span class="d-none d-md-inline">Войти</span>
-                    </a>
-                </th:block>
-            </div>
+            <!-- Если пользователь не авторизован -->
+            <th:block th:unless="${isAuthenticated != null and isAuthenticated}">
+                <a class="nav-icon-link" th:href="@{/auth/login}">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span class="d-none d-lg-inline">Войти</span>
+                </a>
+            </th:block>
         </div>
     </div>
 </nav>
+
+<!-- Bootstrap JS (для дропдаунов) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Скрипт для header -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Добавляем класс при скролле
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.premium-header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Анимация для поиска
+        const searchInput = document.querySelector('.premium-search .form-control');
+        if (searchInput) {
+            searchInput.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            searchInput.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        }
+    });
+</script>
+
+<style>
+    /* Скрываем Alpine.js пока не загрузится */
+    [x-cloak] { display: none !important; }
+</style>
+
 </body>
 </html>

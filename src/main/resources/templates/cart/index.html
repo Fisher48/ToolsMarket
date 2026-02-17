@@ -363,23 +363,24 @@
             headers[csrfHeader] = csrfToken;
         }
 
-        try {
-            const response = await fetch(`/api/cart${endpoint}`, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(data)
-            });
+        const response = await fetch(`/api/cart${endpoint}`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(data)
+        });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('Cart request error:', error);
-            showNotification(error.message || 'Ошибка запроса', 'danger');
-            throw error;
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const result = await response.json(); // Сначала получаем result
+
+        // Теперь можно использовать result
+        window.dispatchEvent(new CustomEvent('cart-updated', {
+            detail: { totalQuantity: result.totalQuantity }
+        }));
+
+        return result;
     }
 
     // Увеличить количество
