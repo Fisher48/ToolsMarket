@@ -87,7 +87,7 @@
                             <!-- Родительская категория -->
                             <div class="mb-3">
                                 <label for="parent" class="form-label">Родительская категория</label>
-                                <select class="form-select" id="parent" name="parent">
+                                <select class="form-select" id="parent" name="parentId">
                                     <option value="">-- Без родительской категории (корневая) --</option>
                                     <option th:each="cat : ${allCategories}"
                                             th:value="${cat.id}"
