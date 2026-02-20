@@ -1,7 +1,5 @@
 package ru.fisher.ToolsMarket.controller.rest;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +17,6 @@ import ru.fisher.ToolsMarket.service.UserService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -33,26 +30,21 @@ public class CartRestController {
 
     @PostMapping("/add")
     public ResponseEntity<?> add(@RequestBody CartRequest request,
-                                 @AuthenticationPrincipal UserDetails userDetails,
-                                 @CookieValue(value = "sessionId", required = false) String sessionId,
-                                 HttpServletResponse response) {
+                                 @AuthenticationPrincipal UserDetails userDetails) {
 
         log.info("Add to cart request: productId={}, quantity={}",
                 request.productId(), request.quantity());
 
         try {
-            // ПРОВЕРКА: productId не должен быть null
             if (request.productId() == null) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "Product ID is required"));
             }
 
             Long userId = getUserId(userDetails);
-            sessionId = ensureSession(sessionId, response);
 
-            Cart cart = cartService.getOrCreateCart(userId, sessionId);
+            Cart cart = cartService.getOrCreateCart(userId);
 
-            // Используем существующий метод с проверкой
             cartService.addProductWithQuantity(
                     cart.getId(),
                     request.productId(),
@@ -70,24 +62,20 @@ public class CartRestController {
 
     @PostMapping("/decrease")
     public ResponseEntity<?> decrease(@RequestBody CartRequest request,
-                                      @AuthenticationPrincipal UserDetails userDetails,
-                                      @CookieValue(value = "sessionId", required = false) String sessionId,
-                                      HttpServletResponse response) {
+                                      @AuthenticationPrincipal UserDetails userDetails) {
 
         log.info("Decrease cart request: productId={}", request.productId());
 
         try {
-            // ПРОВЕРКА
             if (request.productId() == null) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "Product ID is required"));
             }
 
             Long userId = getUserId(userDetails);
-            sessionId = ensureSession(sessionId, response);
 
-            Cart cart = cartService.getOrCreateCart(userId, sessionId);
-            cartService.decreaseProductQuantity(cart.getId(), request.productId());
+            Cart cart = cartService.getOrCreateCart(userId);
+            cartService.decreaseProductInUserCart(userId, request.productId());
 
             return ResponseEntity.ok(buildResponse(cart, userId));
 
@@ -100,23 +88,19 @@ public class CartRestController {
 
     @PostMapping("/remove")
     public ResponseEntity<?> remove(@RequestBody CartRequest request,
-                                    @AuthenticationPrincipal UserDetails userDetails,
-                                    @CookieValue(value = "sessionId", required = false) String sessionId,
-                                    HttpServletResponse response) {
+                                    @AuthenticationPrincipal UserDetails userDetails) {
 
         log.info("Remove from cart request: productId={}", request.productId());
 
         try {
-            // ПРОВЕРКА
             if (request.productId() == null) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "Product ID is required"));
             }
 
             Long userId = getUserId(userDetails);
-            sessionId = ensureSession(sessionId, response);
 
-            Cart cart = cartService.getOrCreateCart(userId, sessionId);
+            Cart cart = cartService.getOrCreateCart(userId);
             cartService.removeProduct(cart.getId(), request.productId());
 
             return ResponseEntity.ok(buildResponse(cart, userId));
@@ -128,17 +112,13 @@ public class CartRestController {
         }
     }
 
-    // ИЗМЕНИТЬ: сделать GET запрос
     @GetMapping("/state")
-    public ResponseEntity<?> state(@AuthenticationPrincipal UserDetails userDetails,
-                                   @CookieValue(value = "sessionId", required = false) String sessionId,
-                                   HttpServletResponse response) {
+    public ResponseEntity<?> state(@AuthenticationPrincipal UserDetails userDetails) {
 
         try {
             Long userId = getUserId(userDetails);
-            sessionId = ensureSession(sessionId, response);
 
-            Cart cart = cartService.getOrCreateCart(userId, sessionId);
+            Cart cart = cartService.getOrCreateCart(userId);
             return ResponseEntity.ok(buildResponse(cart, userId));
 
         } catch (Exception e) {
@@ -148,7 +128,7 @@ public class CartRestController {
         }
     }
 
-    // ===== helpers =====
+    // ===== Вспомогательные методы =====
 
     private CartResponse buildResponse(Cart cart, Long userId) {
         List<CartItemDto> items = userId != null
@@ -192,7 +172,6 @@ public class CartRestController {
                         (a, b) -> b // Если дублируются, берем последний
                 ));
 
-        // Логируем для отладки
         log.debug("Cart response: items={}, totalQty={}, totalAmount={}, totalDiscount={}, totalWithDiscount={}",
                 items.size(), totalQty, totalAmount, totalDiscount, totalWithDiscount);
 
@@ -204,19 +183,6 @@ public class CartRestController {
                 totalDiscount.doubleValue(),
                 totalWithDiscount.doubleValue()
         );
-    }
-
-    private String ensureSession(String sessionId, HttpServletResponse response) {
-        if (sessionId == null) {
-            sessionId = UUID.randomUUID().toString();
-            Cookie cookie = new Cookie("sessionId", sessionId);
-            cookie.setPath("/");
-            cookie.setHttpOnly(true);
-            response.addCookie(cookie);
-
-            log.info("Created new session ID: {}", sessionId);
-        }
-        return sessionId;
     }
 
     private Long getUserId(UserDetails userDetails) {

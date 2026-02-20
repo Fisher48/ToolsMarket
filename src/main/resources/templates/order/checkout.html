@@ -33,14 +33,9 @@
             <h2 class="mb-4">Ваш заказ</h2>
 
             <!-- Информация о пользователе -->
-            <div th:if="${isAuthenticated}" class="alert alert-success mb-4">
+            <div th:if="${currentUser != null}" class="alert alert-success mb-4">
                 <i class="bi bi-check-circle me-2"></i>
                 Вы оформляете заказ как <strong th:text="${currentUser.username}"></strong>
-            </div>
-            <div th:unless="${isAuthenticated}" class="alert alert-warning mb-4">
-                <i class="bi bi-info-circle me-2"></i>
-                Вы оформляете заказ как гость.
-                <a th:href="@{/auth/login}" class="alert-link">Войдите</a> для сохранения истории заказов.
             </div>
 
             <!-- Список товаров -->
@@ -103,7 +98,7 @@
 
                     <form th:action="@{/order/create}" method="post" id="checkoutForm">
                         <!-- Для авторизованных пользователей показываем информацию профиля -->
-                        <div th:if="${isAuthenticated and currentUser != null}" class="mb-3">
+                        <div th:if="${currentUser != null}" class="mb-3">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Имя</label>
@@ -130,7 +125,7 @@
                         </div>
 
                         <!-- Для анонимных пользователей - форма ввода -->
-                        <div th:unless="${isAuthenticated}" class="mb-3">
+                        <div th:unless="${currentUser != null}" class="mb-3">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Имя</label>
@@ -220,8 +215,7 @@
                             class="btn btn-warning w-100 btn-lg py-3"
                             th:disabled="${items.isEmpty()}">
                         <i class="bi bi-check-circle"></i>
-                        <span th:if="${isAuthenticated}">Подтвердить заказ</span>
-                        <span th:unless="${isAuthenticated}">Оформить как гость</span>
+                        <span th:if="${currentUser != null}">Подтвердить заказ</span>
                     </button>
 
                     <div th:if="${items.isEmpty()}" class="mt-2 text-center">

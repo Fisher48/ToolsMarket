@@ -88,20 +88,6 @@
                 </div>
             </div>
 
-            <!-- Уведомления -->
-            <div th:if="${cartMerged != null and cartMerged}" class="alert alert-success alert-dismissible fade show mb-4">
-                <i class="bi bi-check-circle-fill me-2"></i>
-                Товары из анонимной корзины добавлены в вашу учетную запись.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-
-            <div th:if="${hasAnonymousCart != null and hasAnonymousCart}" class="alert alert-info alert-dismissible fade show mb-4">
-                <i class="bi bi-info-circle-fill me-2"></i>
-                В вашей анонимной корзине есть товары.
-                <a th:href="@{/cart/merge}" class="alert-link ms-1">Объединить с текущей?</a>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-
             <!-- Пустая корзина -->
             <div th:if="${#lists.isEmpty(items)}" class="text-center py-5">
                 <i class="bi bi-cart-x display-1 text-muted mb-4"></i>
@@ -174,9 +160,9 @@
                                   th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
                                   th:data-price="${item.unitPrice}">
                             </span>
-                                                    <span class="text-success fw-bold unit-price"
-                                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPriceWithDiscount) + ' ₽'}"
-                                                          th:data-price="${item.unitPriceWithDiscount}">
+                            <span class="text-success fw-bold unit-price"
+                                  th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPriceWithDiscount) + ' ₽'}"
+                                  th:data-price="${item.unitPriceWithDiscount}">
                             </span>
                                                 </div>
                                             </div>
@@ -317,20 +303,10 @@
 
                                 <!-- Кнопка оформления -->
                                 <div class="mb-3">
-                                    <div th:if="${isAuthenticated}">
+                                    <div th:if="${currentUser != null}">
                                         <a th:href="@{/order/checkout}" class="btn btn-warning w-100 py-3 fw-bold">
                                             <i class="bi bi-credit-card me-2"></i> Оформить заказ
                                         </a>
-                                    </div>
-                                    <div th:unless="${isAuthenticated}">
-                                        <a th:href="@{/order/checkout}" class="btn btn-warning w-100 py-3 fw-bold">
-                                            <i class="bi bi-credit-card me-2"></i> Оформить как гость
-                                        </a>
-                                        <div class="mt-2 text-center">
-                                            <small class="text-muted">
-                                                Или <a th:href="@{/auth/login}" class="text-decoration-none">войдите</a> для быстрого оформления
-                                            </small>
-                                        </div>
                                     </div>
                                 </div>
                             </div>

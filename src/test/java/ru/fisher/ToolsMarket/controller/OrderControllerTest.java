@@ -156,7 +156,7 @@ class OrderControllerTest {
         List<CartItemDto> items = List.of(item);
 
         // 3. Мокаем сервисы (для НЕАВТОРИЗОВАННОГО пользователя)
-        when(cartService.getOrCreateCart(null, null)).thenReturn(cart); // ← sessionId не используется!
+        when(cartService.getOrCreateCart(null)).thenReturn(cart); // ← sessionId не используется!
         when(cartService.getCartItems(10L)).thenReturn(items);
 
         // 4. Выполняем запрос БЕЗ авторизации
@@ -183,7 +183,7 @@ class OrderControllerTest {
         order.setId(5L);
         order.setOrderNumber(12345L);
 
-        when(cartService.getOrCreateCart(null, sessionId)).thenReturn(cart);
+        when(cartService.getOrCreateCart(null)).thenReturn(cart);
         when(cartService.getCartItems(10L)).thenReturn(List.of(new CartItemDto()));
         when(orderService.createOrder(10L)).thenReturn(order);
 
@@ -203,7 +203,7 @@ class OrderControllerTest {
         Cart cart = new Cart();
         cart.setId(10L);
 
-        when(cartService.getOrCreateCart(null, sessionId)).thenReturn(cart);
+        when(cartService.getOrCreateCart(null)).thenReturn(cart);
         when(cartService.getCartItems(10L)).thenReturn(List.of()); // Пустая корзина
 
         mockMvc.perform(post("/order/create")
@@ -223,7 +223,7 @@ class OrderControllerTest {
         Cart cart = new Cart();
         cart.setId(cartId);
 
-        when(cartService.getOrCreateCart(null, sessionId)).thenReturn(cart);
+        when(cartService.getOrCreateCart(null)).thenReturn(cart);
         when(orderService.createOrder(cartId))
                 .thenThrow(new IllegalStateException("Cart is empty"));
 
@@ -240,7 +240,7 @@ class OrderControllerTest {
     void createOrderWithNotFoundCartShowsErrorMessage() throws Exception {
         String sessionId = "test-session";
 
-        when(cartService.getOrCreateCart(null, sessionId))
+        when(cartService.getOrCreateCart(null))
                 .thenThrow(new IllegalArgumentException("Cart not found"));
 
         mockMvc.perform(post("/order/create")

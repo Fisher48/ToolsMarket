@@ -70,7 +70,7 @@ class CartServiceTest {
         // given
         String sessionId = UUID.randomUUID().toString();
         // when
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
 
         // then
         assertThat(cart).isNotNull();
@@ -92,7 +92,7 @@ class CartServiceTest {
         cartRepository.save(existing);
 
         // when
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
 
         // then
         assertThat(cart.getId()).isEqualTo(existing.getId());
@@ -103,8 +103,7 @@ class CartServiceTest {
     void addProductCreatesCartItem() {
         // given
         // создаем корзину
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
 
         // создаем продукт
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
@@ -128,8 +127,7 @@ class CartServiceTest {
     @Test
     void whenProductAddedToEmptyCart_cartContainsOneItemWithSnapshot() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
         Product p = createAndSaveProduct("Drill X", BigDecimal.valueOf(10000.00));
 
         // when — добавляем товар
@@ -153,8 +151,7 @@ class CartServiceTest {
     @Test
     void addProductIncreasesQuantityIfExists() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
 
         // создаем продукт
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
@@ -175,8 +172,7 @@ class CartServiceTest {
 
     @Test
     void removeProductFromCartDeletesCartItem() {
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
 
         // Добавляем товар в корзину (проверяем что удаляется независимо от quantity)
@@ -197,8 +193,7 @@ class CartServiceTest {
     @Test
     void decreaseProductQuantityReducesQuantityOrRemovesItem() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
 
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
 
@@ -211,14 +206,14 @@ class CartServiceTest {
         assertThat(itemBefore.getQuantity()).isEqualTo(2);
 
         // when — уменьшаем количество
-        cartService.decreaseProductQuantity(cart.getId(), product.getId());
+        cartService.decreaseProductInUserCart(cart.getId(), product.getId());
 
         // then — quantity должно стать 1
         CartItem itemAfter = cartItemRepository.findByCartId(cart.getId()).getFirst();
         assertThat(itemAfter.getQuantity()).isEqualTo(1);
 
         // when — уменьшаем ещё раз
-        cartService.decreaseProductQuantity(cart.getId(), product.getId());
+        cartService.decreaseProductInUserCart(cart.getId(), product.getId());
 
         // then — CartItem должен исчезнуть
         List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
@@ -228,12 +223,11 @@ class CartServiceTest {
     @Test
     void decreaseProductQuantityForNonExistentItemDoesNothing() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
 
         // when - уменьшаем количество товара, которого нет в корзине
-        cartService.decreaseProductQuantity(cart.getId(), product.getId());
+        cartService.decreaseProductInUserCart(cart.getId(), product.getId());
 
         // then - не должно быть ошибок, корзина пустая
         List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
@@ -256,7 +250,7 @@ class CartServiceTest {
     void addProductThrowsWhenProductNotFound() {
         // given
         String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
         Long nonExistentProductId = 999L;
 
         // when & then
@@ -268,8 +262,7 @@ class CartServiceTest {
     @Test
     void getCartItemsReturnsAllItems() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
 
         Product product1 = createAndSaveProduct("Product 1", BigDecimal.valueOf(10000.00));
         Product product2 = createAndSaveProduct("Product 2", BigDecimal.valueOf(10000.00));
@@ -302,8 +295,7 @@ class CartServiceTest {
     @Test
     void addProductWithQuantityCreatesCartItemWithCorrectQuantity() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
         int quantity = 3;
 
@@ -323,8 +315,7 @@ class CartServiceTest {
     @Test
     void addProductWithQuantityIncreasesExistingItemQuantity() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
 
         // Сначала добавляем 2 штуки
@@ -343,8 +334,7 @@ class CartServiceTest {
     @Test
     void addProductWithQuantityZeroDoesNothing() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
 
         // when
@@ -360,8 +350,7 @@ class CartServiceTest {
     @Test
     void addProductWithNegativeQuantityThrowsException() {
         // given
-        String sessionId = UUID.randomUUID().toString();
-        Cart cart = cartService.getOrCreateCart(null, sessionId);
+        Cart cart = cartService.getOrCreateCart(null);
         Product product = createAndSaveProduct("Test-Product", BigDecimal.valueOf(10000.00));
 
         // when & then

@@ -111,7 +111,7 @@ class OrderServiceTest {
     @Test
     void createOrderFromCartCopiesItemsAndClearCartTest() {
         // Given - Создаем корзину с товарами
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
 
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         Product p2 = createAndSaveProduct("p2", BigDecimal.valueOf(2000.0));
@@ -157,7 +157,7 @@ class OrderServiceTest {
 
     @Test
     void getOrderByIdReturnsOrderWithItems() {
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
 
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         Product p2 = createAndSaveProduct("p2", BigDecimal.valueOf(2000.0));
@@ -177,7 +177,7 @@ class OrderServiceTest {
 
     @Test
     void getUserOrderReturnsOrderOnlyForCorrectUser() {
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProductWithQuantity(cart.getId(), p1.getId(), 1);
         Order order = orderService.createOrder(cart.getId());
@@ -196,7 +196,7 @@ class OrderServiceTest {
     @Test
     void getUserOrdersReturnsOnlyUserOrders() {
         // Создаем заказ для тестового пользователя
-        Cart cart1 = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart1 = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProduct(cart1.getId(), p1.getId());
         Order order1 = orderService.createOrder(cart1.getId());
@@ -210,7 +210,7 @@ class OrderServiceTest {
         userService.createAdminUser(anotherUser.getUsername(), anotherUser.getEmail(), anotherUser.getPassword());
         anotherUser = userService.findByUsername(anotherUser.getUsername()).orElseThrow();
 
-        Cart cart2 = cartService.getOrCreateCart(anotherUser.getId(), UUID.randomUUID().toString());
+        Cart cart2 = cartService.getOrCreateCart(anotherUser.getId());
         cartService.addProduct(cart2.getId(), p1.getId());
         Order order2 = orderService.createOrder(cart2.getId());
 
@@ -225,12 +225,12 @@ class OrderServiceTest {
 
     @Test
     void getUserOrdersByStatusReturnsFilteredOrders() {
-        Cart cart1 = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart1 = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProduct(cart1.getId(), p1.getId());
         Order order1 = orderService.createOrder(cart1.getId());
 
-        Cart cart2 = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart2 = cartService.getOrCreateCart(testUser.getId());
         cartService.addProduct(cart2.getId(), p1.getId());
         Order order2 = orderService.createOrder(cart2.getId());
 
@@ -250,7 +250,7 @@ class OrderServiceTest {
 
     @Test
     void cancelOrderChangesStatusAndCanBeCancelledByUser() {
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProduct(cart.getId(), p1.getId());
         Order order = orderService.createOrder(cart.getId());
@@ -270,7 +270,7 @@ class OrderServiceTest {
 
     @Test
     void cancelOrderOnlyAllowedForSpecificStatuses() {
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProduct(cart.getId(), p1.getId());
         Order order = orderService.createOrder(cart.getId());
@@ -287,7 +287,7 @@ class OrderServiceTest {
     @Test
     void productChangesDoNotAffectExistingOrders() {
         Product p1 = createAndSaveProduct("Test", BigDecimal.valueOf(1000.0));
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
         cartService.addProductWithQuantity(cart.getId(), p1.getId(), 2);
         Order order = orderService.createOrder(cart.getId());
 
@@ -301,7 +301,7 @@ class OrderServiceTest {
 
     @Test
     void updateOrderStatusAfterConfirmationTest() {
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
 
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
 
@@ -331,7 +331,7 @@ class OrderServiceTest {
 
     @Test
     void updateOrderStatusCannotGoBackwards() {
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p = createAndSaveProduct("p1", BigDecimal.valueOf(1000));
         cartService.addProductWithQuantity(cart.getId(), p.getId(), 1);
         Order order = orderService.createOrder(cart.getId());
@@ -349,7 +349,7 @@ class OrderServiceTest {
 
     @Test
     void updateOrderStatusCannotBeChangedAfterCompletion() {
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p = createAndSaveProduct("p1", BigDecimal.valueOf(1000));
         cartService.addProductWithQuantity(cart.getId(), p.getId(), 1);
         Order order = orderService.createOrder(cart.getId());
@@ -374,7 +374,7 @@ class OrderServiceTest {
 
     @Test
     void updateOrderStatusThrowsOnNullStatus() {
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p = createAndSaveProduct("p", BigDecimal.valueOf(1000));
         cartService.addProductWithQuantity(cart.getId(), p.getId(), 1);
         Order order = orderService.createOrder(cart.getId());
@@ -389,7 +389,7 @@ class OrderServiceTest {
     @Test
     void createOrderFromEmptyCartThrowsException() {
         // Given - пустая корзина
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
 
         // When & Then
         assertThatThrownBy(() -> orderService.createOrder(cart.getId()))
@@ -411,7 +411,7 @@ class OrderServiceTest {
     @Test
     void orderNumberIsUniqueAndGenerated() {
         // Given - корзина с товаром
-        Cart cart = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product product = createAndSaveProduct("Test", BigDecimal.valueOf(1000));
         cartService.addProduct(cart.getId(), product.getId());
 
@@ -419,7 +419,7 @@ class OrderServiceTest {
         Order order1 = orderService.createOrder(cart.getId());
 
         // Новая корзина для второго заказа
-        Cart cart2 = cartService.getOrCreateCart(testUser.getId(), UUID.randomUUID().toString());
+        Cart cart2 = cartService.getOrCreateCart(testUser.getId());
         cartService.addProduct(cart2.getId(), product.getId());
         Order order2 = orderService.createOrder(cart2.getId());
 

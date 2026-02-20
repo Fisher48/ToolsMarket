@@ -238,57 +238,58 @@
         <!-- Правая часть с иконками -->
         <div class="nav-icons">
 
-            <!-- Избранное -->
+            <!-- Избранное (пока заглушка) -->
             <a class="nav-icon-link" href="#" title="Избранное">
                 <i class="bi bi-heart"></i>
                 <span class="d-none d-lg-inline">Избранное</span>
             </a>
 
-            <!-- Корзина с Alpine.js -->
-            <div x-data="{
-    quantity: 0,
-    init() {
-        // Загружаем начальное состояние
-        this.loadCart();
+            <!-- Корзина - для авторизованных пользователей -->
+            <th:block th:if="${currentUser != null}">
+                <div x-data="{
+                    quantity: 0,
+                    init() {
+                        this.loadCart();
+                        window.addEventListener('cart-updated', (e) => {
+                            this.quantity = e.detail.totalQuantity;
+                        });
+                    },
+                    loadCart() {
+                        fetch('/api/cart/state')
+                            .then(res => res.json())
+                            .then(data => {
+                                this.quantity = data.totalQuantity || 0;
+                            })
+                            .catch(err => console.error('Error loading cart:', err));
+                    }
+                }">
+                    <a th:href="@{/cart}" class="nav-icon-link position-relative">
+                        <i class="bi bi-cart3"></i>
+                        <span class="d-none d-lg-inline">Корзина</span>
+                        <span class="badge" x-show="quantity > 0"
+                              x-text="quantity" x-cloak></span>
+                    </a>
+                </div>
+            </th:block>
 
-        // Слушаем событие обновления корзины
-        window.addEventListener('cart-updated', (e) => {
-            this.quantity = e.detail.totalQuantity;
-        });
-
-        // Также слушаем кастомное событие для совместимости
-        window.addEventListener('cartUpdated', (e) => {
-            this.quantity = e.detail.totalQuantity;
-        });
-    },
-    loadCart() {
-        fetch('/api/cart/state')
-            .then(res => res.json())
-            .then(data => {
-                this.quantity = data.totalQuantity || 0;
-            })
-            .catch(err => console.error('Error loading cart:', err));
-    }
-}" x-init="init()">
-                <a th:href="@{/cart}" class="nav-icon-link position-relative">
+            <!-- Корзина для неавторизованных - ведет на логин -->
+            <th:block th:unless="${currentUser != null}">
+                <a th:href="@{/auth/login}" class="nav-icon-link position-relative">
                     <i class="bi bi-cart3"></i>
                     <span class="d-none d-lg-inline">Корзина</span>
-                    <span class="badge" x-show="quantity > 0" x-text="quantity"
-                          x-cloak style="background: var(--accent); color: white;"></span>
                 </a>
-            </div>
+            </th:block>
 
-            <!-- Профиль пользователя -->
-            <th:block th:if="${isAuthenticated != null and isAuthenticated}">
+            <!-- Профиль пользователя - для авторизованных -->
+            <th:block th:if="${currentUser != null}">
                 <div class="dropdown">
                     <button class="profile-dropdown dropdown-toggle d-flex align-items-center"
                             type="button" id="userDropdown"
                             data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle me-2"></i>
-                        <span th:if="${currentUser != null}" class="d-none d-lg-inline">
-                            [[${currentUser.username}]]
+                        <span class="d-none d-lg-inline">
+                            <span th:text="${currentUser.username}">Пользователь</span>
                         </span>
-                        <span th:unless="${currentUser != null}" class="d-none d-lg-inline">Профиль</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li>
@@ -301,7 +302,9 @@
                                 <i class="bi bi-box-seam me-2"></i> Мои заказы
                             </a>
                         </li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
                         <li>
                             <form th:action="@{/logout}" method="post" class="mb-0">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
@@ -314,8 +317,8 @@
                 </div>
             </th:block>
 
-            <!-- Если пользователь не авторизован -->
-            <th:block th:unless="${isAuthenticated != null and isAuthenticated}">
+            <!-- Кнопка входа для неавторизованных -->
+            <th:block th:unless="${currentUser != null}">
                 <a class="nav-icon-link" th:href="@{/auth/login}">
                     <i class="bi bi-box-arrow-in-right"></i>
                     <span class="d-none d-lg-inline">Войти</span>

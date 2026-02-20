@@ -8,7 +8,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -20,7 +19,6 @@ import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.*;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 
 @Controller
@@ -32,32 +30,30 @@ public class OrderController {
     private final OrderService orderService;
     private final CartService cartService;
     private final UserService userService;
-    private final ProductService productService;
-    private final DiscountService discountService;
 
     @GetMapping("/{orderId}")
     public String viewOrder(@PathVariable Long orderId,
                             Model model,
                             Authentication authentication) {
+        Long userId = getCurrentUserId(authentication);
+        if (userId == null) {
+            return "redirect:/auth/login";
+        }
+
         try {
-            Long userId = getCurrentUserId(authentication);
-            Order order;
-            User currentUser = null;
+            User currentUser = userService.findById(userId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
 
-            if (userId != null) {
-                currentUser = userService.findById(userId).orElse(null);
-                order = orderService.getOrderWithProducts(orderId);
+            Order order = orderService.getOrderWithProducts(orderId);
 
-                if (!order.getUser().getId().equals(userId)) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Доступ запрещен");
-                }
-            } else {
-                order = orderService.getOrderWithProducts(orderId);
+            // Проверяем, что заказ принадлежит пользователю
+            if (!order.getUser().getId().equals(userId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Доступ запрещен");
             }
 
             List<OrderItemDto> orderItemDtos = order.getOrderItems()
                     .stream()
-                    .map(OrderItemDto::fromEntity) // ← БЕЗ discountService!
+                    .map(OrderItemDto::fromEntity)
                     .toList();
 
             // Рассчитываем итоги из сохраненных данных
@@ -74,13 +70,12 @@ public class OrderController {
                 }
             }
 
-            boolean canCancel = canCancelOrder(order, userId);
+            boolean canCancel = canCancelOrder(order);
 
             model.addAttribute("order", order);
             model.addAttribute("orderItems", orderItemDtos);
             model.addAttribute("canCancel", canCancel);
             model.addAttribute("currentUser", currentUser);
-            model.addAttribute("isAuthenticated", userId != null);
             model.addAttribute("isPublicView", true);
             model.addAttribute("originalTotal", originalTotal);
             model.addAttribute("totalDiscount", totalDiscount);
@@ -101,45 +96,27 @@ public class OrderController {
         }
     }
 
-    private boolean canCancelOrder(Order order, Long userId) {
-        // Проверяем, может ли пользователь отменить заказ
-        if (order.getStatus() != OrderStatus.CREATED &&
-                order.getStatus() != OrderStatus.PAID) {
-            return false;
-        }
-
-        // Проверяем принадлежность заказа
-        if (userId != null) {
-            return order.belongsToUser(userId);
-        }
-
-        // Анонимный пользователь может отменять только созданные заказы
-        return order.getStatus() == OrderStatus.CREATED;
+    /**
+     * Проверка возможности отмены заказа
+     */
+    private boolean canCancelOrder(Order order) {
+        return order.getStatus() == OrderStatus.CREATED ||
+                order.getStatus() == OrderStatus.PAID;
     }
 
     @GetMapping("/checkout")
     public String checkout(@AuthenticationPrincipal UserDetails userDetails,
                            Model model) {
 
-        Long userId = null;
-        User user = null;
-
-        if (userDetails != null) {
-            userId = userService.findByUsername(userDetails.getUsername())
-                    .map(User::getId)
-                    .orElse(null);
-            user = userService.findById(userId).orElse(null);
+        if (userDetails == null) {
+            return "redirect:/auth/login";
         }
+
+        User user = userService.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
 
         // Получаем товары из корзины с учетом скидок
-        List<CartItemDto> items;
-        if (userId != null) {
-            items = cartService.getUserCartItems(userId);
-        } else {
-            // Для анонимных пользователей
-            Cart cart = cartService.getOrCreateCart(null, null);
-            items = cartService.getCartItems(cart.getId());
-        }
+        List<CartItemDto> items = cartService.getUserCartItems(user.getId());
 
         // Вычисляем суммы
         BigDecimal totalAmount = items.stream()
@@ -160,50 +137,31 @@ public class OrderController {
         model.addAttribute("totalWithDiscount", totalWithDiscount);
         model.addAttribute("totalDiscount", totalDiscount);
         model.addAttribute("hasDiscounts", hasDiscounts);
-        model.addAttribute("isAuthenticated", userId != null);
         model.addAttribute("currentUser", user);
-
-        if (user != null) {
-            model.addAttribute("userTypeDisplay", user.getUserType().getDisplayName());
-        }
+        model.addAttribute("userTypeDisplay", user.getUserType().getDisplayName());
 
         return "order/checkout";
     }
 
     @PostMapping("/create")
-    public String createOrder(@CookieValue(value = "sessionId") String sessionId,
-                              @RequestParam(required = false) String email,
-                              @RequestParam(required = false) String phone,
-                              RedirectAttributes redirectAttributes,
+    public String createOrder(RedirectAttributes redirectAttributes,
                               Authentication authentication) {
-        try {
-            Long userId = getCurrentUserId(authentication);
-            Cart cart = cartService.getOrCreateCart(userId, sessionId);
+        Long userId = getCurrentUserId(authentication);
+        if (userId == null) {
+            return "redirect:/auth/login";
+        }
 
+        try {
             // Проверяем, что корзина не пуста
-            List<CartItemDto> items = cartService.getCartItems(cart.getId());
+            List<CartItemDto> items = cartService.getUserCartItems(userId);
             if (items.isEmpty()) {
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Невозможно создать заказ из пустой корзины");
                 return "redirect:/cart";
             }
 
-            Order order;
-            if (userId != null) {
-                // Создаем заказ для зарегистрированного пользователя
-                order = orderService.createOrderFromUserCart(userId);
-            } else {
-                // Для анонимного пользователя
-                order = orderService.createOrder(cart.getId());
-
-                // Если указаны контактные данные, сохраняем их в примечание
-                if (StringUtils.hasText(email) || StringUtils.hasText(phone)) {
-                    String note = String.format("Контактные данные: Email: %s, Телефон: %s",
-                            email != null ? email : "не указан",
-                            phone != null ? phone : "не указан");
-                    orderService.addNote(order.getId(), note);
-                }
-            }
+            // Создаем заказ для зарегистрированного пользователя
+            Order order = orderService.createOrderFromUserCart(userId);
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Заказ №" + order.getOrderNumber() + " успешно создан!");
@@ -211,17 +169,12 @@ public class OrderController {
             return "redirect:/order/" + order.getId();
 
         } catch (IllegalStateException e) {
-            log.warn("Попытка создать заказ из пустой корзины: sessionId={}", sessionId);
+            log.warn("Попытка создать заказ из пустой корзины: userId={}", userId);
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Невозможно создать заказ из пустой корзины");
             return "redirect:/cart";
-        } catch (IllegalArgumentException e) {
-            log.warn("Корзина не найдена: sessionId={}", sessionId, e);
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Корзина не найдена");
-            return "redirect:/cart";
         } catch (Exception e) {
-            log.error("Ошибка при создании заказа: sessionId={}", sessionId, e);
+            log.error("Ошибка при создании заказа: userId={}", userId, e);
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Произошла ошибка при создании заказа");
             return "redirect:/cart";
@@ -238,7 +191,7 @@ public class OrderController {
             if (userId != null) {
                 // Проверяем, что заказ принадлежит пользователю
                 Order order = orderService.getUserOrder(orderId, userId);
-                if (!canCancelOrder(order, userId)) {
+                if (!canCancelOrder(order)) {
                     redirectAttributes.addFlashAttribute("errorMessage",
                             "Вы не можете отменить этот заказ");
                     return "redirect:/order/" + orderId;

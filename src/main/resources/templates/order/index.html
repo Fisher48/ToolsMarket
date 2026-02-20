@@ -233,7 +233,7 @@
             </div>
 
             <!-- Контактная информация (если авторизован) -->
-            <div th:if="${isAuthenticated}" class="card mb-4">
+            <div th:if="${currentUser != null}" class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title mb-3">
                         <i class="bi bi-person me-2"></i>
@@ -243,17 +243,17 @@
                         <li class="mb-2">
                             <i class="bi bi-person-circle me-2 text-muted"></i>
                             <span class="fw-medium">Получатель:</span>
-                            <span th:text="${order.user.firstName} + ' ' + ${order.user.lastName}"></span>
+                            <span th:text="${currentUser.firstName} + ' ' + ${currentUser.lastName}"></span>
                         </li>
-                        <li class="mb-2" th:if="${order.user.email}">
+                        <li class="mb-2" th:if="${currentUser.email}">
                             <i class="bi bi-envelope me-2 text-muted"></i>
                             <span class="fw-medium">Email:</span>
-                            <span th:text="${order.user.email}"></span>
+                            <span th:text="${currentUser.email}"></span>
                         </li>
-                        <li class="mb-2" th:if="${order.user.phone}">
+                        <li class="mb-2" th:if="${currentUser.phone}">
                             <i class="bi bi-telephone me-2 text-muted"></i>
                             <span class="fw-medium">Телефон:</span>
-                            <span th:text="${order.user.phone}"></span>
+                            <span th:text="${currentUser.phone}"></span>
                         </li>
                     </ul>
                 </div>
@@ -273,13 +273,13 @@
                         <button class="btn btn-outline-success" onclick="window.print()">
                             <i class="bi bi-printer me-2"></i> Распечатать заказ
                         </button>
-                        <th:block th:if="${!isAuthenticated}">
+                        <th:block th:if="${currentUser == null}">
                             <a th:href="@{/auth/login}" class="btn btn-outline-warning">
                                 <i class="bi bi-box-arrow-in-right me-2"></i>
                                 Войти для отслеживания заказов
                             </a>
                         </th:block>
-                        <th:block th:if="${isAuthenticated}">
+                        <th:block th:if="${currentUser != null}">
                             <a th:href="@{/profile/orders}" class="btn btn-outline-secondary">
                                 <i class="bi bi-list-ul me-2"></i> К списку заказов
                             </a>

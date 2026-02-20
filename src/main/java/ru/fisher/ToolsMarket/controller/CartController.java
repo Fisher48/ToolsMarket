@@ -1,8 +1,5 @@
 package ru.fisher.ToolsMarket.controller;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -10,7 +7,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.fisher.ToolsMarket.dto.CartItemDto;
@@ -23,7 +19,6 @@ import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 @Controller
 @RequestMapping("/cart")
@@ -33,53 +28,26 @@ public class CartController {
 
     private final CartService cartService;
     private final ProductService productService;
-    private final UserService userService; // Добавляем UserService
+    private final UserService userService;
 
     @GetMapping
-    public String viewCart(@CookieValue(value = "sessionId", required = false) String sessionId,
-                           HttpServletResponse response,
-                           HttpSession session, Model model) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String finalSessionId = getOrCreateSessionId(sessionId, response);
-        Long userId = getCurrentUserId(authentication);
-
-        Cart cart = cartService.getOrCreateCart(userId, finalSessionId);
-        List<CartItemDto> items;
-
-        if (userId != null) {
-            items = cartService.getUserCartItems(userId);
-        } else {
-            items = cartService.getCartItems(cart.getId());
+    public String viewCart(Model model) {
+        User user = getCurrentUser();
+        if (user == null) {
+            return "redirect:/auth/login";
         }
 
-        // Логирование
-        items.forEach(item ->
-                log.debug("Product: {}, Скидка: {}%",
-                        item.getProductName(), item.getDiscountPercentage())
-        );
-
-        updateCartItemCountInSession(session, cart);
+        Cart cart = cartService.getOrCreateCart(user.getId());
+        List<CartItemDto> items = cartService.getUserCartItems(user.getId());
 
         // Вычисляем суммы
-        BigDecimal totalAmount = items.stream()
-                .map(item -> item.getUnitPrice() != null ?
-                        item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())) : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+        BigDecimal totalAmount = cartService.calculateSummary(items);
         BigDecimal totalWithDiscount = items.stream()
                 .map(CartItemDto::getTotalPriceWithDiscount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         BigDecimal totalDiscount = totalAmount.subtract(totalWithDiscount);
 
-        // Если пользователь залогинен
-        if (userId != null && StringUtils.hasText(finalSessionId)) {
-            session.setAttribute("hasAnonymousCart", true);
-            session.setAttribute("anonymousSessionId", finalSessionId);
-        }
-
-        // Рассчитываем общее количество товаров (сумма всех quantity)
+        // Общее количество товаров
         int totalItemCount = items.stream()
                 .mapToInt(CartItemDto::getQuantity)
                 .sum();
@@ -91,18 +59,9 @@ public class CartController {
         model.addAttribute("totalWithDiscount", totalWithDiscount);
         model.addAttribute("totalDiscount", totalDiscount);
         model.addAttribute("hasDiscounts", totalDiscount.compareTo(BigDecimal.ZERO) > 0);
-        model.addAttribute("sessionId", finalSessionId);
-        model.addAttribute("isAuthenticated", userId != null);
-
-        // Добавляем информацию о пользователе для отображения скидок
-        if (userId != null) {
-            User user = userService.findById(userId).orElse(null);
-            if (user != null) {
-                model.addAttribute("userType", user.getUserType());
-                model.addAttribute("userTypeDisplay", user.getUserType().getDisplayName());
-                model.addAttribute("currentUser", user);
-            }
-        }
+        model.addAttribute("userType", user.getUserType());
+        model.addAttribute("userTypeDisplay", user.getUserType().getDisplayName());
+        model.addAttribute("currentUser", user);
 
         return "cart/index";
     }
@@ -111,20 +70,15 @@ public class CartController {
     public String addToCart(@RequestParam Long productId,
                             @RequestParam(defaultValue = "1") Integer quantity,
                             @RequestParam(defaultValue = "cart") String redirectTo,
-                            @CookieValue(value = "sessionId", required = false) String sessionId,
-                            HttpServletResponse response, HttpSession session,
                             @RequestHeader(value = "Referer", required = false) String referer,
                             RedirectAttributes redirectAttributes) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String finalSessionId = getOrCreateSessionId(sessionId, response);
-        Long userId = getCurrentUserId(authentication);
+        User user = getCurrentUser();
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
 
-        Cart cart = cartService.getOrCreateCart(userId, finalSessionId);
-        cartService.addProductWithQuantity(cart.getId(), productId, quantity);
-
-        // Обновляем счетчик в сессии
-        updateCartItemCountInSession(session, cart);
+        cartService.addProductToUserCart(user.getId(), productId, quantity);
 
         // Добавляем сообщение об успехе
         if ("product".equals(redirectTo) || (referer != null && referer.contains("/product/"))) {
@@ -137,126 +91,65 @@ public class CartController {
     @PostMapping("/remove")
     public String removeFromCart(@RequestParam Long productId,
                                  @RequestParam(defaultValue = "cart") String redirectTo,
-                                 @CookieValue("sessionId") String sessionId,
-                                 HttpSession session,
                                  @RequestHeader(value = "Referer", required = false) String referer,
                                  RedirectAttributes redirectAttributes) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = getCurrentUserId(authentication);
-        Cart cart = cartService.getOrCreateCart(userId, sessionId);
-        cartService.removeProduct(cart.getId(), productId);
-
-        // Обновляем счетчик в сессии
-        updateCartItemCountInSession(session, cart);
-
-        // Добавляем сообщение
-        if ("product".equals(redirectTo) || (referer != null && referer.contains("/product/"))) {
-            redirectAttributes.addFlashAttribute("cartMessage", "Товар удален из корзины");
+        User user = getCurrentUser();
+        if (user == null) {
+            return "redirect:/auth/login";
         }
 
-        return determineRedirectUrl(redirectTo, productId, referer);
-    }
-
-    @PostMapping("/decrease")
-    public String decreaseQuantity(@RequestParam Long productId,
-                                   @RequestParam(defaultValue = "cart") String redirectTo,
-                                   @CookieValue("sessionId") String sessionId,
-                                   HttpSession session,
-                                   @RequestHeader(value = "Referer", required = false) String referer,
-                                   RedirectAttributes redirectAttributes) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = getCurrentUserId(authentication);
-        Cart cart = cartService.getOrCreateCart(userId, sessionId);
-        cartService.decreaseProductQuantity(cart.getId(), productId);
-
-        // Обновляем счетчик в сессии
-        updateCartItemCountInSession(session, cart);
-
-        // Добавляем сообщение
-        if ("product".equals(redirectTo) || (referer != null && referer.contains("/product/"))) {
-            redirectAttributes.addFlashAttribute("cartMessage", "Количество уменьшено");
-        }
+        cartService.removeProductFromUserCart(user.getId(), productId);
 
         return determineRedirectUrl(redirectTo, productId, referer);
     }
 
     /**
-     * Объединение анонимной корзины с пользовательской после логина
+     * Уменьшение количества товара
      */
-    @PostMapping("/merge")
-    public String mergeCart(@CookieValue("sessionId") String sessionId,
-                            RedirectAttributes redirectAttributes) {
+    @PostMapping("/decrease")
+    public String decreaseQuantity(@RequestParam Long productId,
+                                   @RequestParam(defaultValue = "cart") String redirectTo,
+                                   @RequestHeader(value = "Referer", required = false) String referer,
+                                   RedirectAttributes redirectAttributes) {
 
-        // Получаем Authentication напрямую из SecurityContext
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = getCurrentUserId(authentication);
-        if (userId == null) {
-            redirectAttributes.addFlashAttribute("error", "Пользователь не авторизован");
-            return "redirect:/cart";
+        User user = getCurrentUser();
+        if (user == null) {
+            return "redirect:/auth/login";
         }
 
-        try {
-            cartService.mergeCartToUser(sessionId, userId);
-            redirectAttributes.addFlashAttribute("success",
-                    "Корзина успешно объединена с вашей учетной записью");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Ошибка при объединении корзины: " + e.getMessage());
-        }
+        cartService.decreaseProductInUserCart(user.getId(), productId);
 
-        return "redirect:/cart";
+        return determineRedirectUrl(redirectTo, productId, referer);
     }
 
     /**
      * Очистка корзины
      */
     @PostMapping("/clear")
-    public String clearCart(@CookieValue("sessionId") String sessionId, HttpSession session) {
+    public String clearCart() {
+        User user = getCurrentUser();
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = getCurrentUserId(authentication);
-        Cart cart = cartService.getOrCreateCart(userId, sessionId);
-
-        // Используем новый метод
-        cartService.clearCart(cart.getId());
-
-        session.setAttribute("cartItemCount", 0);
+        cartService.clearUserCart(user.getId());
         return "redirect:/cart";
     }
 
     // =========== Вспомогательные методы ===========
 
-    private String getOrCreateSessionId(String sessionId, HttpServletResponse response) {
-        if (sessionId == null || sessionId.isEmpty()) {
-            sessionId = UUID.randomUUID().toString();
-            Cookie cookie = new Cookie("sessionId", sessionId);
-            cookie.setPath("/");
-            response.addCookie(cookie);
-        }
-        return sessionId;
-    }
-
-    private Long getCurrentUserId(Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated()) {
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() &&
+                !"anonymousUser".equals(authentication.getPrincipal())) {
             Object principal = authentication.getPrincipal();
             if (principal instanceof UserDetails) {
                 String username = ((UserDetails) principal).getUsername();
-                return userService.findByUsername(username)
-                        .map(User::getId)
-                        .orElse(null);
+                return userService.findByUsername(username).orElse(null);
             }
         }
         return null;
-    }
-
-    private void updateCartItemCountInSession(HttpSession session, Cart cart) {
-        List<CartItemDto> items = cartService.getCartItems(cart.getId());
-        int totalItems = items.stream()
-                .mapToInt(CartItemDto::getQuantity)
-                .sum();
-        session.setAttribute("cartItemCount", totalItems);
     }
 
     // Вспомогательный метод для определения редиректа

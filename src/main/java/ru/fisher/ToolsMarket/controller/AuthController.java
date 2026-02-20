@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.fisher.ToolsMarket.dto.UserDto;
@@ -159,18 +158,6 @@ public class AuthController {
             );
 
             log.info("Пользователь зарегистрирован: {}", user.getUsername());
-
-            // Если была анонимная корзина - объединяем
-            if (StringUtils.hasText(sessionId)) {
-                try {
-                    cartService.mergeCartToUser(sessionId, user.getId());
-                    session.removeAttribute("hasAnonymousCart");
-                    session.removeAttribute("anonymousSessionId");
-                    model.addAttribute("cartMerged", true);
-                } catch (Exception e) {
-                    log.warn("Не удалось объединить корзину: {}", e.getMessage());
-                }
-            }
 
             return "redirect:/auth/login?success";
 

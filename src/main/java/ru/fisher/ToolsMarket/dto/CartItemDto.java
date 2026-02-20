@@ -68,6 +68,25 @@ public class CartItemDto {
         return total;
     }
 
+    /**
+     * Получить цену за единицу товара со скидкой
+     * Если поле не заполнено, вычисляет из общей суммы со скидкой
+     */
+    public BigDecimal getUnitPriceWithDiscount() {
+        if (unitPriceWithDiscount != null) {
+            return unitPriceWithDiscount;
+        }
+
+        // Если есть общая сумма со скидкой и количество, вычисляем
+        if (getTotalPriceWithDiscount() != null && quantity != null && quantity > 0) {
+            return getTotalPriceWithDiscount()
+                    .divide(BigDecimal.valueOf(quantity), 2, RoundingMode.HALF_UP);
+        }
+
+        // Если ничего нет, возвращаем обычную цену
+        return unitPrice;
+    }
+
     public BigDecimal getDiscountAmount() {
         if (discountAmount != null) {
             return discountAmount;

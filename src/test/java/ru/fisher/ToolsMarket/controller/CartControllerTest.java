@@ -56,7 +56,7 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(any(), any())).thenReturn(cart);
+        when(cartService.getOrCreateCart(any())).thenReturn(cart);
         when(cartService.getCartItems(any())).thenReturn(List.of());
 
         // when & then
@@ -76,7 +76,7 @@ class CartControllerTest {
         // Мокаем userService для получения userId
         when(userService.findByUsername("testuser"))
                 .thenReturn(Optional.of(User.builder().id(1L).username("testuser").build()));
-        when(cartService.getOrCreateCart(eq(1L), any())).thenReturn(cart);
+        when(cartService.getOrCreateCart(eq(1L))).thenReturn(cart);
         when(cartService.getCartItems(1L)).thenReturn(List.of());
 
         // when & then
@@ -86,7 +86,7 @@ class CartControllerTest {
                 .andExpect(model().attributeExists("isAuthenticated"))
                 .andExpect(model().attribute("isAuthenticated", true));
 
-        verify(cartService).getOrCreateCart(eq(1L), any());
+        verify(cartService).getOrCreateCart(eq(1L));
     }
 
     @Test
@@ -96,7 +96,7 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(isNull(), any())).thenReturn(cart);
+        when(cartService.getOrCreateCart(isNull())).thenReturn(cart);
         when(cartService.getCartItems(1L)).thenReturn(List.of());
 
         // when & then
@@ -106,7 +106,7 @@ class CartControllerTest {
                 .andExpect(model().attributeExists("isAuthenticated"))
                 .andExpect(model().attribute("isAuthenticated", false));
 
-        verify(cartService).getOrCreateCart(isNull(), any());
+        verify(cartService).getOrCreateCart(isNull());
     }
 
     @Test
@@ -117,7 +117,7 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(isNull(), eq(sessionId))).thenReturn(cart);
+        when(cartService.getOrCreateCart(isNull())).thenReturn(cart);
 
         // when & then
         mockMvc.perform(post("/cart/add")
@@ -140,7 +140,7 @@ class CartControllerTest {
         // Мокаем userService
         when(userService.findByUsername("testuser"))
                 .thenReturn(Optional.of(User.builder().id(1L).username("testuser").build()));
-        when(cartService.getOrCreateCart(eq(1L), eq(sessionId))).thenReturn(cart);
+        when(cartService.getOrCreateCart(eq(1L))).thenReturn(cart);
 
         // when & then
         mockMvc.perform(post("/cart/add").with(csrf())
@@ -150,7 +150,7 @@ class CartControllerTest {
                 .andExpect(redirectedUrl("/cart"));
 
         verify(cartService).addProductWithQuantity(1L, 123L, 1);
-        verify(cartService).getOrCreateCart(eq(1L), eq(sessionId));
+        verify(cartService).getOrCreateCart(eq(1L));
     }
 
     @Test
@@ -164,7 +164,7 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(isNull(), eq(sessionId))).thenReturn(cart);
+        when(cartService.getOrCreateCart(isNull())).thenReturn(cart);
 
         // when & then
         mockMvc.perform(post("/cart/add")
@@ -187,7 +187,7 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(isNull(), eq(sessionId))).thenReturn(cart);
+        when(cartService.getOrCreateCart(isNull())).thenReturn(cart);
 
         // when & then - quantity не передаем, должен быть дефолтный 1
         mockMvc.perform(post("/cart/add")
@@ -209,7 +209,7 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(isNull(), eq(sessionId))).thenReturn(cart);
+        when(cartService.getOrCreateCart(isNull())).thenReturn(cart);
         doNothing().when(cartService).removeProduct(1L, 123L);
 
         // when & then
@@ -232,8 +232,8 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(isNull(), eq(sessionId))).thenReturn(cart);
-        doNothing().when(cartService).decreaseProductQuantity(1L, 123L);
+        when(cartService.getOrCreateCart(isNull())).thenReturn(cart);
+        doNothing().when(cartService).decreaseProductInUserCart(1L, 123L);
 
         // when & then
         mockMvc.perform(post("/cart/decrease")
@@ -242,47 +242,7 @@ class CartControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cart"));
 
-        verify(cartService).decreaseProductQuantity(1L, 123L);
-    }
-
-    @Test
-    @WithMockUser(username = "testuser")
-    void mergeCartSuccess() throws Exception {
-        // given
-        String sessionId = "test-session";
-
-        // Мокаем userService
-        when(userService.findByUsername("testuser"))
-                .thenReturn(Optional.of(User.builder().id(1L).username("testuser").build()));
-
-        Cart mergedCart = new Cart();
-        mergedCart.setId(2L);
-
-        when(cartService.mergeCartToUser(sessionId, 1L)).thenReturn(mergedCart);
-
-        // when & then
-        mockMvc.perform(post("/cart/merge")
-                        .cookie(new Cookie("sessionId", sessionId)))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/cart"));
-
-        verify(cartService).mergeCartToUser(sessionId, 1L);
-    }
-
-    @Test
-    @WithMockUser(username = "testuser")
-    void mergeCartWithoutAuthentication() throws Exception {
-        // given - неаутентифицированный пользователь
-        String sessionId = "test-session";
-
-        // when & then
-        mockMvc.perform(post("/cart/merge")
-                        .cookie(new Cookie("sessionId", sessionId)))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/cart"))
-                .andExpect(flash().attributeExists("error"));
-
-        verify(cartService, never()).mergeCartToUser(any(), any());
+        verify(cartService).decreaseProductInUserCart(1L, 123L);
     }
 
     @Test
@@ -293,7 +253,7 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(isNull(), eq(sessionId))).thenReturn(cart);
+        when(cartService.getOrCreateCart(isNull())).thenReturn(cart);
         doNothing().when(cartService).clearCart(1L);
 
         // when & then
@@ -312,7 +272,7 @@ class CartControllerTest {
         Cart cart = new Cart();
         cart.setId(1L);
 
-        when(cartService.getOrCreateCart(isNull(), any())).thenReturn(cart);
+        when(cartService.getOrCreateCart(isNull())).thenReturn(cart);
 
         // when & then
         mockMvc.perform(post("/cart/add")
@@ -322,44 +282,5 @@ class CartControllerTest {
                 .andExpect(cookie().exists("sessionId"));
 
         verify(cartService).addProductWithQuantity(1L, 123L, 1);
-    }
-
-    @Test
-    @WithMockUser(username = "testuser")
-    void viewCartWithAuthenticatedUserAndAnonymousCart() throws Exception {
-        // given - аутентифицированный пользователь с sessionId
-        String sessionId = "existing-session";
-        Cart cart = new Cart();
-        cart.setId(1L);
-
-        // Важно: userId и sessionId оба передаются в getOrCreateCart
-        when(userService.findByUsername("testuser"))
-                .thenReturn(Optional.of(User.builder().id(1L).username("testuser").build()));
-        when(cartService.getOrCreateCart(eq(1L), eq(sessionId))).thenReturn(cart);
-        when(cartService.getCartItems(1L)).thenReturn(List.of());
-
-        // when & then
-        MvcResult result = mockMvc.perform(get("/cart").with(csrf())
-                        .cookie(new Cookie("sessionId", sessionId)))
-                .andExpect(status().isOk())
-                .andExpect(view().name("cart/index"))
-                .andReturn();
-
-        // Проверяем сессионные атрибуты
-        HttpSession session = result.getRequest().getSession();
-
-        // hasAnonymousCart будет true только если:
-        // 1. userId != null (аутентифицирован)
-        // 2. finalSessionId != null и не пустой
-        // В тесте finalSessionId берется из куки "sessionId"
-
-        Assertions.assertNotNull(session);
-        Boolean hasAnonymousCart = (Boolean) session.getAttribute("hasAnonymousCart");
-        String anonymousSessionId = (String) session.getAttribute("anonymousSessionId");
-
-        // Для отладки
-        log.info("hasAnonymousCart: {}", hasAnonymousCart);
-        log.info("anonymousSessionId: {}", anonymousSessionId);
-        log.info("Session ID from cookie: {}", sessionId);
     }
 }
