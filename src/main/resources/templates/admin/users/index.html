@@ -81,6 +81,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Имя</th>
+                        <th>Примечание</th>
                         <th>Email</th>
                         <th>Тип пользователя</th>
                         <th>Статус</th>
@@ -95,6 +96,7 @@
                         <td>
                             <span th:text="${user.firstName + ' ' + user.lastName}"></span>
                         </td>
+                        <td th:text="${user.note}"></td>
                         <td th:text="${user.email}"></td>
                         <td>
                             <!-- ИСПРАВЛЕННАЯ СТРОКА: безопасная проверка на null -->

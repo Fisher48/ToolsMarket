@@ -63,6 +63,14 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <label class="form-label">Примечание</label>
+                                    <input type="text"
+                                           name="note"
+                                           class="form-control"
+                                           th:value="${user.note}">
+                                </div>
+
+                                <div class="mb-3">
                                     <label class="form-label">Email <span class="text-danger">*</span></label>
                                     <input type="email"
                                            name="email"

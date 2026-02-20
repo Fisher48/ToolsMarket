@@ -56,6 +56,9 @@ public class User implements UserDetails {
     @Builder.Default
     private UserType userType = UserType.REGULAR;
 
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     @Builder.Default

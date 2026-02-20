@@ -91,6 +91,7 @@ public class AdminUserController {
                              @RequestParam(required = false) String email,
                              @RequestParam(required = false) String phone,
                              @RequestParam(required = false) String userType,
+                             @RequestParam(required = false) String note,
                              @RequestParam(defaultValue = "true") boolean enabled,
                              RedirectAttributes redirectAttributes) {
 
@@ -100,7 +101,7 @@ public class AdminUserController {
                 type = UserType.valueOf(userType.toUpperCase());
             }
 
-            userService.updateUser(id, firstName, lastName, email, phone, type, enabled);
+            userService.updateUser(id, firstName, lastName, email, phone, type, note, enabled);
 
             redirectAttributes.addFlashAttribute("success", "Пользователь обновлен");
 

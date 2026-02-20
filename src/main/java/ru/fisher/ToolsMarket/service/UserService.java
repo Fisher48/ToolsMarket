@@ -112,6 +112,7 @@ public class UserService {
                            String email,
                            String phone,
                            UserType userType,
+                           String note,
                            boolean enabled) {
 
         User user = userRepository.findById(userId)
@@ -128,6 +129,7 @@ public class UserService {
         if (email != null) user.setEmail(email);
         if (phone != null) user.setPhone(phone);
         if (userType != null) user.setUserType(userType);
+        if (note != null) user.setNote(note);
         user.setEnabled(enabled);
         user.setUpdatedAt(Instant.now());
 
