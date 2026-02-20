@@ -9,26 +9,28 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary: #0d2e67;      /* темно-синий */
+            --primary-dark: #0a1f3f; /* еще темнее */
+            --primary-light: #2a4b8c; /* светлее */
+
+            /* Тени */
+            --shadow-sm: 0 2px 8px rgba(84, 110, 122, 0.08);
+            --shadow-md: 0 4px 16px rgba(84, 110, 122, 0.12);
+            --shadow-lg: 0 8px 24px rgba(84, 110, 122, 0.15);
+        }
+
         .cart-item {
             transition: all 0.2s ease;
         }
         .cart-item:hover {
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
-        .quantity-btn {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-        }
-        .quantity-btn:hover {
-            background-color: #f8f9fa;
-        }
+
         .hover-primary:hover {
-            color: #0d6efd !important;
+            color: var(--primary) !important;
         }
+
         .product-image {
             border: 1px solid #dee2e6;
             transition: transform 0.2s;
@@ -36,17 +38,101 @@
         .product-image:hover {
             transform: scale(1.05);
         }
+
         .btn-loading {
             opacity: 0.7;
             pointer-events: none;
         }
+
         .cart-add-success {
             animation: cartAddSuccess 0.3s ease;
         }
+
         @keyframes cartAddSuccess {
             0% { transform: scale(1); }
             50% { transform: scale(1.02); }
             100% { transform: scale(1); }
+        }
+
+        /* Кнопки + и - в нашем стиле */
+        .quantity-controls-full {
+            display: flex;
+            width: 100%;
+            border: 2px solid var(--primary);
+            border-radius: 50px;
+            overflow: hidden;
+            background: white;
+            height: 48px;
+            max-width: 160px;
+        }
+
+        .quantity-btn-full {
+            flex: 1;
+            height: 48px;
+            border: none;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--primary);
+            font-size: 28px;
+            font-weight: 800;
+            padding: 0;
+        }
+
+        .quantity-btn-full:hover {
+            background: #f0f0f0;
+            color: var(--primary-dark);
+        }
+
+        .quantity-btn-full:active {
+            background: #e0e0e0;
+            transform: scale(0.96);
+        }
+
+        .quantity-display-full {
+            flex: 1;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            background: white;
+            border-left: 2px solid var(--primary);
+            border-right: 2px solid var(--primary);
+        }
+
+        /* Кнопка добавления */
+        .add-to-cart-btn {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            border: none;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: white;
+            transition: all 0.3s ease;
+            height: 48px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .add-to-cart-btn:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .add-to-cart-btn:active {
+            background: var(--primary-dark);
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         @media (max-width: 768px) {
@@ -54,9 +140,8 @@
                 text-align: center;
                 margin-bottom: 15px;
             }
-            .quantity-controls {
-                justify-content: center !important;
-                margin: 10px 0;
+            .quantity-controls-full {
+                margin: 0 auto;
             }
             .item-total {
                 text-align: center !important;
@@ -156,60 +241,41 @@
                                         <div class="mb-2">
                                             <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
                                                 <div class="d-flex align-items-center">
-                            <span class="text-muted text-decoration-line-through me-2 small old-unit-price"
-                                  th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
-                                  th:data-price="${item.unitPrice}">
-                            </span>
-                            <span class="text-success fw-bold unit-price"
-                                  th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPriceWithDiscount) + ' ₽'}"
-                                  th:data-price="${item.unitPriceWithDiscount}">
-                            </span>
+                                                    <span class="text-muted text-decoration-line-through me-2 small old-unit-price"
+                                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
+                                                          th:data-price="${item.unitPrice}"></span>
+                                                    <span class="text-success fw-bold unit-price"
+                                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPriceWithDiscount) + ' ₽'}"
+                                                          th:data-price="${item.unitPriceWithDiscount}"></span>
                                                 </div>
                                             </div>
                                             <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
-                        <span class="text-success fw-bold unit-price"
-                              th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
-                              th:data-price="${item.unitPrice}">
-                        </span>
+                                                <span class="text-success fw-bold unit-price"
+                                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
+                                                      th:data-price="${item.unitPrice}"></span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Управление количеством -->
                                     <div class="col-md-3 col-12 mt-3 mt-md-0">
-                                        <div class="d-flex align-items-center justify-content-start quantity-controls">
+                                        <div class="quantity-controls-full">
                                             <button type="button"
-                                                    class="btn btn-outline-secondary quantity-btn"
+                                                    class="quantity-btn-full"
                                                     th:data-product-id="${item.productId}"
                                                     onclick="decreaseQuantity(this)">
                                                 <i class="bi bi-dash"></i>
                                             </button>
 
-                                            <span class="mx-3 fw-bold quantity-display"
+                                            <span class="quantity-display-full"
                                                   th:text="${item.quantity}"></span>
 
                                             <button type="button"
-                                                    class="btn btn-outline-secondary quantity-btn"
+                                                    class="quantity-btn-full"
                                                     th:data-product-id="${item.productId}"
                                                     onclick="increaseQuantity(this)">
                                                 <i class="bi bi-plus"></i>
                                             </button>
-                                        </div>
-                                        <div class="text-center mt-2">
-                                            <small class="text-muted">
-                                                <span class="quantity-display" th:text="${item.quantity}"></span> ×
-                                                <span class="unit-price-single"
-                                                      th:if="${item.discountPercentage != null and item.discountPercentage > 0}"
-                                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPriceWithDiscount)}"
-                                                      th:data-price="${item.unitPriceWithDiscount}">
-                        </span>
-                                                <span class="unit-price-single"
-                                                      th:unless="${item.discountPercentage != null and item.discountPercentage > 0}"
-                                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice)}"
-                                                      th:data-price="${item.unitPrice}">
-                        </span>
-                                                ₽
-                                            </small>
                                         </div>
                                     </div>
 
@@ -217,22 +283,19 @@
                                     <div class="col-md-3 col-12 mt-3 mt-md-0 text-md-end item-total">
                                         <div class="item-total-price">
                                             <p class="fw-bold fs-5 text-primary mb-2">
-                        <span th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
-                            <span class="text-muted text-decoration-line-through me-2 small d-block old-total-price"
-                                  th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}"
-                                  th:data-price="${item.totalPrice}">
-                            </span>
-                            <span class="current-total-price"
-                                  th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPriceWithDiscount) + ' ₽'}"
-                                  th:data-price="${item.totalPriceWithDiscount}">
-                            </span>
-                        </span>
+                                                <span th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
+                                                    <span class="text-muted text-decoration-line-through me-2 small d-block old-total-price"
+                                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}"
+                                                          th:data-price="${item.totalPrice}"></span>
+                                                    <span class="current-total-price"
+                                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPriceWithDiscount) + ' ₽'}"
+                                                          th:data-price="${item.totalPriceWithDiscount}"></span>
+                                                </span>
                                                 <span th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
-                            <span class="current-total-price"
-                                  th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}"
-                                  th:data-price="${item.totalPrice}">
-                            </span>
-                        </span>
+                                                    <span class="current-total-price"
+                                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}"
+                                                          th:data-price="${item.totalPrice}"></span>
+                                                </span>
                                             </p>
                                         </div>
                                         <button type="button"
@@ -260,25 +323,23 @@
                                 <div class="mb-3">
                                     <!-- Товары без скидки -->
                                     <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">
-                        Товары (<span id="summary-items-count" th:text="${totalItemCount}"></span> шт.):
-                    </span>
+                                        <span class="text-muted">
+                                            Товары (<span id="summary-items-count" th:text="${totalItemCount}"></span> шт.):
+                                        </span>
                                         <span class="fw-medium" id="summary-total-amount"
                                               th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalAmount) + ' ₽'}"
-                                              th:data-price="${totalAmount}">
-                    </span>
+                                              th:data-price="${totalAmount}"></span>
                                     </div>
 
                                     <!-- Скидка если есть -->
                                     <div th:if="${hasDiscounts}" class="d-flex justify-content-between mb-2 text-success" id="discount-section">
-                    <span>
-                        <i class="bi bi-percent me-1"></i>
-                        <span th:unless="${userTypeDisplay}">Скидка:</span>
-                    </span>
+                                        <span>
+                                            <i class="bi bi-percent me-1"></i>
+                                            <span th:unless="${userTypeDisplay}">Скидка:</span>
+                                        </span>
                                         <span class="fw-bold" id="summary-total-discount">
-                        -<span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount)}">
-                        </span> ₽
-                    </span>
+                                            -<span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount)}"></span> ₽
+                                        </span>
                                     </div>
 
                                     <!-- Итоговая сумма -->
@@ -287,8 +348,7 @@
                                         <span class="fw-bold">Итого к оплате:</span>
                                         <span class="fw-bold fs-4 text-primary" id="summary-total-with-discount"
                                               th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalWithDiscount) + ' ₽'}"
-                                              th:data-price="${totalWithDiscount}">
-                    </span>
+                                              th:data-price="${totalWithDiscount}"></span>
                                     </div>
 
                                     <!-- Экономия если есть скидка -->
@@ -296,8 +356,7 @@
                                         <i class="bi bi-piggy-bank me-1"></i>
                                         Ваша экономия:
                                         <strong id="savings-amount"
-                                                th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}">
-                                        </strong>
+                                                th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}"></strong>
                                     </div>
                                 </div>
 
@@ -349,13 +408,10 @@
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const result = await response.json(); // Сначала получаем result
-
-        // Теперь можно использовать result
+        const result = await response.json();
         window.dispatchEvent(new CustomEvent('cart-updated', {
             detail: { totalQuantity: result.totalQuantity }
         }));
-
         return result;
     }
 
@@ -450,11 +506,8 @@
         try {
             const result = await cartRequest('/clear', {});
 
-            // Удаляем все товары из UI
             const cartItems = document.querySelectorAll('.cart-item');
-            cartItems.forEach(item => {
-                item.remove();
-            });
+            cartItems.forEach(item => item.remove());
 
             updateCartSummary(result);
             showNotification('Корзина очищена', 'info');
@@ -477,86 +530,17 @@
             return;
         }
 
-        // Находим элемент товара в ответе сервера
         const itemData = result.items?.find(item => item.productId == productId);
         if (!itemData) return;
 
-        // Обновляем количество во всех местах
-        const quantityDisplays = cartItem.querySelectorAll('.quantity-display');
-        quantityDisplays.forEach(display => {
-            display.textContent = quantity;
-        });
+        const quantityDisplay = cartItem.querySelector('.quantity-display-full');
+        if (quantityDisplay) quantityDisplay.textContent = quantity;
 
-        // Получаем цены
-        const unitPrice = itemData.unitPrice || 0;
-        const unitPriceWithDiscount = itemData.unitPriceWithDiscount || unitPrice;
-        const hasDiscount = itemData.discountPercentage && itemData.discountPercentage > 0;
-        const priceToShow = hasDiscount ? unitPriceWithDiscount : unitPrice;
-
-        // Обновляем цену за единицу в блоке "X × Y ₽"
-        const unitPriceElements = cartItem.querySelectorAll('.unit-price-single');
-        unitPriceElements.forEach(element => {
-            element.textContent = formatPrice(priceToShow);
-        });
-
-        // Обновляем цену за единицу в основном блоке
-        const unitPriceElement = cartItem.querySelector('.unit-price');
-        const oldPriceElement = cartItem.querySelector('.text-decoration-line-through.small');
-
-        if (hasDiscount) {
-            if (unitPriceElement) {
-                unitPriceElement.textContent = formatPrice(unitPriceWithDiscount) + ' ₽';
-            }
-            if (oldPriceElement) {
-                oldPriceElement.textContent = formatPrice(unitPrice) + ' ₽';
-                oldPriceElement.style.display = 'inline';
-            }
-        } else {
-            if (unitPriceElement) {
-                unitPriceElement.textContent = formatPrice(unitPrice) + ' ₽';
-            }
-            if (oldPriceElement) {
-                oldPriceElement.style.display = 'none';
-            }
+        const totalPriceElement = cartItem.querySelector('.current-total-price');
+        if (totalPriceElement) {
+            totalPriceElement.textContent = formatPrice(itemData.totalPriceWithDiscount) + ' ₽';
         }
 
-        // Обновляем итоговую сумму
-        const totalPrice = itemData.totalPrice || 0;
-        const totalPriceWithDiscount = itemData.totalPriceWithDiscount || totalPrice;
-
-        // Находим элементы по новым классам
-        const oldTotalPriceElement = cartItem.querySelector('.old-total-price');
-        const currentTotalPriceElement = cartItem.querySelector('.current-total-price');
-
-        if (currentTotalPriceElement) {
-            if (hasDiscount) {
-                // Если есть скидка
-                currentTotalPriceElement.textContent = formatPrice(totalPriceWithDiscount) + ' ₽';
-
-                // Показываем и обновляем старую цену
-                if (oldTotalPriceElement) {
-                    oldTotalPriceElement.textContent = formatPrice(totalPrice) + ' ₽';
-                    oldTotalPriceElement.style.display = 'block';
-                } else {
-                    // Если элемента старой цены нет, создаем его
-                    const priceContainer = currentTotalPriceElement.parentElement;
-                    const oldPriceSpan = document.createElement('span');
-                    oldPriceSpan.className = 'text-muted text-decoration-line-through me-2 small d-block old-total-price';
-                    oldPriceSpan.textContent = formatPrice(totalPrice) + ' ₽';
-                    priceContainer.insertBefore(oldPriceSpan, currentTotalPriceElement);
-                }
-            } else {
-                // Если нет скидки
-                currentTotalPriceElement.textContent = formatPrice(totalPrice) + ' ₽';
-
-                // Скрываем старую цену
-                if (oldTotalPriceElement) {
-                    oldTotalPriceElement.style.display = 'none';
-                }
-            }
-        }
-
-        // Анимация обновления
         cartItem.classList.add('cart-add-success');
         setTimeout(() => cartItem.classList.remove('cart-add-success'), 300);
     }
@@ -567,61 +551,31 @@
         if (cartItem) {
             cartItem.style.opacity = '0.5';
             cartItem.style.transform = 'translateX(-20px)';
-            setTimeout(() => {
-                if (cartItem.parentNode) {
-                    cartItem.remove();
-                }
-            }, 300);
+            setTimeout(() => cartItem.remove(), 300);
         }
     }
 
     // Обновить итоговую информацию
     function updateCartSummary(result) {
-        console.log('Update cart summary with:', result);
-
-        // Обновить счетчик в хедере
         updateHeaderBadge(result.totalQuantity);
 
         const totalItemCount = result.totalQuantity || 0;
-        const uniqueItemCount = result.items?.length || 0;
+        document.getElementById('items-count').textContent = totalItemCount;
+        document.getElementById('summary-items-count').textContent = totalItemCount;
 
-        const itemsCount = document.getElementById('items-count');
-        const summaryItemsCount = document.getElementById('summary-items-count');
-
-        if (itemsCount) itemsCount.textContent = totalItemCount;
-        if (summaryItemsCount) summaryItemsCount.textContent = totalItemCount;
-
-        // Обновить суммы
         const totalAmount = result.totalAmount || 0;
         const totalDiscount = result.totalDiscount || 0;
         const totalWithDiscount = result.totalWithDiscount || totalAmount;
 
-        const totalAmountElement = document.getElementById('summary-total-amount');
-        const totalDiscountElement = document.getElementById('summary-total-discount');
-        const totalWithDiscountElement = document.getElementById('summary-total-with-discount');
-        const savingsAmountElement = document.getElementById('savings-amount');
+        document.getElementById('summary-total-amount').textContent = formatPriceWithCurrency(totalAmount, "₽");
+        document.getElementById('summary-total-with-discount').textContent = formatPriceWithCurrency(totalWithDiscount, "₽");
 
-        if (totalAmountElement) {
-            totalAmountElement.textContent = formatPriceWithCurrency(totalAmount, "₽");
-            totalAmountElement.dataset.price = totalAmount;
-        }
-        if (totalDiscountElement && totalDiscount > 0) {
-            totalDiscountElement.innerHTML = `-${formatPriceWithCurrency(totalDiscount, "₽")}`;
-        }
-        if (totalWithDiscountElement) {
-            totalWithDiscountElement.textContent = formatPriceWithCurrency(totalWithDiscount, "₽");
-            totalWithDiscountElement.dataset.price = totalWithDiscount;
-        }
-        if (savingsAmountElement && totalDiscount > 0) {
-            savingsAmountElement.textContent = formatPriceWithCurrency(totalDiscount, "₽");
-        }
-
-        // Показать/скрыть секцию скидок
         const discountSection = document.getElementById('discount-section');
         const savingsAlert = document.getElementById('savings-alert');
         const totalDiscountInfo = document.getElementById('total-discount-info');
 
         if (totalDiscount > 0) {
+            document.getElementById('summary-total-discount').innerHTML = `-${formatPriceWithCurrency(totalDiscount, "₽")}`;
             if (discountSection) discountSection.style.display = 'flex';
             if (savingsAlert) savingsAlert.style.display = 'block';
             if (totalDiscountInfo) {
@@ -634,11 +588,9 @@
             if (totalDiscountInfo) totalDiscountInfo.style.display = 'none';
         }
 
-        // Если корзина пуста, показать сообщение
         if (!result.items || result.items.length === 0) {
             const cartContainer = document.getElementById('cart-items-container');
-            if (cartContainer) {
-                cartContainer.innerHTML = `
+            cartContainer.innerHTML = `
                 <div class="text-center py-5">
                     <i class="bi bi-cart-x display-1 text-muted mb-4"></i>
                     <h3 class="text-muted mb-3">Корзина пуста</h3>
@@ -648,77 +600,36 @@
                     </a>
                 </div>
             `;
-            }
-
-            // Также скрываем блок итогов при пустой корзине
-            const summaryCard = document.querySelector('.col-lg-4 .card');
-            if (summaryCard) {
-                summaryCard.style.display = 'none';
-            }
-        } else {
-            // Если корзина не пуста, показываем блок итогов
-            const summaryCard = document.querySelector('.col-lg-4 .card');
-            if (summaryCard) {
-                summaryCard.style.display = 'block';
-            }
         }
     }
 
     // Обновить счетчик в хедере
     function updateHeaderBadge(totalQuantity) {
         let badge = document.getElementById('cart-badge');
-        const cartLink = document.querySelector('.navbar-nav .position-relative');
+        const cartLink = document.querySelector('.cart-indicator a');
 
         if (totalQuantity > 0) {
-            if (!badge) {
-                if (cartLink) {
-                    badge = document.createElement('span');
-                    badge.id = 'cart-badge';
-                    badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                    cartLink.appendChild(badge);
-                }
+            if (!badge && cartLink) {
+                badge = document.createElement('span');
+                badge.id = 'cart-badge';
+                badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                cartLink.appendChild(badge);
             }
-            if (badge) {
-                badge.textContent = totalQuantity;
-                badge.style.display = 'inline-block';
-            }
+            if (badge) badge.textContent = totalQuantity;
         } else if (badge) {
             badge.style.display = 'none';
         }
     }
 
-    // Форматирование цены
-    // Форматирование цены с поддержкой копеек
-    function formatPrice(price, withDecimals = false) {
-        if (price == null || price === undefined) {
-            return withDecimals ? "0,00" : "0";
-        }
-
-        // Преобразуем в число если это строка
-        if (typeof price === 'string') {
-            price = parseFloat(price);
-        }
-
-        if (withDecimals) {
-            // С копейками
-            const roundedPrice = price.toFixed(2);
-            const parts = roundedPrice.split('.');
-            const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-            const decimalPart = parts[1] || "00";
-            return integerPart + "," + decimalPart;
-        } else {
-            // Без копеек (только рубли) - как в вашем Java PriceFormatter
-            const roundedPrice = Math.round(price);
-            return roundedPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-        }
+    function formatPrice(price) {
+        if (price == null) return "0";
+        return Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     }
 
-    // Функция для форматирования с валютой
-    function formatPriceWithCurrency(price, currency = "₽", withDecimals = false) {
-        return formatPrice(price, withDecimals) + " " + currency;
+    function formatPriceWithCurrency(price, currency = "₽") {
+        return formatPrice(price) + " " + currency;
     }
 
-    // Показать уведомление
     function showNotification(message, type = 'success') {
         let container = document.getElementById('notification-container');
         if (!container) {
@@ -730,29 +641,18 @@
 
         const alert = document.createElement('div');
         alert.className = `alert alert-${type} alert-dismissible fade show mb-2 shadow`;
-
-        const icon = type === 'success' ? 'check-circle' :
-            type === 'danger' ? 'exclamation-circle' : 'info-circle';
-
+        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
         alert.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="bi bi-${icon} fs-5 me-2"></i>
-            <div class="flex-grow-1">${message}</div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-
+            <div class="d-flex align-items-center">
+                <i class="bi bi-${icon} fs-5 me-2"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
         container.appendChild(alert);
-
-        setTimeout(() => {
-            if (alert.parentNode) {
-                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
-                bsAlert.close();
-            }
-        }, 1000);
+        setTimeout(() => alert.remove(), 3000);
     }
 
-    // Загрузить начальное состояние
     async function loadCartState() {
         try {
             const response = await fetch('/api/cart/state');
@@ -765,7 +665,6 @@
         }
     }
 
-    // Инициализация
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Cart page initialized');
         loadCartState();

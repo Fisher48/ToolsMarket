@@ -4,9 +4,14 @@
 
       <!-- Колонка 1: О магазине -->
       <div class="col-lg-4 col-md-6">
-        <h5 class="fw-bold mb-3">
-          <i class="bi bi-tools me-2"></i>ToolsMarket48
-        </h5>
+        <a class="d-flex align-items-center text-decoration-none"
+           style="height: 70px; gap: 12px;">
+          <img th:src="@{/logo.png}"
+               alt="ToolsMarket48"
+               height="100"
+               style="display: block; max-height: 100px; width: auto; transition: transform 0.3s ease;">
+          <span class="fw-bold text-white" style="font-size: 1.5rem;">ToolsMarket48</span>
+        </a>
         <p class="text-white-50 mb-4" style="line-height: 1.8;">
           Магазин профессиональных инструментов и оборудования.
         </p>

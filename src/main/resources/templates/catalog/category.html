@@ -12,10 +12,9 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         :root {
-            /* Основные цвета Black Coral */
-            --black-coral: #546E7A;
-            --black-coral-dark: #455A64;
-            --black-coral-light: #78909C;
+            --primary: #0d2e67;      /* темно-синий */
+            --primary-dark: #0a1f3f; /* еще темнее */
+            --primary-light: #2a4b8c; /* светлее */
 
             /* Тени */
             --shadow-sm: 0 2px 8px rgba(84, 110, 122, 0.08);
@@ -84,7 +83,7 @@
         .quantity-controls {
             display: flex;
             align-items: center;
-            background: #f8f9fa;
+            background: black;
             border-radius: 6px;
             padding: 4px;
             flex-grow: 1;
@@ -131,10 +130,11 @@
 
         /* Кнопка добавления */
         .add-to-cart-btn {
-            background: linear-gradient(135deg, var(--black-coral-dark) 0%, var(--black-coral) 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
             border: none;
+            font-size: 1.2rem !important;
             border-radius: 50px !important;  /* Более скругленные углы как на главной */
-            font-weight: 700 !important;
+            font-weight: 600 !important;
             color: white !important;
             transition: all 0.3s ease;
             height: 44px;
@@ -144,8 +144,15 @@
             box-shadow: var(--shadow-sm);
         }
 
+        /* Эффект при нажатии (active) */
+        .add-to-cart-btn:active {
+            background: var(--primary-dark);
+            transform: translateY(0px) scale(0.98);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
         .add-to-cart-btn:hover {
-            background: linear-gradient(135deg, var(--black-coral) 0%, var(--black-coral-light) 100%);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
             transform: translateY(-2px);
             color: white !important;
             box-shadow: var(--shadow-md);
@@ -214,7 +221,7 @@
         .subcategory-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            border-color: #0d6efd;
+            border-color: var(--primary-light);
         }
 
         .subcategory-image-container {
@@ -240,7 +247,7 @@
 
         .subcategory-icon {
             font-size: 48px;
-            color: #0d6efd;
+            color: var(--primary);
             transition: transform 0.3s ease;
         }
 
@@ -306,10 +313,11 @@
         .quantity-controls-full {
             display: flex;
             width: 100%;
-            border: 2px solid var(--black-coral);
+            border: 2px solid var(--primary);
             border-radius: 50px;  /* Более скругленные */
             overflow: hidden;
-            background: var(--black-coral);
+            font-weight: bold;
+            background: white;
             height: 44px;
         }
 
@@ -317,24 +325,25 @@
             flex: 1;
             height: 44px;
             border: none;
-            background: var(--black-coral);
+            background: white;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            color: white;
-            font-size: 20px;
-            font-weight: 600;
+            color: var(--primary);
+            font-size: 28px;
+            font-weight: 700;
             padding: 0;
         }
 
         .quantity-btn-full:hover {
-            background: var(--black-coral-dark);
+            background: var(--primary-dark);
         }
 
         .quantity-btn-full:active {
-            background: var(--black-coral-light);
+            background: var(--primary-light);
+            transform: scale(0.96);
         }
 
         .quantity-display-full {
@@ -343,12 +352,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            font-weight: 600;
-            color: white;
-            background: var(--black-coral);
-            border-left: 2px solid var(--black-coral-light);
-            border-right: 2px solid var(--black-coral-light);
+            font-size: 22px;
+            font-weight: 700;
+            color: black;
+            background: white;
+            border-left: 2px solid var(--primary);
+            border-right: 2px solid var(--primary);
         }
     </style>
 </head>

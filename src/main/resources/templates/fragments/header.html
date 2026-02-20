@@ -11,6 +11,11 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+
     <style>
         /* Премиальные переменные */
         :root {
@@ -26,6 +31,7 @@
 
         /* Премиальный header */
         .premium-header {
+            padding: 0 !important;
             background: var(--bg-glass);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -44,9 +50,9 @@
 
         /* Логотип */
         .premium-logo {
-            font-size: 1.6rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: var(--primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -138,6 +144,7 @@
 
         /* Профиль */
         .profile-dropdown {
+            align-items: center;
             background: transparent;
             border: none;
             color: var(--text);
@@ -215,15 +222,19 @@
      @scroll.window="scrolled = window.scrollY > 50"
      :class="{ 'scrolled': scrolled }">
 
-    <div class="container d-flex align-items-center py-3">
+    <div class="container d-flex align-items-center justify-content-between" style="min-height: 70px; gap: 20px;">
 
-        <!-- Логотип -->
-        <a class="premium-logo" th:href="@{/}">
-            <i class="bi bi-tools me-2"></i>ToolsMarket48
+        <!-- Логотип - слева -->
+        <a class="premium-logo d-flex align-items-center" th:href="@{/}" style="height: 70px; gap: 8px;">
+            <img th:src="@{/logo.png}"
+                 alt="ToolsMarket48"
+                 height="100"
+                 style="display: block; max-height: 100px; width: auto; transition: transform 0.3s ease;">
+            <span>ToolsMarket48</span>
         </a>
 
-        <!-- Поиск -->
-        <form class="premium-search" th:action="@{/search}" method="get">
+        <!-- Поиск - по центру -->
+        <form class="premium-search flex-grow-1" th:action="@{/search}" method="get" style="max-width: 600px;">
             <div class="input-group">
                 <input class="form-control" type="search" name="q"
                        placeholder="Введите название..."
@@ -236,7 +247,7 @@
         </form>
 
         <!-- Правая часть с иконками -->
-        <div class="nav-icons">
+        <div class="nav-icons" style="width: 400px; justify-content: flex-end;">
 
             <!-- Избранное (пока заглушка) -->
             <a class="nav-icon-link" href="#" title="Избранное">

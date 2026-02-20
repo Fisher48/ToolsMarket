@@ -10,10 +10,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <style>
         :root {
-            /* Основные цвета Black Coral */
-            --black-coral: #546E7A;
-            --black-coral-dark: #455A64;
-            --black-coral-light: #78909C;
+            --primary: #0d2e67;      /* темно-синий */
+            --primary-dark: #0a1f3f; /* еще темнее */
+            --primary-light: #2a4b8c; /* светлее */
 
             /* Тени */
             --shadow-sm: 0 2px 8px rgba(84, 110, 122, 0.08);
@@ -76,10 +75,10 @@
         .quantity-controls-full {
             display: flex;
             width: 100%;
-            border: 2px solid var(--black-coral);
+            border: 2px solid var(--primary);
             border-radius: 50px;
             overflow: hidden;
-            background: var(--black-coral);
+            background: var(--primary);
             height: 44px;
         }
 
@@ -87,7 +86,7 @@
             flex: 1;
             height: 44px;
             border: none;
-            background: var(--black-coral);
+            background: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -100,13 +99,13 @@
         }
 
         .quantity-btn-full:hover {
-            background: var(--black-coral-dark);
+            background: var(--primary-dark);
         }
 
         .quantity-btn-full:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            background: var(--black-coral-light);
+            background: var(--primary-light);
         }
 
         .quantity-display-full {
@@ -116,20 +115,20 @@
             align-items: center;
             justify-content: center;
             font-size: 20px;
-            font-weight: 600;
+            font-weight: 700;
             color: white;
-            background: var(--black-coral);
-            border-left: 2px solid var(--black-coral-light);
-            border-right: 2px solid var(--black-coral-light);
+            background: var(--primary);
+            border-left: 2px solid var(--primary-light);
+            border-right: 2px solid var(--primary-light);
         }
 
         /* Кнопка добавления - Black Coral */
         .add-to-cart-btn {
-            background: linear-gradient(135deg, var(--black-coral-dark) 0%, var(--black-coral) 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             border: none;
             border-radius: 50px;
-            font-weight: 600;
-            font-size: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
             color: white;
             transition: all 0.3s ease;
             height: 44px;
@@ -140,15 +139,16 @@
             box-shadow: var(--shadow-sm);
         }
 
+        /* При наведении - делаем темнее */
         .add-to-cart-btn:hover {
-            background: linear-gradient(135deg, var(--black-coral) 0%, var(--black-coral-light) 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-dark) 100%);
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
 
         /* Кнопка "На главную" */
         .btn-primary {
-            background: linear-gradient(135deg, var(--black-coral-dark) 0%, var(--black-coral) 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
             border: none;
             border-radius: 50px;
             padding: 10px 24px;
@@ -157,34 +157,34 @@
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, var(--black-coral) 0%, var(--black-coral-light) 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
 
         /* Пагинация - в стиле Black Coral */
         .page-link {
-            color: var(--black-coral);
+            color: var(--primary);
             border-radius: 50px;
             margin: 0 3px;
             transition: all 0.2s ease;
         }
 
         .page-link:hover {
-            background-color: var(--black-coral-light);
+            background-color: var(--primary-light);
             color: white;
-            border-color: var(--black-coral-light);
+            border-color: var(--primary-light);
         }
 
         .page-item.active .page-link {
-            background: linear-gradient(135deg, var(--black-coral-dark) 0%, var(--black-coral) 100%);
-            border-color: var(--black-coral);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            border-color: var(--primary);
             color: white;
         }
 
         /* Цена товара */
         .text-primary {
-            color: var(--black-coral) !important;
+            color: var(--primary) !important;
         }
 
         /* Анимации */

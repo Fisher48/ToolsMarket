@@ -44,11 +44,15 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Публичные
-                        .requestMatchers( "/",
-                                "/css/**", "/js/**", "/images/**",
-                                "/webjars/**", "/search/**",
-                                "/error", "/catalog/**", "/product/**",
-                                "/category/**", "/api/public/**").permitAll()
+                        .requestMatchers(
+                                "/", "/index", "/error",
+                                "/css/**", "/js/**", "/images/**", "/webjars/**",
+                                "/logo.png",                                  // логотип
+                                "/favicon.ico", "/favicon-*.png",             // favicon
+                                "/apple-touch-icon.png", "/site.webmanifest", // apple и manifest
+                                "/search/**", "/catalog/**", "/product/**",
+                                "/category/**", "/api/public/**"
+                        ).permitAll()
 
                         // Точки входа для авторизации
                         .requestMatchers(

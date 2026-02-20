@@ -15,10 +15,9 @@
 
     <style>
         :root {
-            /* Основные цвета Black Coral */
-            --black-coral: #546E7A;
-            --black-coral-dark: #455A64;
-            --black-coral-light: #78909C;
+            --primary: #0d2e67;      /* темно-синий */
+            --primary-dark: #0a1f3f; /* еще темнее */
+            --primary-light: #2a4b8c; /* светлее */
 
             /* Красный акцент для удаления */
             --accent: #E63946;
@@ -29,7 +28,7 @@
         }
 
         body {
-            background-color: #f8f9fa;
+            background-color: var(--primary-light);
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
@@ -81,7 +80,7 @@
 
         .thumb-swiper .swiper-slide-thumb-active {
             opacity: 1;
-            border-color: #0d6efd;
+            border-color: var(--primary);
             box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
         }
 
@@ -94,7 +93,7 @@
         /* Навигация */
         .swiper-button-next,
         .swiper-button-prev {
-            color: #0d6efd;
+            color: var(--primary);
             background: rgba(255, 255, 255, 0.9);
             width: 44px;
             height: 44px;
@@ -116,7 +115,7 @@
         }
 
         .swiper-pagination-bullet-active {
-            background: #0d6efd;
+            background: var(--primary-light);
         }
 
         /* ===== МОДАЛЬНОЕ ОКНО ===== */
@@ -203,10 +202,10 @@
         .quantity-controls-full-width {
             display: flex;
             width: 100%;
-            border: 2px solid var(--black-coral);
+            border: 2px solid var(--primary);
             border-radius: 50px;
             overflow: hidden;
-            background: var(--black-coral);
+            background: var(--primary);
             height: 50px;
         }
 
@@ -214,7 +213,7 @@
             flex: 1;
             height: 100%;
             border: none;
-            background: var(--black-coral);
+            background: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -227,11 +226,11 @@
         }
 
         .quantity-btn-full-width:hover {
-            background: var(--black-coral-dark);
+            background: var(--primary-dark);
         }
 
         .quantity-btn-full-width:active {
-            background: var(--black-coral-light);
+            background: var(--primary-light);
         }
 
         .quantity-display-full-width {
@@ -244,32 +243,32 @@
             font-weight: 700;
             color: white;
             background: var(--black-coral);
-            border-left: 2px solid var(--black-coral-light);
-            border-right: 2px solid var(--black-coral-light);
+            border-left: 2px solid var(--primary-light);
+            border-right: 2px solid var(--primary-light);
             min-width: 60px;
         }
 
         /* Кнопка "Добавить в корзину" */
         #add-to-cart-btn.btn-primary {
-            background: linear-gradient(135deg, var(--black-coral-dark) 0%, var(--black-coral) 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
             border: none;
             border-radius: 50px;
             font-weight: 700 !important;
-            font-size: 1.1rem !important;
+            font-size: 1.3rem !important;
             color: white;
             transition: all 0.3s ease;
             box-shadow: var(--shadow-sm);
         }
 
         #add-to-cart-btn.btn-primary:hover {
-            background: linear-gradient(135deg, var(--black-coral) 0%, var(--black-coral-light) 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
 
         /* Кнопка "Перейти к оформлению" */
         a[href="/cart"].btn-primary {
-            background: linear-gradient(135deg, var(--black-coral-dark) 0%, var(--black-coral) 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
             border: none;
             border-radius: 50px;
             font-weight: 600;
@@ -278,7 +277,7 @@
         }
 
         a[href="/cart"].btn-primary:hover {
-            background: linear-gradient(135deg, var(--black-coral) 0%, var(--black-coral-light) 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
