@@ -328,6 +328,7 @@
 
                     <!-- Блок управления корзиной -->
                     <div class="cart-control-container"
+                         th:if="${currentUser != null}"
                          th:data-product-id="${product.id}"
                          th:data-initial-quantity="${cartProductQuantities[product.id] ?: 0}">
 
