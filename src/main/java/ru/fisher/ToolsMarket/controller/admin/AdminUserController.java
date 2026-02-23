@@ -3,6 +3,8 @@ package ru.fisher.ToolsMarket.controller.admin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,17 +30,21 @@ public class AdminUserController {
 
     @GetMapping
     public String listUsers(Model model,
-                            @RequestParam(required = false) String search,
                             @RequestParam(defaultValue = "0") int page,
-                            @RequestParam(defaultValue = "20") int size) {
+                            @RequestParam(defaultValue = "20") int size,
+                            @RequestParam(defaultValue = "id,asc") String sort,
+                            @RequestParam(required = false) String search,
+                            @RequestParam(required = false) UserType userType,
+                            @RequestParam(required = false) Boolean enabled) {
 
-        Page<User> usersPage;
+        // Парсим параметры сортировки
+        String[] sortParams = sort.split(",");
+        Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
+        Sort sorting = Sort.by(direction, sortParams[0]);
 
-        if (search != null && !search.trim().isEmpty()) {
-            usersPage = userService.searchUsers(search.trim(), PageRequest.of(page, size));
-        } else {
-            usersPage = userService.getAllUsers(PageRequest.of(page, size));
-        }
+        Pageable pageable = PageRequest.of(page, size, sorting);
+
+        Page<User> usersPage = userService.searchUsers(search, userType, enabled, pageable);
 
         // Получаем статистику по типам пользователей
         Map<UserType, Long> userTypeStats = userService.getUserTypeStatistics();
@@ -48,8 +54,11 @@ public class AdminUserController {
         model.addAttribute("totalPages", usersPage.getTotalPages());
         model.addAttribute("totalItems", usersPage.getTotalElements());
         model.addAttribute("search", search);
+        model.addAttribute("selectedUserType", userType);
+        model.addAttribute("selectedEnabled", enabled);
         model.addAttribute("userTypes", UserType.values());
         model.addAttribute("userTypeStats", userTypeStats);
+        model.addAttribute("currentSort", sort);
 
         return "admin/users/index";
     }

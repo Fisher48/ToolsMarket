@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fisher.ToolsMarket.dto.UserProfileUpdateDto;
+import ru.fisher.ToolsMarket.dto.UserSpecification;
 import ru.fisher.ToolsMarket.models.Role;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.models.UserType;
@@ -338,6 +340,27 @@ public class UserService {
     @Transactional(readOnly = true)
     public Page<User> searchUsers(String query, Pageable pageable) {
         return userRepository.searchUsers(query, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<User> searchUsers(String search, UserType userType, Boolean enabled, Pageable pageable) {
+        Specification<User> spec = (
+                (root, query, cb) -> cb.conjunction()
+        );
+
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and(UserSpecification.searchAll(search));
+        }
+
+        if (userType != null) {
+            spec = spec.and(UserSpecification.hasUserType(userType));
+        }
+
+        if (enabled != null) {
+            spec = spec.and(UserSpecification.hasStatus(enabled));
+        }
+
+        return userRepository.findAll(spec, pageable);
     }
 
     /**
