@@ -39,10 +39,12 @@ public class AdminUserController {
 
         // Парсим параметры сортировки
         String[] sortParams = sort.split(",");
-        Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
-        Sort sorting = Sort.by(direction, sortParams[0]);
+        String sortField = sortParams.length > 0 ? sortParams[0] : "id";
+        Sort.Direction direction = sortParams.length > 1
+                ? Sort.Direction.fromString(sortParams[1])
+                : Sort.Direction.ASC;
 
-        Pageable pageable = PageRequest.of(page, size, sorting);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
 
         Page<User> usersPage = userService.searchUsers(search, userType, enabled, pageable);
 
