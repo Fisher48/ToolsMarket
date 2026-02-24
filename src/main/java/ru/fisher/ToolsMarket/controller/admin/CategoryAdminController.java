@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/admin/categories")
+@PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
 @RequiredArgsConstructor
 @Slf4j
 public class CategoryAdminController {
@@ -217,6 +219,7 @@ public class CategoryAdminController {
     }
 
     // Удаление категории
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {
         Category category = categoryService.findEntityById(id)

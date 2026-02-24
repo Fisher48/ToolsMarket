@@ -61,8 +61,10 @@ public class UserController {
         // Проверяем роль и добавляем флаг
         boolean isAdmin = user.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        boolean isManager = user.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_MANAGER"));
         model.addAttribute("isAdmin", isAdmin);
-
+        model.addAttribute("isManager", isManager);
         model.addAttribute("user", user);
         model.addAttribute("orders", orders);
         model.addAttribute("orderCount", orders.size());

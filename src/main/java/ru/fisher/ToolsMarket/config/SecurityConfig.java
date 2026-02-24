@@ -62,7 +62,7 @@ public class SecurityConfig {
                         // Точки входа для админа
                         .requestMatchers(
                                 "/admin/**", "/api/admin/**", "/grafana/**"
-                        ).hasRole("ADMIN")
+                        ).hasAnyRole("ADMIN","MANAGER")
 
                         // Точки входа для пользователя
                         .requestMatchers( "/api/**",

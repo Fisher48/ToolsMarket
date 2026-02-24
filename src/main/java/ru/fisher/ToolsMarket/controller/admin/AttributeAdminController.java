@@ -3,6 +3,7 @@ package ru.fisher.ToolsMarket.controller.admin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/admin/categories/{categoryId}/attributes")
+@PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
 @RequiredArgsConstructor
 public class AttributeAdminController {
     private final CategoryService categoryService;
@@ -94,6 +96,7 @@ public class AttributeAdminController {
     }
 
     @PostMapping("/{attributeId}/delete")
+    @PreAuthorize("hasRole('ADMIN')")
     public String deleteAttribute(@PathVariable Long categoryId,
                                   @PathVariable Long attributeId) {
         attributeService.deleteAttribute(attributeId);
