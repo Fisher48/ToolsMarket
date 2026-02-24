@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
@@ -165,5 +167,18 @@ public class GlobalExceptionHandler {
                 ex.getCookieName()));
         response.put("timestamp", LocalDateTime.now());
         return response;
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ModelAndView handleAccessDenied(AuthorizationDeniedException ex,
+                                           HttpServletRequest request) {
+        log.warn("Access denied for user trying to access: {}", request.getRequestURI());
+
+        ModelAndView mav = new ModelAndView("error/403");
+        mav.addObject("error", "Доступ запрещен");
+        mav.addObject("message", "У вас нет прав для просмотра этой страницы");
+        mav.addObject("path", request.getRequestURI());
+
+        return mav;
     }
 }
