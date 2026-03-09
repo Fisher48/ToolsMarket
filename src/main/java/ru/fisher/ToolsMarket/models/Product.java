@@ -61,6 +61,12 @@ public class Product {
     @OrderBy("sortOrder ASC")
     private Set<ProductImage> images = new LinkedHashSet<>();
 
+    @Column(name = "created_by_user_id")
+    private Long createdByUserId;
+
+    @Column(name = "updated_by_user_id")
+    private Long updatedByUserId;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 

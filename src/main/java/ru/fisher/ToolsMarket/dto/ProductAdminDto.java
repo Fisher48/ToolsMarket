@@ -20,6 +20,12 @@ public class ProductAdminDto {
     private List<String> categories;
     private Instant createdAt;
 
+    private Long createdByUserId;
+    private String createdByUserName;
+
+    private Long updatedByUserId;
+    private String updatedByUserName;
+
     public String getProductType() {
         return productType != null ? productType : "—";
     }

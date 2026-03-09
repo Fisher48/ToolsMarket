@@ -189,6 +189,8 @@
                                         </a>
                                     </th>
 
+                                    <th>Создал</th>
+                                    <th>Изменил</th>
                                     <th>Действия</th>
                                 </tr>
                                 </thead>
@@ -224,7 +226,31 @@
                                     </td>
 
                                     <td th:text="${#temporals.format(product.createdAt, 'dd.MM.yyyy')}"></td>
-                                    <td th:text="${#temporals.format(product.createdAt, 'dd.MM.yyyy')}">01.01.2024</td>
+
+                                    <!-- Кто создал -->
+                                    <td>
+                                        <div class="user-badge">
+                                            <i class="bi bi-person-plus"></i>
+                                            <span th:if="${product.createdByUserName != null}"
+                                                  th:text="${product.createdByUserName}">
+                                            </span>
+                                            <span th:unless="${product.createdByUserName != null}"
+                                                  class="text-muted">—</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Кто изменил -->
+                                    <td>
+                                        <div class="user-badge">
+                                            <i class="bi bi-pencil"></i>
+                                            <span th:if="${product.updatedByUserName != null}"
+                                                  th:text="${product.updatedByUserName}">
+                                            </span>
+                                            <span th:unless="${product.updatedByUserName != null}"
+                                                  class="text-muted">—</span>
+                                        </div>
+                                    </td>
+
                                     <td class="table-actions">
                                         <a th:href="@{/admin/products/{id}(id=${product.id})}"
                                            class="btn btn-sm btn-outline-primary" title="Просмотр">

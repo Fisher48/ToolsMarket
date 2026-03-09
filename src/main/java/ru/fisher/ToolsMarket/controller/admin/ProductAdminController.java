@@ -9,6 +9,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +21,7 @@ import ru.fisher.ToolsMarket.dto.ImageOrderDto;
 import ru.fisher.ToolsMarket.dto.ProductAdminDto;
 import ru.fisher.ToolsMarket.exceptions.ValidationException;
 import ru.fisher.ToolsMarket.models.*;
-import ru.fisher.ToolsMarket.service.AttributeService;
-import ru.fisher.ToolsMarket.service.CategoryService;
-import ru.fisher.ToolsMarket.service.ImageStorageService;
-import ru.fisher.ToolsMarket.service.ProductService;
+import ru.fisher.ToolsMarket.service.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -40,6 +39,7 @@ public class ProductAdminController {
     private final CategoryService categoryService;
     private final ImageStorageService imageStorageService;
     private final AttributeService attributeService;
+    private final UserService userService;
 
     // Список
     @GetMapping
@@ -125,10 +125,15 @@ public class ProductAdminController {
                          @RequestParam(required = false) List<MultipartFile> images,
                          @RequestParam(required = false) List<String> imageAlts,
                          @RequestParam(required = false) List<Integer> imageSortOrders,
-                         @RequestParam(required = false) ProductType productType) {
+                         @RequestParam(required = false) ProductType productType,
+                         @AuthenticationPrincipal UserDetails userDetails) {
 
         log.info("Creating product: {}", name);
         log.info("Received {} images", images != null ? images.size() : 0);
+
+        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+                .map(User::getId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         // Создаем новый продукт с установкой временных меток
         Product product = Product.builder()
@@ -140,6 +145,7 @@ public class ProductAdminController {
                 .price(price)
                 .currency(currency)
                 .active(active)
+                .createdByUserId(currentUserId)
                 .createdAt(Instant.now())  // Устанавливаем createdAt
                 .updatedAt(Instant.now())  // Устанавливаем updatedAt
                 .categories(new HashSet<>())
@@ -348,7 +354,12 @@ public class ProductAdminController {
             @RequestParam(defaultValue = "true") boolean active,
             @RequestParam(required = false) List<Long> categoryIds,
             @RequestParam(required = false) ProductType productType,
+            @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
+
+        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+                .map(User::getId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         try {
             log.info("=== ОБНОВЛЕНИЕ ОСНОВНОЙ ИНФОРМАЦИИ ТОВАРА {} ===", id);
@@ -363,6 +374,7 @@ public class ProductAdminController {
             product.setDescription(description);
             product.setSku(sku);
             product.setPrice(price);
+            product.setUpdatedByUserId(currentUserId);
             product.setCurrency(currency);
             product.setActive(active);
             product.setProductType(productType);

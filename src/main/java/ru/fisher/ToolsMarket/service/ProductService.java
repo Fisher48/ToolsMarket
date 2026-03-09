@@ -31,6 +31,7 @@ public class ProductService {
     private final ProductMapperService productMapperService;
     private final ProductImageMapperService productImageMapperService;
     private final AttributeService attributeService;
+    private final UserService userService;
     private final DiscountService discountService;
 
     @Transactional(readOnly = true)
@@ -97,6 +98,20 @@ public class ProductService {
                 .map(Category::getName)
                 .toList();
 
+        String createdByUserName = null;
+        if (product.getCreatedByUserId() != null) {
+            createdByUserName = userService.findById(product.getCreatedByUserId())
+                    .map(User::getUsername)
+                    .orElse(null);
+        }
+
+        String updatedByUserName = null;
+        if (product.getUpdatedByUserId() != null) {
+            updatedByUserName = userService.findById(product.getUpdatedByUserId())
+                    .map(User::getUsername)
+                    .orElse(null);
+        }
+
         return new ProductAdminDto(
                 product.getId(),
                 product.getName(),
@@ -106,7 +121,11 @@ public class ProductService {
                 product.isActive(),
                 product.getProductType().getDisplayName(),
                 categories,
-                product.getCreatedAt()
+                product.getCreatedAt(),
+                product.getCreatedByUserId(),
+                createdByUserName,
+                product.getUpdatedByUserId(),
+                updatedByUserName
         );
     }
 
