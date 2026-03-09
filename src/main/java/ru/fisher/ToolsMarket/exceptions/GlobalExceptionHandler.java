@@ -181,4 +181,15 @@ public class GlobalExceptionHandler {
 
         return mav;
     }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public String handleNoResource(Model model, HttpServletRequest request) {
+        log.warn("404 error for path: {}", request.getRequestURI());
+
+        model.addAttribute("error", "Страница не найдена");
+        model.addAttribute("path", request.getRequestURI());
+        model.addAttribute("timestamp", LocalDateTime.now());
+
+        return "error/404";
+    }
 }
