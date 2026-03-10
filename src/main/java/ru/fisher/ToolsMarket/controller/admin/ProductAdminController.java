@@ -412,8 +412,12 @@ public class ProductAdminController {
 
             // ID для удаления
             @RequestParam(required = false) List<Long> deleteImageIds,
-
+            @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
+
+        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+                .map(User::getId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         try {
             log.info("=== ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ ТОВАРА {} ===", id);
@@ -458,6 +462,8 @@ public class ProductAdminController {
             if (newImages != null && !newImages.isEmpty()) {
                 addNewImages(product, newImages, newImageAlts, newImageOrders);
             }
+
+            product.setUpdatedByUserId(currentUserId);
 
             // Сохраняем товар (изменения в изображениях сохранятся каскадно)
             productService.saveEntity(product);
@@ -646,7 +652,12 @@ public class ProductAdminController {
     @PostMapping("/{id}/specifications")
     public String saveSpecifications(@PathVariable Long id,
                                      @RequestParam Map<String, String> allParams,
+                                     @AuthenticationPrincipal UserDetails userDetails,
                                      RedirectAttributes redirectAttributes) {
+        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+                .map(User::getId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
         try {
             Product product = productService.findWithDetailsById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -661,6 +672,7 @@ public class ProductAdminController {
                             Map.Entry::getValue
                     ));
 
+            product.setUpdatedByUserId(currentUserId);
             attributeService.saveProductAttributes(product, attributeValues);
 
             redirectAttributes.addFlashAttribute("successMessage",
