@@ -58,16 +58,97 @@
     border-radius: 3px;
 }
 
-/* Для мобильных */
 @media (max-width: 767.98px) {
     .admin-sidebar-wrapper {
         position: static;
         width: 100%;
         height: auto;
-        max-height: 300px;
+        max-height: none;  /* Убираем ограничение высоты */
     }
 
     .admin-sidebar {
-        max-height: 300px;
+        max-height: none;
+        padding: 5px 0;
+    }
+
+    /* Делаем заголовок компактнее */
+    .admin-sidebar .px-3.py-4 {
+        padding: 8px !important;
+        text-align: center;
+    }
+
+    .admin-sidebar .px-3.py-4 h5 {
+        font-size: 1.1rem;
+        margin: 0;
+    }
+
+    /* Горизонтальное меню */
+    .admin-sidebar .nav {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        padding: 0 5px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .admin-sidebar .nav-item {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    .admin-sidebar .nav-link {
+        padding: 6px 10px !important;
+        margin: 0 !important;
+        font-size: 0.8rem !important;
+        white-space: nowrap !important;
+        border-radius: 20px !important;
+        border-left: none !important;
+    }
+
+    .admin-sidebar .nav-link:hover {
+        border-left-color: transparent;
+    }
+
+    .admin-sidebar .nav-link.active {
+        border-left-color: transparent;
+    }
+
+    /* Компактный разделитель */
+    .admin-sidebar-heading {
+        text-align: center !important;
+        font-size: 0.7rem !important;
+        margin-bottom: 5px !important;
+    }
+
+    /* Ссылки "На главную" и выход */
+    .admin-sidebar .px-3 {
+        padding: 0 10px !important;
+        text-align: center;
+    }
+
+    .admin-sidebar .nav.flex-column {
+        flex-direction: row !important;
+        justify-content: center !important;
+        gap: 10px !important;
+    }
+
+    .admin-sidebar .nav.flex-column .nav-link {
+        padding: 6px 12px !important;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+
+    .admin-sidebar .dropdown-item {
+        display: inline-block !important;
+        width: auto !important;
+        padding: 6px 12px !important;
+        background: rgba(220,53,69,0.2) !important;
+        border-radius: 20px !important;
+        border: none !important;
+    }
+
+    .admin-sidebar .dropdown-item:hover {
+        background: rgba(220,53,69,0.4) !important;
     }
 }

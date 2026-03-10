@@ -134,6 +134,116 @@
             transform: translateY(0) scale(0.98);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            /* Уменьшаем отступы футера */
+            .bg-dark {
+                margin-top: 30px;
+                padding: 20px 0 10px !important;
+            }
+
+            /* Уменьшаем заголовки */
+            .bg-dark h5, .bg-dark h6 {
+                font-size: 1.1rem !important;
+                margin-bottom: 10px !important;
+            }
+
+            /* Компактные списки */
+            .bg-dark ul {
+                margin-bottom: 15px !important;
+            }
+
+            .bg-dark li {
+                margin-bottom: 5px !important;
+                font-size: 0.9rem !important;
+            }
+
+            /* Убираем подчеркивание на мобилках */
+            .bg-dark h5::after, .bg-dark h6::after {
+                width: 30px !important;
+                height: 2px !important;
+                bottom: -5px !important;
+            }
+
+            /* Юридическая информация - компактно */
+            .legal-info {
+                margin-top: 15px !important;
+                padding: 10px !important;
+            }
+
+            .legal-info p {
+                font-size: 0.7rem !important;
+                line-height: 1.3 !important;
+            }
+
+            /* Копирайт */
+            .bg-dark hr {
+                margin: 15px 0 5px !important;
+            }
+
+            .bg-dark .copyright p {
+                font-size: 0.7rem !important;
+                margin-bottom: 5px !important;
+            }
+
+            /* Социальные иконки меньше */
+            .social-links {
+                margin-bottom: 10px;
+            }
+
+            .social-links a {
+                width: 30px !important;
+                height: 30px !important;
+                font-size: 0.9rem !important;
+            }
+
+            .main-swiper .swiper-slide img {
+                height: 350px;
+            }
+
+            .thumb-swiper {
+                height: 70px;
+            }
+
+            .thumb-swiper .swiper-slide {
+                width: 60px;
+                height: 60px;
+            }
+
+            .swiper-button-next,
+            .swiper-button-prev {
+                display: none;
+            }
+
+            .close-modal {
+                top: 10px;
+                right: 20px;
+                font-size: 40px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-swiper .swiper-slide img {
+                height: 280px;
+            }
+
+            .thumb-swiper .swiper-slide {
+                width: 50px;
+                height: 50px;
+            }
+        }
+
+        /* Адаптивность для мобильных */
+        @media (max-width: 576px) {
+            .subcategory-title {
+                font-size: 0.9rem; /* Чуть меньше на мобилках */
+            }
+
+            .subcategory-body {
+                padding: 0.75rem;
+                min-height: 70px;
+            }
+        }
 
         @media (max-width: 768px) {
             .product-image-container {
