@@ -39,6 +39,10 @@ public class ExcelImportResult {
         created++;
     }
 
+    public void incrementCreated(int count) {
+        created += count;
+    }
+
     public void incrementSkipped() {
         skipped++;
     }

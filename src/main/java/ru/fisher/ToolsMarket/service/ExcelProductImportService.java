@@ -3,6 +3,7 @@ package ru.fisher.ToolsMarket.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +13,7 @@ import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.ProductImage;
 import ru.fisher.ToolsMarket.models.ProductType;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
+import ru.fisher.ToolsMarket.repository.ProductImageRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
 
 import java.io.InputStream;
@@ -25,9 +27,13 @@ import java.util.*;
 public class ExcelProductImportService {
 
     private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
     private final CategoryRepository categoryRepository;
 
-    // Категория по умолчанию для импортированных товаров
+    // Размер пакета для массовой вставки
+    @Value("${app.import.batch-size}")
+    private int batchSize;
+
     private static final String DEFAULT_CATEGORY_TITLE = "ruchnoy_instrument";
     private static final BigDecimal DEFAULT_PRICE = BigDecimal.ZERO;
 
@@ -50,14 +56,18 @@ public class ExcelProductImportService {
             return result;
         }
 
+        long startTime = System.currentTimeMillis();
+
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = WorkbookFactory.create(inputStream)) {
 
             // Получаем первый лист
             Sheet sheet = workbook.getSheetAt(0);
-            result.setTotalRows(sheet.getPhysicalNumberOfRows() - 1); // минус заголовок
+            int totalRows = sheet.getPhysicalNumberOfRows() - 1;
+            result.setTotalRows(totalRows);
 
-            // Определяем индексы столбцов
+            log.info("Начинаем импорт {} строк из Excel", totalRows);
+
             Map<String, Integer> columnIndexes = findColumnIndexes(sheet.getRow(0));
 
             // Проверяем наличие обязательных столбцов
@@ -69,21 +79,66 @@ public class ExcelProductImportService {
             // Получаем категорию по умолчанию
             Category defaultCategory = getOrCreateDefaultCategory();
 
-            // Обрабатываем строки
+            // Собираем все существующие SKU для быстрой проверки
+            Set<String> existingSkus = new HashSet<>(productRepository.findAllSkus());
+            log.info("Загружено {} существующих SKU", existingSkus.size());
+
+            // Списки для пакетного сохранения
+            List<Product> productsToSave = new ArrayList<>();
+            List<ProductImage> imagesToSave = new ArrayList<>();
+
+            int processed = 0;
+            int batchCounter = 0;
+
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
                 try {
-                    processRow(row, columnIndexes, defaultCategory, result);
+                    Product product = processRowToProduct(row, columnIndexes, defaultCategory, existingSkus, result);
+
+                    if (product != null) {
+                        productsToSave.add(product);
+
+                        // Если есть изображение, добавляем отдельно
+                        String imageUrl = getImageUrlFromRow(row, columnIndexes);
+                        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                            ProductImage image = new ProductImage();
+                            image.setProduct(product);
+                            image.setUrl(imageUrl.trim());
+                            image.setSortOrder(0);
+                            imagesToSave.add(image);
+                        }
+
+                        batchCounter++;
+                        processed++;
+
+                        // Сохраняем пакет при достижении лимита
+                        if (batchCounter >= batchSize) {
+                            saveBatch(productsToSave, imagesToSave, result);
+                            productsToSave.clear();
+                            imagesToSave.clear();
+                            batchCounter = 0;
+
+                            log.info("Сохранен пакет из {} товаров. Прогресс: {}/{}",
+                                    batchSize, processed, result.getTotalRows());
+                        }
+                    }
+
                 } catch (Exception e) {
                     log.error("Ошибка при обработке строки {}: {}", i + 1, e.getMessage());
                     result.addError("Строка " + (i + 1) + ": " + e.getMessage());
                 }
             }
 
-            log.info("Импорт завершен. Создано: {}, Пропущено: {}, Ошибок: {}",
-                    result.getCreated(), result.getSkipped(), result.getErrors());
+            // Сохраняем остатки
+            if (!productsToSave.isEmpty()) {
+                saveBatch(productsToSave, imagesToSave, result);
+            }
+
+            long endTime = System.currentTimeMillis();
+            log.info("Импорт завершен за {} мс. Создано: {}, Пропущено: {}, Ошибок: {}",
+                    (endTime - startTime), result.getCreated(), result.getSkipped(), result.getErrors());
 
         } catch (Exception e) {
             log.error("Ошибка при чтении Excel файла", e);
@@ -94,8 +149,134 @@ public class ExcelProductImportService {
     }
 
     /**
-     * Определение индексов столбцов
+     * Пакетное сохранение товаров и изображений
      */
+    private void saveBatch(List<Product> products, List<ProductImage> images, ExcelImportResult result) {
+        if (products.isEmpty()) return;
+
+        // Сохраняем товары пакетно
+        List<Product> savedProducts = productRepository.saveAll(products);
+        result.incrementCreated(savedProducts.size());
+
+        for (Product product : savedProducts) {
+            result.addCreatedProduct(product.getSku());
+        }
+
+        // Сохраняем изображения
+        productImageRepository.saveAll(images);
+
+        log.debug("Сохранен пакет: {} товаров, {} изображений", savedProducts.size(), images.size());
+    }
+
+    /**
+     * Преобразование строки в объект Product (без сохранения)
+     */
+    private Product processRowToProduct(Row row, Map<String, Integer> columnIndexes,
+                                        Category defaultCategory, Set<String> existingSkus,
+                                        ExcelImportResult result) {
+
+        Integer skuIndex = columnIndexes.get("Артикул");
+        if (skuIndex == null) {
+            result.addError("Не найден столбец 'Артикул'");
+            return null;
+        }
+
+        String sku = getCellValueAsString(row.getCell(skuIndex));
+        if (sku == null || sku.trim().isEmpty()) {
+            result.incrementErrors();
+            result.addError("Пустой артикул");
+            return null;
+        }
+        sku = sku.trim();
+
+        // Быстрая проверка существования через Set
+        if (existingSkus.contains(sku)) {
+            result.incrementSkipped();
+            result.addSkippedProduct(sku, "уже существует");
+            return null;
+        }
+
+        // Добавляем в Set, чтобы избежать дубликатов в рамках одного импорта
+        existingSkus.add(sku);
+
+        Integer nameIndex = columnIndexes.get("Наименование элемента");
+        if (nameIndex == null) {
+            result.incrementErrors();
+            result.addError("Не найден столбец 'Наименование элемента'");
+            return null;
+        }
+
+        String name = getCellValueAsString(row.getCell(nameIndex));
+        if (name == null || name.trim().isEmpty()) {
+            result.incrementErrors();
+            result.addError("Пустое наименование для артикула " + sku);
+            return null;
+        }
+        name = name.trim();
+
+        // Получаем описание (необязательное)
+        Integer descIndex = columnIndexes.get("Детальное описание");
+        String description = descIndex != null ?
+                getCellValueAsString(row.getCell(descIndex)) : null;
+
+        // Создаем товар
+        Product product = createProduct(sku, name, description, defaultCategory);
+
+        result.incrementCreated();
+        result.addCreatedProduct(sku);
+        log.info("Создан товар: SKU={}, наименование={}", sku, name);
+        return product;
+    }
+
+    /**
+     * Создание товара
+     */
+    private Product createProduct(String sku, String name, String description, Category category) {
+
+        // Генерируем title из имени + sku для уникальности
+        String title = generateTitle(name) + "-" + sku.toLowerCase();
+
+        // Создаем товар
+        Product product = new Product();
+        product.setSku(sku);
+        product.setName(name);
+        product.setTitle(title);
+        product.setDescription(description);
+        product.setShortDescription(generateShortDescription(description, name));
+        product.setPrice(DEFAULT_PRICE);
+        product.setCurrency("RUB");
+        product.setActive(true);
+        product.setProductType(ProductType.OTHER);
+        product.setCreatedAt(Instant.now());
+        product.setUpdatedAt(Instant.now());
+
+        // Инициализируем коллекции
+        if (product.getCategories() == null) {
+            product.setCategories(new HashSet<>());
+        }
+        if (product.getImages() == null) {
+            product.setImages(new LinkedHashSet<>());
+        }
+        if (product.getAttributeValues() == null) {
+            product.setAttributeValues(new LinkedHashSet<>());
+        }
+
+        product.getCategories().add(category);
+
+        return product;
+    }
+
+    /**
+     * Получение URL изображения из строки
+     */
+    private String getImageUrlFromRow(Row row, Map<String, Integer> columnIndexes) {
+        Integer imageIndex = columnIndexes.get("Детальная картинка");
+        if (imageIndex != null) {
+            return getCellValueAsString(row.getCell(imageIndex));
+        }
+        return null;
+    }
+
     private Map<String, Integer> findColumnIndexes(Row headerRow) {
         Map<String, Integer> indexes = new HashMap<>();
 
@@ -126,113 +307,6 @@ public class ExcelProductImportService {
         return indexes;
     }
 
-    /**
-     * Обработка одной строки
-     */
-    private void processRow(Row row, Map<String, Integer> columnIndexes,
-                            Category defaultCategory, ExcelImportResult result) {
-
-        // Получаем артикул (обязательное поле)
-        Integer skuIndex = columnIndexes.get("Артикул");
-        if (skuIndex == null) {
-            result.addError("Не найден столбец 'Артикул'");
-            return;
-        }
-
-        String sku = getCellValueAsString(row.getCell(skuIndex));
-        if (sku == null || sku.trim().isEmpty()) {
-            result.incrementErrors();
-            result.addError("Пустой артикул");
-            return;
-        }
-        sku = sku.trim();
-
-        // Проверяем, существует ли товар с таким артикулом
-        if (productRepository.findBySku(sku).isPresent()) {
-            result.incrementSkipped();
-            result.addSkippedProduct(sku, "уже существует");
-            log.debug("Товар с артикулом {} уже существует, пропускаем", sku);
-            return;
-        }
-
-        // Получаем наименование (обязательное поле)
-        Integer nameIndex = columnIndexes.get("Наименование элемента");
-        if (nameIndex == null) {
-            result.incrementErrors();
-            result.addError("Не найден столбец 'Наименование элемента'");
-            return;
-        }
-
-        String name = getCellValueAsString(row.getCell(nameIndex));
-        if (name == null || name.trim().isEmpty()) {
-            result.incrementErrors();
-            result.addError("Пустое наименование для артикула " + sku);
-            return;
-        }
-        name = name.trim();
-
-        // Получаем описание (необязательное)
-        Integer descIndex = columnIndexes.get("Детальное описание");
-        String description = descIndex != null ?
-                getCellValueAsString(row.getCell(descIndex)) : null;
-
-        // Получаем картинку (необязательная)
-        Integer imageIndex = columnIndexes.get("Детальная картинка");
-        String imageUrl = imageIndex != null ?
-                getCellValueAsString(row.getCell(imageIndex)) : null;
-
-        // Создаем товар
-        Product product = createProduct(sku, name, description, imageUrl, defaultCategory);
-
-        result.incrementCreated();
-        result.addCreatedProduct(sku);
-        log.info("Создан товар: SKU={}, наименование={}", sku, name);
-    }
-
-    /**
-     * Создание товара
-     */
-    private Product createProduct(String sku, String name, String description,
-                                  String imageUrl, Category category) {
-
-        // Генерируем title из имени + sku для уникальности
-        String title = generateTitle(name) + "-" + sku.toLowerCase();
-
-        Product product = Product.builder()
-                .sku(sku)
-                .name(name)
-                .title(title)
-                .description(description)
-                .shortDescription(generateShortDescription(description, name))
-                .price(DEFAULT_PRICE)
-                .categories(new HashSet<>())
-                .images(new HashSet<>())
-                .currency("RUB")
-                .active(true)
-                .productType(ProductType.OTHER)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .build();
-
-        // Добавляем категорию
-        product.getCategories().add(category);
-
-        // Добавляем изображение, если есть
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            ProductImage image = ProductImage.builder()
-                    .product(product)
-                    .url(imageUrl.trim())
-                    .sortOrder(0)
-                    .build();
-            product.getImages().add(image);
-        }
-
-        return productRepository.save(product);
-    }
-
-    /**
-     * Получение или создание категории по умолчанию
-     */
     private Category getOrCreateDefaultCategory() {
         return categoryRepository.findByTitle(DEFAULT_CATEGORY_TITLE)
                 .orElseGet(() -> {
