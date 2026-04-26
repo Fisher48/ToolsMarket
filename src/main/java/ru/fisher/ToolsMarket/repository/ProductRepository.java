@@ -8,9 +8,9 @@ import org.springframework.stereotype.Repository;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.models.Product;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
@@ -18,6 +18,18 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Optional<Product> findByTitle(String title);
 
     Optional<Product> findBySku(String sku);
+
+    /**
+     * Найти все продукты по списку SKU (для массовых операций)
+     */
+    @Query("SELECT p FROM Product p WHERE p.sku IN :skus")
+    List<Product> findAllBySkus(@Param("skus") Set<String> skus);
+
+    @Query("SELECT new Product(p.sku, p.title, p.price) FROM Product p WHERE p.sku IN :skus")
+    List<Product> findAllBySkusOptimized(@Param("skus") Set<String> skus);
+
+    @Query("SELECT p.sku FROM Product p")
+    Set<String> findAllSkus();
 
     @Query("SELECT p FROM Product p " +
             "JOIN p.categories c " +
@@ -81,21 +93,4 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
             "WHERE p.id = :id")
     Optional<Product> findByIdWithAllRelations(@Param("id") Long id);
 
-    @Modifying
-    @Query("""
-        UPDATE Product p
-        SET p.price = :price
-        WHERE p.sku = :sku
-    """)
-    int updatePriceByArticle(
-            @Param("sku") String sku,
-            @Param("price") BigDecimal price
-    );
-
-
-//    @Query("SELECT p FROM Product p " +
-//            "WHERE p.active = true " +
-//            "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
-//            "OR p.description LIKE CONCAT('%', :q, '%'))")
-//    Page<Product> searchActive(@Param("q") String q, Pageable pageable);
 }

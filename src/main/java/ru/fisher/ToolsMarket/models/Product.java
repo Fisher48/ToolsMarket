@@ -77,6 +77,12 @@ public class Product {
     @OrderBy("sortOrder ASC")
     private Set<ProductAttributeValue> attributeValues = new LinkedHashSet<>();
 
+    public Product(String sku, String title, BigDecimal price) {
+        this.sku = sku;
+        this.title = title;
+        this.price = price;
+    }
+
     // Вспомогательный метод для получения значения атрибута
     public String getAttributeValue(String attributeName) {
         return attributeValues.stream()

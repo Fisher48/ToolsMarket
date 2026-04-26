@@ -65,59 +65,6 @@ public class PriceImportController {
         return "admin/prices/import_prices";
     }
 
-//    @PostMapping("/import")
-//    public String handleImport(@RequestParam("file") MultipartFile file,
-//                               @RequestParam(value = "dryRun", defaultValue = "false") boolean dryRun,
-//                               Model model) throws IOException {
-//
-//        log.info("Price import request: file={}, size={}, dryRun={}",
-//                file.getOriginalFilename(), file.getSize(), dryRun);
-//
-//        // Валидация файла
-//        if (file.isEmpty()) {
-//            model.addAttribute("error", "Файл пустой");
-//            return "admin/prices/import_prices";
-//        }
-//
-//        if (!isValidExcelFile(file)) {
-//            model.addAttribute("error",
-//                    "Поддерживаются только файлы Excel (.xlsx, .xls)");
-//            return "admin/prices/import_prices";
-//        }
-//
-//        try {
-//            ImportResult result;
-//
-//            if (dryRun) {
-//                // Тестовый режим
-//                result = priceImportService.dryRunImport(
-//                        file.getInputStream(),
-//                        file.getOriginalFilename()
-//                );
-//                log.info("Dry-run completed: {} changes, {} not found",
-//                        result.updatedCount(), result.notFoundCount());
-//            } else {
-//                // Реальный импорт
-//                result = priceImportService.importPrices(
-//                        file.getInputStream(),
-//                        file.getOriginalFilename()
-//                );
-//                log.info("Import completed: {} updated, {} not found",
-//                        result.updatedCount(), result.notFoundCount());
-//            }
-//
-//            model.addAttribute("result", result);
-//            model.addAttribute("dryRun", dryRun);
-//
-//        } catch (Exception e) {
-//            log.error("Error importing prices", e);
-//            model.addAttribute("error",
-//                    "Ошибка обработки файла: " + e.getMessage());
-//        }
-//
-//        return "admin/prices/import_prices";
-//    }
-
     /**
      * Отдельный endpoint для быстрого dry-run через AJAX
      */
