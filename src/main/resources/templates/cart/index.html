@@ -327,7 +327,10 @@
                                                 <th:block th:unless="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
                                                     <div class="bg-light rounded d-flex align-items-center justify-content-center"
                                                          style="width: 80px; height: 80px;">
-                                                        <i class="bi bi-tools text-muted"></i>
+                                                        <img src="/static/placeholder.jpg"
+                                                             alt="Нет изображения"
+                                                             class="card-img-top product-image"
+                                                             style="width: 80px; height: 80px; object-fit: contain; opacity: 0.9;">
                                                     </div>
                                                 </th:block>
                                             </a>
