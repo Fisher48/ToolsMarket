@@ -45,8 +45,9 @@ public class CategoryMapperService {
             dto.setChildrenCount(category.getChildren().size());
             dto.setChildren(category.getChildren().stream()
                     .map(this::toSimpleDto) // Используем toSimpleDto а не toDto
-                    .sorted(Comparator.comparing(CategorySimpleDto::getSortOrder))
-                    .collect(Collectors.toList()));
+                    .sorted(Comparator.comparing(CategorySimpleDto::getSortOrder)
+                            .thenComparing(CategorySimpleDto::getName))
+                    .toList());
         } else {
             dto.setChildrenCount(0);
             dto.setChildren(Collections.emptyList());
