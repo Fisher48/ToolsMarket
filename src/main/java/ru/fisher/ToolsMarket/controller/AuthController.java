@@ -42,9 +42,17 @@ public class AuthController {
     public String loginPage(@RequestParam(value = "success", required = false) String success,
                             @RequestParam(value = "error", required = false) String error,
                             @RequestParam(value = "logout", required = false) String logout,
+                            @RequestParam(value = "redirect", required = false) String redirect,
                             HttpServletRequest request,
                             HttpSession session,
                             Model model) {
+
+        // Сохраняем redirect URL в сессию, если он передан
+        if (redirect != null && !redirect.isEmpty()) {
+            session.setAttribute("loginRedirectUrl", redirect);
+            log.debug("Сохранен redirect URL в сессию: {}", redirect);
+        }
+
 
         String clientIp = recaptchaValidationFilter.getClientIp(request);
 
@@ -57,10 +65,13 @@ public class AuthController {
         log.debug("Client IP: {}", clientIp);
         log.debug("Login attempts: {}", attempts);
         log.debug("Captcha required: {}", captchaRequired);
+        log.debug("Redirect URL from param: {}", redirect);
+        log.debug("Redirect URL from session: {}", session.getAttribute("loginRedirectUrl"));
 
         // Добавляем в модель
         model.addAttribute("loginAttempts", attempts);
         model.addAttribute("captchaRequired", captchaRequired);
+        model.addAttribute("redirectUrl", redirect);
 
         // Если была ошибка капчи из сессии
         String captchaError = (String) session.getAttribute("captchaError");

@@ -26,6 +26,7 @@ public class SecurityConfig {
     private final UserDetailServiceImpl userDetailsService;
     private final RecaptchaValidationFilter recaptchaValidationFilter;
     private final CustomAuthenticationFailureHandler failureHandler;
+    private final CustomAuthenticationSuccessHandler successHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -76,14 +77,20 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/auth/login")
                         .loginProcessingUrl("/auth/login")
-                        .defaultSuccessUrl("/", true)
-                        .failureHandler(failureHandler)
-                        //.failureUrl("/auth/login?error=true")
-                        .permitAll()
+                        .successHandler(successHandler)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/")
+                        .logoutSuccessHandler((request,
+                                               response,
+                                               authentication) -> {
+                            String referer = request.getHeader("Referer");
+                            if (referer != null && !referer.contains("/login") && !referer.contains("/logout")) {
+                                response.sendRedirect(referer);
+                            } else {
+                                response.sendRedirect("/");
+                            }
+                        })
                         .deleteCookies("JSESSIONID")
                         .invalidateHttpSession(true)
                         .permitAll()

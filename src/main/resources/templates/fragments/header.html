@@ -331,7 +331,8 @@
 
             <!-- Кнопка входа для неавторизованных -->
             <th:block th:unless="${currentUser != null}">
-                <a class="nav-icon-link" th:href="@{/auth/login}">
+                <a class="nav-icon-link"
+                   th:href="@{/auth/login(redirect=${currentUrl})}">
                     <i class="bi bi-box-arrow-in-right"></i>
                     <span class="d-none d-lg-inline">Войти</span>
                 </a>
