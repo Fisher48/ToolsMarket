@@ -297,6 +297,26 @@
             margin-top: auto; /* Прижимаем к низу если нужно */
         }
 
+        /* Пагинация - в стиле Black Coral */
+        .page-link {
+            color: var(--primary);
+            border-radius: 50px;
+            margin: 0 3px;
+            transition: all 0.2s ease;
+        }
+
+        .page-link:hover {
+            background-color: var(--primary-light);
+            color: white;
+            border-color: var(--primary-light);
+        }
+
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            border-color: var(--primary);
+            color: white;
+        }
+
         /* Адаптивность */
         @media (max-width: 768px) {
             /* Уменьшаем отступы футера */
@@ -667,55 +687,47 @@
         <div th:if="${products.totalPages > 1}" class="row mt-5">
             <div class="col">
                 <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center">
-                        <!-- Первая страница -->
+                    <ul class="pagination pagination-lg justify-content-center">
                         <li class="page-item" th:classappend="${products.first} ? 'disabled' : ''">
                             <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=0)}">
                                 <i class="bi bi-chevron-double-left"></i>
                             </a>
                         </li>
 
-                        <!-- Предыдущая страница -->
                         <li class="page-item" th:classappend="${products.first} ? 'disabled' : ''">
-                            <a class="page-link"
-                               th:href="@{/category/{title}(title=${category.title}, page=${products.number - 1})}">
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.number - 1})}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
 
-                        <!-- Номера страниц -->
-                        <li th:each="page : ${#numbers.sequence(0, products.totalPages - 1)}"
+                        <!-- Показываем только 5 страниц -->
+                        <li th:each="page : ${#numbers.sequence(
+                    (products.number - 2) < 0 ? 0 : (products.number - 2),
+                    (products.number + 2) >= products.totalPages ? (products.totalPages - 1) : (products.number + 2)
+                )}"
                             class="page-item"
                             th:classappend="${page == products.number} ? 'active' : ''">
-                            <a class="page-link"
-                               th:href="@{/category/{title}(title=${category.title}, page=${page})}"
-                               th:text="${page + 1}">1</a>
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${page})}"
+                               th:text="${page + 1}"></a>
                         </li>
 
-                        <!-- Следующая страница -->
                         <li class="page-item" th:classappend="${products.last} ? 'disabled' : ''">
-                            <a class="page-link"
-                               th:href="@{/category/{title}(title=${category.title}, page=${products.number + 1})}">
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.number + 1})}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
 
-                        <!-- Последняя страница -->
                         <li class="page-item" th:classappend="${products.last} ? 'disabled' : ''">
-                            <a class="page-link"
-                               th:href="@{/category/{title}(title=${category.title}, page=${products.totalPages - 1})}">
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.totalPages - 1})}">
                                 <i class="bi bi-chevron-double-right"></i>
                             </a>
                         </li>
                     </ul>
                 </nav>
 
-                <!-- Информация о странице -->
                 <div class="text-center text-muted mt-2">
-                    Страница <span th:text="${products.number + 1}">1</span> из
-                    <span th:text="${products.totalPages}">1</span>
-                    • Показано <span th:text="${products.numberOfElements}">0</span> из
-                    <span th:text="${products.totalElements}">0</span> товаров
+                    Страница <span th:text="${products.number + 1}"></span> из
+                    <span th:text="${products.totalPages}"></span>
                 </div>
             </div>
         </div>

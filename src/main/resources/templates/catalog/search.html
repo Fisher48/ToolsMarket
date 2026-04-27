@@ -498,14 +498,19 @@
                             </a>
                         </li>
 
-                        <!-- Page numbers -->
-                        <li th:each="page : ${#numbers.sequence(0, results.totalPages - 1)}"
-                            class="page-item"
-                            th:classappend="${page == results.number} ? 'active' : ''">
-                            <a class="page-link"
-                               th:href="@{/search(q=${query}, page=${page})}"
-                               th:text="${page + 1}">1</a>
-                        </li>
+                        <!-- Page numbers with limit 5 -->
+                        <th:block th:with="start=${results.number - 2}, end=${results.number + 2}">
+                            <li th:each="page :
+                            ${#numbers.sequence(start < 0 ? 0 : start, end >=
+                            results.totalPages ? results.totalPages - 1 : end
+                    )}"
+                                class="page-item"
+                                th:classappend="${page == results.number} ? 'active' : ''">
+                                <a class="page-link"
+                                   th:href="@{/search(q=${query}, page=${page})}"
+                                   th:text="${page + 1}">1</a>
+                            </li>
+                        </th:block>
 
                         <!-- Next page -->
                         <li class="page-item" th:classappend="${results.last} ? 'disabled' : ''">
