@@ -145,6 +145,7 @@ public class OrderController {
 
     @PostMapping("/create")
     public String createOrder(RedirectAttributes redirectAttributes,
+                              @RequestParam(value = "note", required = false) String note,
                               Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
         if (userId == null) {
@@ -162,6 +163,7 @@ public class OrderController {
 
             // Создаем заказ для зарегистрированного пользователя
             Order order = orderService.createOrderFromUserCart(userId);
+            order.setNote(note);
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Заказ №" + order.getOrderNumber() + " успешно создан!");

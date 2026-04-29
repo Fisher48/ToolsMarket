@@ -122,38 +122,13 @@
                                        th:value="${currentUser.phone != null ?
                                        currentUser.phone : 'Не указан'}" readonly>
                             </div>
-                        </div>
-
-                        <!-- Для анонимных пользователей - форма ввода -->
-                        <div th:unless="${currentUser != null}" class="mb-3">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Имя</label>
-                                    <input type="text" class="form-control" name="firstName"
-                                           placeholder="Ваше имя" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Фамилия</label>
-                                    <input type="text" class="form-control" name="lastName"
-                                           placeholder="Ваша фамилия">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" name="email"
-                                       placeholder="example@mail.com" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Телефон <span class="text-danger">*</span></label>
-                                <input type="tel" class="form-control" name="phone"
-                                       placeholder="+7 (999) 123-45-67" required>
-                            </div>
                             <div class="mb-3">
                                 <label class="form-label">Примечание к заказу</label>
                                 <textarea class="form-control" name="note" rows="3"
-                                          placeholder="Комментарии к заказу, особые пожелания..."></textarea>
+                                          placeholder="Комментарии к заказу..."></textarea>
                             </div>
                         </div>
+
                     </form>
                 </div>
             </div>
