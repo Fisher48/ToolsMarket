@@ -3,6 +3,7 @@ package ru.fisher.ToolsMarket.repository;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface CategoryRepository extends JpaRepository<Category, Long> {
+public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSpecificationExecutor<Category> {
 
     Optional<Category> findByTitle(String title);
 
@@ -25,6 +26,12 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
             "LEFT JOIN FETCH c.children " +
             "ORDER BY c.sortOrder, c.name")
     List<Category> findAllWithAttributes();
+
+    // Для поиска с сортировкой
+    @Query("SELECT c FROM Category c " +
+            "LEFT JOIN FETCH c.parent " +
+            "ORDER BY c.sortOrder ASC, c.name ASC")
+    List<Category> findAllWithParentOrdered();
 
     @EntityGraph(attributePaths = {"attributes", "parent", "children"})
     @Query("SELECT c FROM Category c WHERE c.id = :id")

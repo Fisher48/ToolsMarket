@@ -4,6 +4,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -12,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import ru.fisher.ToolsMarket.dto.CategoryAdminDto;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.ImageStorageService;
@@ -32,9 +37,30 @@ public class CategoryAdminController {
 
     // Список всех категорий
     @GetMapping
-    public String index(Model model) {
-        List<Category> categories = categoryService.findAllEntities();
-        model.addAttribute("categories", categories);
+    public String index(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id,asc") String sort,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Long parentId,
+            Model model) {
+
+        String[] sortParams = sort.split(",");
+        Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
+        Sort sorting = Sort.by(direction, sortParams[0]);
+        Pageable pageable = PageRequest.of(page, size, sorting);
+
+        Page<CategoryAdminDto> categoryPage = categoryService.search(name, title, parentId, pageable);
+
+        // Для выпадающего списка родительских категорий
+        List<Category> allCategories = categoryService.findAllEntitiesSorted();
+
+        model.addAttribute("categoryPage", categoryPage);
+        model.addAttribute("allCategories", allCategories);
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("currentPage", page);
+
         return "admin/categories/index";
     }
 

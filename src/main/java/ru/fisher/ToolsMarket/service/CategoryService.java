@@ -1,6 +1,9 @@
 package ru.fisher.ToolsMarket.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fisher.ToolsMarket.dto.*;
@@ -100,6 +103,40 @@ public class CategoryService {
 
     public List<Category> findAllCategories() {
         return categoryRepository.findAll();
+    }
+
+    public Page<CategoryAdminDto> search(
+            String name,
+            String title,
+            Long parentId,
+            Pageable pageable) {
+
+        Specification<Category> spec = (root, query, cb) ->
+                cb.conjunction();
+
+        if (name != null && !name.isBlank()) {
+            spec = spec.and(CategorySpecification.nameLike(name));
+        }
+
+        if (title != null && !title.isBlank()) {
+            spec = spec.and(CategorySpecification.titleLike(title));
+        }
+
+        if (parentId != null) {
+            spec = spec.and(CategorySpecification.hasParent(parentId));
+        }
+
+        Page<Category> categoryPage = categoryRepository.findAll(spec, pageable);
+
+        return categoryPage.map(category -> {
+            CategoryDto dto = categoryMapperService.toDto(category);
+            return categoryMapperService.convertToAdminDto(category, dto);
+        });
+    }
+
+    // Метод для получения всех категорий с сортировкой
+    public List<Category> findAllEntitiesSorted() {
+        return categoryRepository.findAllWithParentOrdered();
     }
 
 //    @Transactional

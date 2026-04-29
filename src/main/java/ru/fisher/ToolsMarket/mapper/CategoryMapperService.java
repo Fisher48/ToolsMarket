@@ -76,6 +76,23 @@ public class CategoryMapperService {
                 .collect(Collectors.toList());
     }
 
+    public CategoryAdminDto convertToAdminDto(Category category, CategoryDto dto) {
+        return CategoryAdminDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .title(category.getTitle())
+                .description(category.getDescription())
+                .parentName(dto.getParentName())
+                .parentId(dto.getParentId())
+                .sortOrder(category.getSortOrder())
+                .imageUrl(category.getImageUrl())
+                .thumbnailUrl(category.getThumbnailUrl())
+                .childrenCount(dto.getChildrenCount())
+                .attributesCount(category.getAttributes() != null ? category.getAttributes().size() : 0)
+                .createdAt(category.getCreatedAt())
+                .build();
+    }
+
 //    public CategoryWithParentDto toWithParentDto(Category category) {
 //        if (category == null) return null;
 //
