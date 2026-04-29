@@ -2,6 +2,7 @@ package ru.fisher.ToolsMarket.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -9,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fisher.ToolsMarket.dto.UserProfileUpdateDto;
+import ru.fisher.ToolsMarket.dto.UserRegistrationEvent;
 import ru.fisher.ToolsMarket.dto.UserSpecification;
 import ru.fisher.ToolsMarket.models.Role;
 import ru.fisher.ToolsMarket.models.User;
@@ -28,6 +30,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     public List<User> findAll() {
         return userRepository.findAll();
@@ -89,6 +92,16 @@ public class UserService {
 
         User saved = userRepository.save(user);
         log.info("Пользователь зарегистрирован: {}", username);
+
+        // Публикуем событие о регистрации
+        eventPublisher.publishEvent(UserRegistrationEvent.builder()
+                .userId(saved.getId())
+                .username(saved.getUsername())
+                .email(saved.getEmail())
+                .firstName(saved.getFirstName())
+                .lastName(saved.getLastName())
+                .phone(saved.getPhone())
+                .build());
 
         return saved;
     }

@@ -15,9 +15,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
-import ru.fisher.ToolsMarket.dto.OrderCreatedEvent;
-import ru.fisher.ToolsMarket.dto.OrderEmailPayload;
-import ru.fisher.ToolsMarket.dto.SimpleOrderItemDto;
+import ru.fisher.ToolsMarket.dto.*;
 import ru.fisher.ToolsMarket.models.FailedEmail;
 import ru.fisher.ToolsMarket.models.OrderStatus;
 import ru.fisher.ToolsMarket.repository.FailedEmailRepository;
@@ -91,6 +89,36 @@ public class EmailService {
                 event.total(),
                 event.customerEmail()
         );
+    }
+
+    @Retryable(
+            retryFor = {
+                    MailException.class,
+                    MessagingException.class
+            },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 3000, multiplier = 2)
+    )
+    public void sendUserRegistrationEmail(UserRegistrationEvent event) throws MessagingException {
+        log.info("Отправка сообщения о регистрации нового пользователя для админа: {}", event.email());
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(from);
+        helper.setTo(adminEmail);
+        helper.setSubject("Новый пользователь зарегистрировался на ToolsMarket48");
+
+        // Контекст для Thymeleaf
+        Context context = new Context();
+        context.setVariable("user", event);
+        context.setVariable("formattedDate", LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
+
+        String htmlContent = templateEngine.process("email/user-registration", context);
+        helper.setText(htmlContent, true);
+
+        mailSender.send(message);
     }
 
     /**
