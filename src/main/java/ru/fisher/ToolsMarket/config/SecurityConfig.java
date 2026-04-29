@@ -28,6 +28,9 @@ public class SecurityConfig {
     private final CustomAuthenticationFailureHandler failureHandler;
     private final CustomAuthenticationSuccessHandler successHandler;
 
+    @Value("${app.security.remember-me.key}")
+    private String uniqueSecret;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.addFilterBefore(
@@ -78,6 +81,7 @@ public class SecurityConfig {
                         .loginPage("/auth/login")
                         .loginProcessingUrl("/auth/login")
                         .successHandler(successHandler)
+                        .failureHandler(failureHandler)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
@@ -102,6 +106,12 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(exception -> exception
                         .accessDeniedPage("/error/403")
+                )
+                .rememberMe(remember -> remember
+                        .key(uniqueSecret)
+                        .tokenValiditySeconds(120 * 24 * 60 * 60)  // 120 дней для "Запомнить меня"
+                        .rememberMeParameter("remember-me")
+                        .userDetailsService(userDetailsService)
                 )
                 .userDetailsService(userDetailsService);
 
