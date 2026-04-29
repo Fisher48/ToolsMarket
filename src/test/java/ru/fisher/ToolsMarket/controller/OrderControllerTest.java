@@ -185,7 +185,7 @@ class OrderControllerTest {
 
         when(cartService.getOrCreateCart(null)).thenReturn(cart);
         when(cartService.getCartItems(10L)).thenReturn(List.of(new CartItemDto()));
-        when(orderService.createOrder(10L)).thenReturn(order);
+        when(orderService.createOrder(10L,"")).thenReturn(order);
 
         mockMvc.perform(post("/order/create")
                         .cookie(new Cookie("sessionId", sessionId)))
@@ -224,7 +224,7 @@ class OrderControllerTest {
         cart.setId(cartId);
 
         when(cartService.getOrCreateCart(null)).thenReturn(cart);
-        when(orderService.createOrder(cartId))
+        when(orderService.createOrder(cartId,""))
                 .thenThrow(new IllegalStateException("Cart is empty"));
 
         mockMvc.perform(post("/order/create")

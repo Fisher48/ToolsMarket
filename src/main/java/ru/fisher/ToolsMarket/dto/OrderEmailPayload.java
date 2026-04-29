@@ -8,5 +8,6 @@ public record OrderEmailPayload(
         Long orderNumber,
         List<SimpleOrderItemDto> items,
         BigDecimal total,
-        String customerEmail
+        String customerEmail,
+        String note
 ) {}

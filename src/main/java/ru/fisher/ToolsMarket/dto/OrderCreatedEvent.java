@@ -9,5 +9,6 @@ public record OrderCreatedEvent(
         Long orderNumber,
         List<OrderItemDto> orderItems,
         BigDecimal total,
-        String customerEmail
+        String customerEmail,
+        String note
 ) {}

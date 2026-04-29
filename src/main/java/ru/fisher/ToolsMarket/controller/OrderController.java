@@ -162,8 +162,7 @@ public class OrderController {
             }
 
             // Создаем заказ для зарегистрированного пользователя
-            Order order = orderService.createOrderFromUserCart(userId);
-            order.setNote(note);
+            Order order = orderService.createOrderFromUserCart(userId, note);
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Заказ №" + order.getOrderNumber() + " успешно создан!");

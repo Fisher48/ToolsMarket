@@ -120,7 +120,7 @@ class OrderServiceTest {
         cartService.addProductWithQuantity(cart.getId(), p2.getId(), 1);
 
         // When - Создаем заказ из корзины
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         // Then
         assertThat(order.getId()).isNotNull();
@@ -165,7 +165,7 @@ class OrderServiceTest {
         cartService.addProductWithQuantity(cart.getId(), p1.getId(), 2);
         cartService.addProductWithQuantity(cart.getId(), p2.getId(), 1);
 
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         Order fromDb = orderService.getOrder(order.getId());
 
@@ -180,7 +180,7 @@ class OrderServiceTest {
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProductWithQuantity(cart.getId(), p1.getId(), 1);
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         // Должен вернуть заказ для правильного пользователя
         Order userOrder = orderService.getUserOrder(order.getId(), testUser.getId());
@@ -199,7 +199,7 @@ class OrderServiceTest {
         Cart cart1 = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProduct(cart1.getId(), p1.getId());
-        Order order1 = orderService.createOrder(cart1.getId());
+        Order order1 = orderService.createOrder(cart1.getId(),"");
 
         // Создаем второго пользователя и его заказ
         ru.fisher.ToolsMarket.models.User anotherUser = ru.fisher.ToolsMarket.models.User.builder()
@@ -212,7 +212,7 @@ class OrderServiceTest {
 
         Cart cart2 = cartService.getOrCreateCart(anotherUser.getId());
         cartService.addProduct(cart2.getId(), p1.getId());
-        Order order2 = orderService.createOrder(cart2.getId());
+        Order order2 = orderService.createOrder(cart2.getId(),"");
 
         // Получаем заказы только для тестового пользователя
         List<Order> userOrders = orderService.getUserOrders(testUser.getId());
@@ -228,11 +228,11 @@ class OrderServiceTest {
         Cart cart1 = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProduct(cart1.getId(), p1.getId());
-        Order order1 = orderService.createOrder(cart1.getId());
+        Order order1 = orderService.createOrder(cart1.getId(),"");
 
         Cart cart2 = cartService.getOrCreateCart(testUser.getId());
         cartService.addProduct(cart2.getId(), p1.getId());
-        Order order2 = orderService.createOrder(cart2.getId());
+        Order order2 = orderService.createOrder(cart2.getId(),"");
 
         // Меняем статус второго заказа
         orderService.updateStatus(order2.getId(), OrderStatus.PAID);
@@ -253,7 +253,7 @@ class OrderServiceTest {
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProduct(cart.getId(), p1.getId());
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         // Отменяем заказ
         orderService.cancelOrder(order.getId(), testUser.getId());
@@ -273,7 +273,7 @@ class OrderServiceTest {
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
         cartService.addProduct(cart.getId(), p1.getId());
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         // Меняем статус на COMPLETED
         orderService.updateStatus(order.getId(), OrderStatus.COMPLETED);
@@ -289,7 +289,7 @@ class OrderServiceTest {
         Product p1 = createAndSaveProduct("Test", BigDecimal.valueOf(1000.0));
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         cartService.addProductWithQuantity(cart.getId(), p1.getId(), 2);
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         // Меняем продукт
         p1.setName("CHANGED!");
@@ -307,7 +307,7 @@ class OrderServiceTest {
 
         cartService.addProductWithQuantity(cart.getId(), p1.getId(), 2);
 
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
         assertThat(order.getId()).isNotNull();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CREATED);
         assertThat(order.getUser().getId()).isEqualTo(testUser.getId());
@@ -334,7 +334,7 @@ class OrderServiceTest {
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p = createAndSaveProduct("p1", BigDecimal.valueOf(1000));
         cartService.addProductWithQuantity(cart.getId(), p.getId(), 1);
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         // Переводим вперед
         orderService.updateStatus(order.getId(), OrderStatus.PAID);
@@ -352,7 +352,7 @@ class OrderServiceTest {
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p = createAndSaveProduct("p1", BigDecimal.valueOf(1000));
         cartService.addProductWithQuantity(cart.getId(), p.getId(), 1);
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         orderService.updateStatus(order.getId(), OrderStatus.COMPLETED);
 
@@ -377,7 +377,7 @@ class OrderServiceTest {
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p = createAndSaveProduct("p", BigDecimal.valueOf(1000));
         cartService.addProductWithQuantity(cart.getId(), p.getId(), 1);
-        Order order = orderService.createOrder(cart.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
 
         assertThatThrownBy(() ->
                 orderService.updateStatus(order.getId(), null)
@@ -392,7 +392,7 @@ class OrderServiceTest {
         Cart cart = cartService.getOrCreateCart(testUser.getId());
 
         // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(cart.getId()))
+        assertThatThrownBy(() -> orderService.createOrder(cart.getId(),""))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Cart is empty");
     }
@@ -403,7 +403,7 @@ class OrderServiceTest {
         Long nonExistentCartId = 999L;
 
         // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(nonExistentCartId))
+        assertThatThrownBy(() -> orderService.createOrder(nonExistentCartId,""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Cart not found");
     }
@@ -416,12 +416,12 @@ class OrderServiceTest {
         cartService.addProduct(cart.getId(), product.getId());
 
         // When - создаем два заказа подряд
-        Order order1 = orderService.createOrder(cart.getId());
+        Order order1 = orderService.createOrder(cart.getId(),"");
 
         // Новая корзина для второго заказа
         Cart cart2 = cartService.getOrCreateCart(testUser.getId());
         cartService.addProduct(cart2.getId(), product.getId());
-        Order order2 = orderService.createOrder(cart2.getId());
+        Order order2 = orderService.createOrder(cart2.getId(),"");
 
         // Then - номера заказов уникальны
         assertThat(order1.getOrderNumber()).isNotEqualTo(order2.getOrderNumber());

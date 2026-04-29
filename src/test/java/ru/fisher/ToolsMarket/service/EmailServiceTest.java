@@ -243,9 +243,9 @@ class EmailServiceTest {
         System.out.println("\n=== Test 1: Concurrent failures ===");
 
         OrderCreatedEvent event1 = new OrderCreatedEvent(1L, 1001L, new ArrayList<>(),
-                BigDecimal.valueOf(1000), "user1@example.com");
+                BigDecimal.valueOf(1000), "user1@example.com", "TEST NOTE");
         OrderCreatedEvent event2 = new OrderCreatedEvent(2L, 1002L, new ArrayList<>(),
-                BigDecimal.valueOf(2000), "user2@example.com");
+                BigDecimal.valueOf(2000), "user2@example.com", "TEST NOTE");
 
         // Настраиваем моки для ошибок
         MimeMessage mock1 = mock(MimeMessage.class);
@@ -285,9 +285,9 @@ class EmailServiceTest {
         System.out.println("\n=== Test 2: Concurrent successes ===");
 
         OrderCreatedEvent event1 = new OrderCreatedEvent(3L, 1003L, new ArrayList<>(),
-                BigDecimal.valueOf(3000), "user3@example.com");
+                BigDecimal.valueOf(3000), "user3@example.com", "TEST NOTE");
         OrderCreatedEvent event2 = new OrderCreatedEvent(4L, 1004L, new ArrayList<>(),
-                BigDecimal.valueOf(4000), "user4@example.com");
+                BigDecimal.valueOf(4000), "user4@example.com", "TEST NOTE");
 
         // Настраиваем моки для успеха
         MimeMessage mock1 = mock(MimeMessage.class);
@@ -323,9 +323,9 @@ class EmailServiceTest {
         System.out.println("\n=== Test 3: Mixed scenario (one fails, one succeeds) ===");
 
         OrderCreatedEvent event1 = new OrderCreatedEvent(5L, 1005L, new ArrayList<>(),
-                BigDecimal.valueOf(5000), "user5@example.com");
+                BigDecimal.valueOf(5000), "user5@example.com", "TEST NOTE");
         OrderCreatedEvent event2 = new OrderCreatedEvent(6L, 1006L, new ArrayList<>(),
-                BigDecimal.valueOf(6000), "user6@example.com");
+                BigDecimal.valueOf(6000), "user6@example.com", "TEST NOTE");
 
         // Используем ThreadLocal для изоляции
         ThreadLocal<Boolean> shouldFail = ThreadLocal.withInitial(() -> false);
@@ -404,12 +404,14 @@ class EmailServiceTest {
         // given
         OrderCreatedEvent event1 = new OrderCreatedEvent(
                 1L, 1001L, new ArrayList<>(),
-                BigDecimal.valueOf(1000), "user1@example.com"
+                BigDecimal.valueOf(1000), "user1@example.com",
+                "TEST NOTE"
         );
 
         OrderCreatedEvent event2 = new OrderCreatedEvent(
                 2L, 1002L, new ArrayList<>(),
-                BigDecimal.valueOf(2000), "user2@example.com"
+                BigDecimal.valueOf(2000), "user2@example.com",
+                "TEST NOTE"
         );
 
         // Тест 1: Сначала тестируем с ошибками
@@ -467,12 +469,14 @@ class EmailServiceTest {
         // given
         OrderCreatedEvent event1 = new OrderCreatedEvent(
                 1L, 1001L, new ArrayList<>(),
-                BigDecimal.valueOf(1000), "user1@example.com"
+                BigDecimal.valueOf(1000), "user1@example.com",
+                "TEST NOTE"
         );
 
         OrderCreatedEvent event2 = new OrderCreatedEvent(
                 2L, 1002L, new ArrayList<>(),
-                BigDecimal.valueOf(2000), "user2@example.com"
+                BigDecimal.valueOf(2000), "user2@example.com",
+                "TEST NOTE"
         );
 
         // Создаем моки
@@ -632,7 +636,8 @@ class EmailServiceTest {
         // given
         OrderCreatedEvent event = new OrderCreatedEvent(
                 1L, 1001L, new ArrayList<>(),
-                BigDecimal.ZERO, "test@example.com"
+                BigDecimal.ZERO, "test@example.com",
+                "TEST NOTE"
         );
 
         MimeMessage mockMessage = mock(MimeMessage.class);
@@ -690,7 +695,8 @@ class EmailServiceTest {
                 123L,
                 items,
                 BigDecimal.valueOf(1300),
-                "test@example.com"
+                "test@example.com",
+                "TEST NOTE"
         );
     }
 }

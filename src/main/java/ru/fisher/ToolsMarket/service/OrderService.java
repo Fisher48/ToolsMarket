@@ -44,11 +44,11 @@ public class OrderService {
      * Создание заказа из корзины пользователя
      */
     @Transactional
-    public Order createOrderFromUserCart(Long userId) {
+    public Order createOrderFromUserCart(Long userId, String note) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
-        return createOrder(cart.getId());
+        return createOrder(cart.getId(), note);
     }
 
     /**
@@ -88,7 +88,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Order createOrder(Long cartId) {
+    public Order createOrder(Long cartId, String note) {
         Cart cart = cartRepository.findByIdWithProducts(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
@@ -105,6 +105,7 @@ public class OrderService {
         Order order = Order.builder()
                 .orderNumber(generateOrderNumber(user.getId()))
                 .user(user)
+                .note(note)
                 .status(OrderStatus.CREATED)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -173,7 +174,8 @@ public class OrderService {
                 order.getOrderItems().stream()
                         .map(OrderItemDto::fromEntity).toList(),
                 order.getTotalPrice(),
-                order.getUser().getEmail()
+                order.getUser().getEmail(),
+                order.getNote()
         ));
 
         return saved;

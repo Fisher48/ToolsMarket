@@ -63,6 +63,7 @@ public class EmailService {
         context.setVariable("order", event);
         context.setVariable("items", event.orderItems());
         context.setVariable("total", event.total());
+        context.setVariable("note", event.note());
         context.setVariable("formattedDate", LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
 
@@ -87,7 +88,8 @@ public class EmailService {
                 event.orderNumber(),
                 simpleItems, // Используем упрощенный DTO
                 event.total(),
-                event.customerEmail()
+                event.customerEmail(),
+                event.note()
         );
     }
 
