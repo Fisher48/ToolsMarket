@@ -46,6 +46,12 @@ public class RecaptchaValidationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Проверка, не отправлен ли уже ответ
+        if (response.isCommitted()) {
+            log.debug("Response already committed, skipping filter");
+            return;
+        }
+
         // 1. Проверка ЛОГИНА
         if (uri.equals("/auth/login") && method.equalsIgnoreCase("POST")) {
             handleLogin(request, response, chain, ip);
@@ -67,9 +73,14 @@ public class RecaptchaValidationFilter extends OncePerRequestFilter {
                              FilterChain chain,
                              String ip) throws IOException, ServletException {
 
+        // Проверка, не отправлен ли уже ответ
+        if (response.isCommitted()) {
+            log.debug("Response already committed in handleLogin, skipping");
+            return;
+        }
+
         boolean captchaRequired = false;
 
-        // Если настроено "всегда на логине" ИЛИ много неудачных попыток
         if (recaptchaConfig.isAlwaysOnLogin()) {
             captchaRequired = true;
             log.debug("CAPTCHA required for login (always on)");
@@ -90,7 +101,12 @@ public class RecaptchaValidationFilter extends OncePerRequestFilter {
                                 FilterChain chain,
                                 String ip) throws IOException, ServletException {
 
-        // На регистрации всегда проверяем, если включено
+        // Проверка, не отправлен ли уже ответ
+        if (response.isCommitted()) {
+            log.debug("Response already committed in handleRegister, skipping");
+            return;
+        }
+
         if (recaptchaConfig.isAlwaysOnRegister()) {
             log.debug("CAPTCHA required for register (always on)");
             validateCaptcha(request, response, chain, ip, recaptchaConfig.getRegisterAction());
@@ -105,6 +121,12 @@ public class RecaptchaValidationFilter extends OncePerRequestFilter {
                                  String ip,
                                  String action) throws IOException, ServletException {
 
+        // Проверка, не отправлен ли уже ответ
+        if (response.isCommitted()) {
+            log.debug("Response already committed in validateCaptcha, skipping");
+            return;
+        }
+
         String captchaToken = request.getParameter("g-recaptcha-response");
 
         if (StringUtils.isEmpty(captchaToken)) {
@@ -116,18 +138,35 @@ public class RecaptchaValidationFilter extends OncePerRequestFilter {
         try {
             captchaService.verify(captchaToken, ip, action);
             log.debug("CAPTCHA verification successful for {} from IP: {}", action, ip);
-            chain.doFilter(request, response);
+
+            // Проверяем еще раз перед chain.doFilter
+            if (!response.isCommitted()) {
+                chain.doFilter(request, response);
+            } else {
+                log.debug("Response committed before chain.doFilter, skipping");
+            }
 
         } catch (CaptchaException ex) {
             log.error("CAPTCHA verification failed for {} from IP: {} - {}",
                     action, ip, ex.getMessage());
-            setErrorAndRedirect(request, response, action);
+
+            if (!response.isCommitted()) {
+                setErrorAndRedirect(request, response, action);
+            } else {
+                log.debug("Response already committed, cannot redirect for CAPTCHA error");
+            }
         }
     }
 
     private void setErrorAndRedirect(HttpServletRequest request,
                                      HttpServletResponse response,
                                      String action) throws IOException {
+
+        // Важная проверка - если ответ уже отправлен, не делаем редирект
+        if (response.isCommitted()) {
+            log.debug("Response already committed, cannot redirect for action: {}", action);
+            return;
+        }
 
         HttpSession session = request.getSession();
         String errorMessage = switch (action) {
@@ -138,10 +177,15 @@ public class RecaptchaValidationFilter extends OncePerRequestFilter {
 
         session.setAttribute("captchaError", errorMessage);
 
-        // Редирект на соответствующую страницу
         String redirectUrl = action.equals("register")
                 ? "/auth/register?error=captcha"
                 : "/auth/login?error=captcha";
+
+        // Сохраняем redirect URL для возврата после логина
+        String originalRedirect = request.getParameter("redirect");
+        if (originalRedirect != null && !originalRedirect.isEmpty()) {
+            redirectUrl += "&redirect=" + originalRedirect;
+        }
 
         response.sendRedirect(redirectUrl);
     }

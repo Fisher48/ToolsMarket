@@ -10,10 +10,13 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import ru.fisher.ToolsMarket.recaptcha.RecaptchaValidationFilter;
 import ru.fisher.ToolsMarket.service.UserDetailServiceImpl;
 
@@ -89,6 +92,10 @@ public class SecurityConfig {
                         .logoutSuccessHandler((request,
                                                response,
                                                authentication) -> {
+                            // Принудительно удаляем сессию из реестра
+                            if (authentication != null && request.getSession(false) != null) {
+                                sessionRegistry().removeSessionInformation(request.getSession(false).getId());
+                            }
                             String referer = request.getHeader("Referer");
                             if (referer != null && !referer.contains("/login") && !referer.contains("/logout")) {
                                 response.sendRedirect(referer);
@@ -98,12 +105,16 @@ public class SecurityConfig {
                         })
                         .deleteCookies("JSESSIONID")
                         .invalidateHttpSession(true)
+                        .clearAuthentication(true)
                         .permitAll()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .sessionFixation().migrateSession()
                         .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
+                        .expiredUrl("/auth/login?expired")
+                        .sessionRegistry(sessionRegistry())
                 )
                 .exceptionHandling(exception -> exception
                         .accessDeniedPage("/error/403")
@@ -121,6 +132,16 @@ public class SecurityConfig {
     }
 
     @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
+    }
+
+        @Bean
     public PasswordEncoder getPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }

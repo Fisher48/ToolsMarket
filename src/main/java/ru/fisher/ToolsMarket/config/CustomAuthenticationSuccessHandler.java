@@ -23,7 +23,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // 1. Сначала пробуем взять redirect из сессии (тот, что мы сохранили сами)
         String redirectUrl = (String) session.getAttribute("loginRedirectUrl");
-        log.info("redirect из сессии: {}", redirectUrl);
+        log.debug("redirect из сессии: {}", redirectUrl);
 
         // 2. Очищаем сессию
         session.removeAttribute("loginRedirectUrl");
@@ -31,7 +31,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         // 3. Если нет в сессии - берем из параметра формы
         if (redirectUrl == null || redirectUrl.isEmpty()) {
             redirectUrl = request.getParameter("redirect");
-            log.info("redirect из параметра: {}", redirectUrl);
+            log.debug("redirect из параметра: {}", redirectUrl);
         }
 
         // 4. Игнорируем API запросы (они не нужны для редиректа)
@@ -42,11 +42,8 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // 5. Проверяем, что URL безопасен (только относительные пути)
         if (redirectUrl != null && redirectUrl.startsWith("/") && !redirectUrl.contains("/auth/")) {
-
-            log.info("✅ РЕДИРЕКТ НА: {}", redirectUrl);
             response.sendRedirect(redirectUrl);
         } else {
-            log.info("✅ РЕДИРЕКТ НА ГЛАВНУЮ: /");
             response.sendRedirect("/");
         }
     }
