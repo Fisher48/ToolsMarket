@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
@@ -36,6 +37,22 @@ public class SecurityConfig {
     private String uniqueSecret;
 
     @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return webSecurity ->
+                webSecurity.ignoring().requestMatchers(
+                        "/css/**",
+                        "/js/**",
+                        "/images/**",
+                        "/webjars/**",
+                        "/logo.png",
+                        "/favicon.ico",
+                        "/favicon-*.png",
+                        "/apple-touch-icon.png",
+                        "/site.webmanifest"
+                );
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.addFilterBefore(
                         recaptchaValidationFilter,
@@ -54,10 +71,6 @@ public class SecurityConfig {
                         // Публичные
                         .requestMatchers(
                                 "/", "/index", "/error",
-                                "/css/**", "/js/**", "/images/**", "/webjars/**",
-                                "/logo.png",                                  // логотип
-                                "/favicon.ico", "/favicon-*.png",             // favicon
-                                "/apple-touch-icon.png", "/site.webmanifest", // apple и manifest
                                 "/search/**", "/catalog/**", "/product/**",
                                 "/category/**", "/api/public/**"
                         ).permitAll()
@@ -92,10 +105,6 @@ public class SecurityConfig {
                         .logoutSuccessHandler((request,
                                                response,
                                                authentication) -> {
-                            // Принудительно удаляем сессию из реестра
-                            if (authentication != null && request.getSession(false) != null) {
-                                sessionRegistry().removeSessionInformation(request.getSession(false).getId());
-                            }
                             String referer = request.getHeader("Referer");
                             if (referer != null && !referer.contains("/login") && !referer.contains("/logout")) {
                                 response.sendRedirect(referer);

@@ -2,6 +2,7 @@ package ru.fisher.ToolsMarket.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -45,17 +47,25 @@ public class GlobalExceptionHandler {
         return "redirect:" + (referer != null ? referer : "/admin/orders");
     }
 
-//    @ExceptionHandler(Exception.class)
-//    public String handleGeneralException(Exception e,
-//                                         RedirectAttributes redirectAttributes) {
-//        // Если это ResponseStatusException - пропускаем, Spring сам его обработает
-//        if (e instanceof ResponseStatusException) {
-//            throw (ResponseStatusException) e;
+    // Обработка ошибки при разрыве соединения
+    @ExceptionHandler({AsyncRequestNotUsableException.class, ClientAbortException.class})
+    @ResponseStatus(HttpStatus.OK)
+    public void handleClientAbort(Exception e) {
+        log.debug("Client disconnected before response could be sent: {}", e.getMessage());
+        // Ничего не делаем - клиент уже ушел
+    }
+
+    // Ловим обрыв соединения клиентом
+//    @ExceptionHandler({ClientAbortException.class, IOException.class})
+//    public void handleClientAbortException(Exception ex) {
+//        if (ex.getMessage() != null &&
+//                (ex.getMessage().contains("Broken pipe") || ex.getMessage().contains("Connection reset by peer"))) {
+//            // Либо вообще ничего не делаем, либо пишем в дебаг, чтобы не засорять ERROR логи
+//            log.debug("Client disconnected before response could be completely sent: {}", ex.getMessage());
+//            return;
 //        }
-//        log.error("Неожиданная ошибка", e);
-//        redirectAttributes.addFlashAttribute("errorMessage",
-//                "Произошла внутренняя ошибка. Пожалуйста, попробуйте позже.");
-//        return "redirect:/admin/orders";
+//        // Если это другая IOException, логируем как обычно
+//        log.error("I/O error occurred", ex);
 //    }
 
     @ExceptionHandler(OrderNotFoundException.class)
