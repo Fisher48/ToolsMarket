@@ -324,8 +324,8 @@
 
 <main class="container my-4">
     <!-- Search Header -->
-    <div class="row mb-4">
-        <div class="col">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
             <h1>Результаты поиска</h1>
 
             <!-- Есть запрос и есть результаты -->
@@ -336,7 +336,7 @@
                 </p>
             </div>
 
-            <!-- Есть запрос но нет результатов -->
+            <!-- Есть запрос, но нет результатов -->
             <div th:if="${query != null and !query.isEmpty() and resultsCount == 0}">
                 <p class="lead text-muted">
                     По запросу "<span th:text="${query}"></span>" ничего не найдено
@@ -348,6 +348,23 @@
                 <p class="lead text-muted">
                     Введите поисковый запрос в поле выше
                 </p>
+            </div>
+        </div>
+
+        <!-- Блок сортировки -->
+        <div class="col-md-4 d-flex justify-content-md-end align-items-center mt-3 mt-md-0">
+            <div class="d-flex align-items-center gap-2">
+                <label for="sortSelect" class="text-muted small fw-bold">Сортировать:</label>
+                <select id="sortSelect"
+                        class="form-select"
+                        style="width: auto; border-radius: 50px; border-color: var(--black-coral); cursor: pointer;"
+                        onchange="changeSort(this.value)">
+                    <option value="name_asc" th:selected="${currentSort == 'name_asc'}">По имени (А-Я)</option>
+                    <option value="name_desc" th:selected="${currentSort == 'name_desc'}">По имени (Я-А)</option>
+                    <option value="price_asc" th:selected="${currentSort == 'price_asc'}">Сначала дешевле</option>
+                    <option value="price_desc" th:selected="${currentSort == 'price_desc'}">Сначала дороже</option>
+                    <option value="popularity" th:selected="${currentSort == 'popularity'}">По популярности</option>
+                </select>
             </div>
         </div>
     </div>
@@ -485,7 +502,7 @@
                         <!-- First page -->
                         <li class="page-item" th:classappend="${results.first} ? 'disabled' : ''">
                             <a class="page-link"
-                               th:href="@{/search(q=${query}, page=0)}">
+                               th:href="@{/search(q=${query}, page=0, sort=${currentSort})}">
                                 <i class="bi bi-chevron-double-left"></i>
                             </a>
                         </li>
@@ -493,21 +510,21 @@
                         <!-- Previous page -->
                         <li class="page-item" th:classappend="${results.first} ? 'disabled' : ''">
                             <a class="page-link"
-                               th:href="@{/search(q=${query}, page=${results.number - 1})}">
+                               th:href="@{/search(q=${query}, page=${results.number - 1}, sort=${currentSort})}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
 
                         <!-- Page numbers with limit 5 -->
                         <th:block th:with="start=${results.number - 2}, end=${results.number + 2}">
-                            <li th:each="page :
-                            ${#numbers.sequence(start < 0 ? 0 : start, end >=
-                            results.totalPages ? results.totalPages - 1 : end
+                            <li th:each="page : ${#numbers.sequence(
+                        start < 0 ? 0 : start,
+                        end >= results.totalPages ? results.totalPages - 1 : end
                     )}"
                                 class="page-item"
                                 th:classappend="${page == results.number} ? 'active' : ''">
                                 <a class="page-link"
-                                   th:href="@{/search(q=${query}, page=${page})}"
+                                   th:href="@{/search(q=${query}, page=${page}, sort=${currentSort})}"
                                    th:text="${page + 1}">1</a>
                             </li>
                         </th:block>
@@ -515,7 +532,7 @@
                         <!-- Next page -->
                         <li class="page-item" th:classappend="${results.last} ? 'disabled' : ''">
                             <a class="page-link"
-                               th:href="@{/search(q=${query}, page=${results.number + 1})}">
+                               th:href="@{/search(q=${query}, page=${results.number + 1}, sort=${currentSort})}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
@@ -523,7 +540,7 @@
                         <!-- Last page -->
                         <li class="page-item" th:classappend="${results.last} ? 'disabled' : ''">
                             <a class="page-link"
-                               th:href="@{/search(q=${query}, page=${results.totalPages - 1})}">
+                               th:href="@{/search(q=${query}, page=${results.totalPages - 1}, sort=${currentSort})}">
                                 <i class="bi bi-chevron-double-right"></i>
                             </a>
                         </li>
@@ -772,6 +789,13 @@
         } catch (error) {
             console.error('Error loading cart state:', error);
         }
+    }
+
+    function changeSort(sortValue) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('sort', sortValue);
+        urlParams.set('page', '0'); // Сбрасываем на первую страницу при смене сортировки
+        window.location.search = urlParams.toString();
     }
 
     // Инициализация

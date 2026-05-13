@@ -117,6 +117,7 @@ public class CatalogController {
     @GetMapping("/search")
     public String search(@RequestParam(required = false) String q,
                          @RequestParam(defaultValue = "0") int page,
+                         @RequestParam(defaultValue = "name_asc") String sort,
                          @AuthenticationPrincipal UserDetails userDetails,
                          Model model) {
 
@@ -130,7 +131,9 @@ public class CatalogController {
         if (q == null || q.trim().isEmpty()) {
             searchResults = Page.empty();
         } else {
-            searchResults = productService.searchWithDiscounts(q.trim(), user, PageRequest.of(page, 12));
+            // Создаем PageRequest с сортировкой
+            PageRequest pageRequest = PageRequest.of(page, 12, productService.getSort(sort));
+            searchResults = productService.searchWithDiscounts(q.trim(), user, pageRequest);
         }
 
         // Проверка товаров в корзине (только для авторизованных)
@@ -181,6 +184,7 @@ public class CatalogController {
         model.addAttribute("results", enhancedProducts);
         model.addAttribute("resultsCount", searchResults.getTotalElements());
         model.addAttribute("cartProductQuantities", cartProductQuantities);
+        model.addAttribute("currentSort", sort); // Передаем текущую сортировку в модель для UI
 
         return "catalog/search";
     }
@@ -192,6 +196,7 @@ public class CatalogController {
     @GetMapping("/category/{title}")
     public String category(@PathVariable String title,
                            @RequestParam(defaultValue = "0") int page,
+                           @RequestParam(defaultValue = "name_asc") String sort,
                            @AuthenticationPrincipal UserDetails userDetails,
                            Model model) {
 
@@ -203,8 +208,10 @@ public class CatalogController {
         CategoryDto category = categoryService.findByTitle(title)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        // Создаем PageRequest с сортировкой
+        PageRequest pageRequest = PageRequest.of(page, 12, productService.getSort(sort));
         Page<ProductListDto> products = productService.findByCategoryWithDiscounts(
-                category.getId(), user, PageRequest.of(page, 12));
+                category.getId(), user, pageRequest);
 
         // Проверка товаров в корзине (только для авторизованных)
         Map<Long, Integer> cartProductQuantities = new HashMap<>();
@@ -252,6 +259,7 @@ public class CatalogController {
         model.addAttribute("category", category);
         model.addAttribute("products", enhancedProducts);
         model.addAttribute("cartProductQuantities", cartProductQuantities);
+        model.addAttribute("currentSort", sort); // Передаем текущую сортировку в модель для UI
 
         return "catalog/category";
     }

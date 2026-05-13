@@ -36,15 +36,22 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
             "WHERE c.id = :categoryId AND p.active = true")
     Page<Product> findActiveByCategory(@Param("categoryId") Long categoryId, Pageable pageable);
 
+//    @Query("SELECT p FROM Product p " +
+//            "WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
+//            "OR LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', :q, '%')) " +
+//            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :q, '%')) " +
+//            "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+//            "ORDER BY " +
+//            "CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT(:q, '%')) THEN 1 " +
+//            "     WHEN LOWER(p.sku) = LOWER(:q) THEN 2 " +
+//            "     ELSE 3 END, p.name")
+//    Page<Product> searchProduct(@Param("q") String q, Pageable pageable);
+
     @Query("SELECT p FROM Product p " +
             "WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
             "OR LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', :q, '%')) " +
             "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :q, '%')) " +
-            "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :q, '%'))) " +
-            "ORDER BY " +
-            "CASE WHEN LOWER(p.name) LIKE LOWER(CONCAT(:q, '%')) THEN 1 " +
-            "     WHEN LOWER(p.sku) = LOWER(:q) THEN 2 " +
-            "     ELSE 3 END, p.name")
+            "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :q, '%')))")
     Page<Product> searchProduct(@Param("q") String q, Pageable pageable);
 
     boolean existsByTitle(String title);

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +48,29 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Optional<Product> findByIdWithAllRelations(Long id) {
         return productRepository.findByIdWithAllRelations(id);
+    }
+
+    /**
+     * Преобразует строку сортировки в объект Sort
+     */
+    public Sort getSort(String sortParam) {
+        if (sortParam == null) return Sort.by("name").ascending();
+
+        return switch (sortParam) {
+            case "price_asc" -> Sort.by("price").ascending();
+            case "price_desc" -> Sort.by("price").descending();
+            case "popularity" -> Sort.by("views").descending(); // Популярные — те, у кого больше просмотров
+            case "name_desc" -> Sort.by("name").descending();
+            default -> Sort.by("name").ascending();
+        };
+    }
+
+    @Transactional
+    public void incrementProductViews(String title) {
+        productRepository.findByTitle(title).ifPresent(product -> {
+            product.incrementViews();
+            productRepository.save(product);
+        });
     }
 
     public Page<ProductAdminDto> search(

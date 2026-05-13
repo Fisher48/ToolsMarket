@@ -545,6 +545,24 @@
 
     <!-- Products Section -->
     <div th:if="${#lists.isEmpty(category.children)}">
+        <!-- Блок сортировки -->
+        <div class="row mb-4 align-items-center">
+            <div class="col-12 d-flex justify-content-end align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="sortSelect" class="text-muted small fw-bold">Сортировать:</label>
+                    <select id="sortSelect"
+                            class="form-select"
+                            style="width: auto; border-radius: 50px; border-color: var(--black-coral); cursor: pointer;"
+                            onchange="changeSort(this.value)">
+                        <option value="name_asc" th:selected="${currentSort == 'name_asc'}">По имени (А-Я)</option>
+                        <option value="name_desc" th:selected="${currentSort == 'name_desc'}">По имени (Я-А)</option>
+                        <option value="price_asc" th:selected="${currentSort == 'price_asc'}">Сначала дешевле</option>
+                        <option value="price_desc" th:selected="${currentSort == 'price_desc'}">Сначала дороже</option>
+                        <option value="popularity" th:selected="${currentSort == 'popularity'}">По популярности</option>
+                    </select>
+                </div>
+            </div>
+        </div>
         <div class="row">
             <div class="col-12">
                 <!-- Products Grid -->
@@ -688,37 +706,41 @@
             <div class="col">
                 <nav aria-label="Page navigation">
                     <ul class="pagination pagination-lg justify-content-center">
+                        <!-- First page -->
                         <li class="page-item" th:classappend="${products.first} ? 'disabled' : ''">
-                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=0)}">
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=0, sort=${currentSort})}">
                                 <i class="bi bi-chevron-double-left"></i>
                             </a>
                         </li>
 
+                        <!-- Previous page -->
                         <li class="page-item" th:classappend="${products.first} ? 'disabled' : ''">
-                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.number - 1})}">
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.number - 1}, sort=${currentSort})}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
 
-                        <!-- Показываем только 5 страниц -->
+                        <!-- Page numbers -->
                         <li th:each="page : ${#numbers.sequence(
-                    (products.number - 2) < 0 ? 0 : (products.number - 2),
-                    (products.number + 2) >= products.totalPages ? (products.totalPages - 1) : (products.number + 2)
-                )}"
+                            (products.number - 2) < 0 ? 0 : (products.number - 2),
+                            (products.number + 2) >= products.totalPages ? (products.totalPages - 1) : (products.number + 2)
+                        )}"
                             class="page-item"
                             th:classappend="${page == products.number} ? 'active' : ''">
-                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${page})}"
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${page}, sort=${currentSort})}"
                                th:text="${page + 1}"></a>
                         </li>
 
+                        <!-- Next page -->
                         <li class="page-item" th:classappend="${products.last} ? 'disabled' : ''">
-                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.number + 1})}">
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.number + 1}, sort=${currentSort})}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
 
+                        <!-- Last page -->
                         <li class="page-item" th:classappend="${products.last} ? 'disabled' : ''">
-                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.totalPages - 1})}">
+                            <a class="page-link" th:href="@{/category/{title}(title=${category.title}, page=${products.totalPages - 1}, sort=${currentSort})}">
                                 <i class="bi bi-chevron-double-right"></i>
                             </a>
                         </li>
@@ -974,6 +996,13 @@
         } catch (error) {
             console.error('Error loading cart state:', error);
         }
+    }
+
+    function changeSort(sortValue) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('sort', sortValue);
+        url.searchParams.set('page', '0'); // Сбрасываем на первую страницу при смене сортировки
+        window.location.href = url.toString();
     }
 
     // Инициализация
