@@ -77,6 +77,9 @@ public class Product {
     @OrderBy("sortOrder ASC")
     private Set<ProductAttributeValue> attributeValues = new LinkedHashSet<>();
 
+    @Column(nullable = false)
+    private Long views = 0L; // Количество просмотров
+
     public Product(String sku, String title, BigDecimal price) {
         this.sku = sku;
         this.title = title;
@@ -90,6 +93,11 @@ public class Product {
                 .map(ProductAttributeValue::getValue)
                 .findFirst()
                 .orElse(null);
+    }
+
+    // Метод для увеличения счетчика
+    public void incrementViews() {
+        this.views++;
     }
 
 }

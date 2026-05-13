@@ -72,6 +72,9 @@ public class CatalogController {
                           @AuthenticationPrincipal UserDetails userDetails,
                           Model model) {
 
+        // --- Увеличиваем счетчик просмотров ---
+        productService.incrementProductViews(title);
+
         User user = null;
         if (userDetails != null) {
             user = userService.findByUsername(userDetails.getUsername()).orElse(null);
