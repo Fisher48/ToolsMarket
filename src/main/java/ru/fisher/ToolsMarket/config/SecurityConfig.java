@@ -6,10 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
@@ -36,24 +38,26 @@ public class SecurityConfig {
     @Value("${app.security.remember-me.key}")
     private String uniqueSecret;
 
+
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return webSecurity ->
-                webSecurity.debug(false)
-                        .ignoring().requestMatchers(
-                        "/css/**",
-                        "/js/**",
-                        "/images/**",
-                        "/webjars/**",
-                        "/logo.png",
-                        "/favicon.ico",
-                        "/favicon-*.png",
-                        "/apple-touch-icon.png",
-                        "/site.webmanifest"
-                );
+    @Order(1)
+    public SecurityFilterChain staticResourcesFilterChain(HttpSecurity http) throws Exception {
+        http.securityMatcher(
+                        "/css/**", "/js/**", "/images/**", "/webjars/**",
+                        "/logo.png", "/favicon.ico", "/favicon-*.png",
+                        "/apple-touch-icon.png", "/site.webmanifest"
+                )
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable)
+                .securityContext(AbstractHttpConfigurer::disable)
+                .requestCache(RequestCacheConfigurer::disable);
+        return http.build();
     }
 
     @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.addFilterBefore(
                         recaptchaValidationFilter,
