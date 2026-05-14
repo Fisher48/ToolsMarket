@@ -70,9 +70,7 @@
                         <a th:href="@{/admin/products/{id}(id=${product.id})}" class="btn btn-outline-primary me-2">
                             <i class="fas fa-eye me-1"></i> Просмотр
                         </a>
-                        <a th:href="@{/admin/products}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-1"></i> Назад
-                        </a>
+                        <a th:href="${returnUrl}" class="btn btn-secondary">Назад к списку</a>
                     </div>
                 </div>
 

@@ -1,5 +1,7 @@
 package ru.fisher.ToolsMarket.controller.admin;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -53,6 +55,7 @@ public class ProductAdminController {
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
+            HttpServletRequest request, HttpSession session,
             Model model) {
 
         String[] sortParams = sort.split(",");
@@ -69,12 +72,18 @@ public class ProductAdminController {
         model.addAttribute("productPage", productPage);
         model.addAttribute("currentSort", sort);
 
+        // Сохраняем текущее состояние (URL + параметры) в сессию
+        String queryString = request.getQueryString();
+        String currentUrl = "/admin/products" +
+                (queryString != null && !queryString.isEmpty() ? "?" + queryString : "");
+        session.setAttribute("productAdminListUrl", currentUrl);
+
         return "admin/products/index";
     }
 
     // Просмотр
     @GetMapping("/{id}")
-    public String show(@PathVariable Long id, Model model) {
+    public String show(@PathVariable Long id, Model model, HttpSession session) {
         Product product = productService.findByIdWithAllRelations(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
@@ -82,16 +91,18 @@ public class ProductAdminController {
         Map<Attribute, String> productAttributes = attributeService.getProductAttributes(product);
         model.addAttribute("product", product);
         model.addAttribute("productAttributes", productAttributes);
+        model.addAttribute("returnUrl", getReturnUrl(session));
 
         return "admin/products/show";
     }
 
     // Создание — форма
     @GetMapping("/new")
-    public String newProduct(Model model) {
+    public String newProduct(Model model, HttpSession session) {
         model.addAttribute("product", new Product());
         model.addAttribute("categories", categoryService.findAllCategories());
         model.addAttribute("allProductTypes", ProductType.values());
+        model.addAttribute("returnUrl", getReturnUrl(session));
         return "admin/products/new";
     }
 
@@ -126,7 +137,8 @@ public class ProductAdminController {
                          @RequestParam(required = false) List<String> imageAlts,
                          @RequestParam(required = false) List<Integer> imageSortOrders,
                          @RequestParam(required = false) ProductType productType,
-                         @AuthenticationPrincipal UserDetails userDetails) {
+                         @AuthenticationPrincipal UserDetails userDetails,
+                         HttpSession session) {
 
         log.info("Creating product: {}", name);
         log.info("Received {} images", images != null ? images.size() : 0);
@@ -171,12 +183,12 @@ public class ProductAdminController {
             log.info("Images saved successfully");
         }
 
-        return "redirect:/admin/products";
+        return "redirect:" + getReturnUrl(session);
     }
 
     // Редактирование — форма
     @GetMapping("/{id}/edit")
-    public String edit(@PathVariable Long id, Model model) {
+    public String edit(@PathVariable Long id, Model model, HttpSession session) {
         // Используем метод с полной загрузкой
         Product product = productService.findByIdWithAllRelations(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
@@ -212,6 +224,7 @@ public class ProductAdminController {
 
 //        model.addAttribute("product", product);
 //        model.addAttribute("categories", categoryService.findAllCategories());
+        model.addAttribute("returnUrl", getReturnUrl(session));
         return "admin/products/edit";
     }
 
@@ -568,9 +581,9 @@ public class ProductAdminController {
     // Удаление
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id) {
+    public String delete(@PathVariable Long id, HttpSession session) {
         productService.deleteEntity(id);
-        return "redirect:/admin/products";
+        return "redirect:" + getReturnUrl(session);
     }
 
     private void saveProductImages(Product product, List<MultipartFile> images,
@@ -625,7 +638,7 @@ public class ProductAdminController {
 //    }
 
     @GetMapping("/{id}/specifications")
-    public String specificationsForm(@PathVariable Long id, Model model) {
+    public String specificationsForm(@PathVariable Long id, Model model, HttpSession session) {
         Product product = productService.findWithDetailsById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -645,6 +658,7 @@ public class ProductAdminController {
         model.addAttribute("product", product);
         model.addAttribute("attributes", allAttributes);
         model.addAttribute("currentValues", currentValues); // Это Map<Long, String>
+        model.addAttribute("returnUrl", getReturnUrl(session));
 
         return "admin/products/specifications";
     }
@@ -695,5 +709,10 @@ public class ProductAdminController {
         return "redirect:/admin/products/" + id;
     }
 
+    private String getReturnUrl(HttpSession session) {
+        String url = (String) session.getAttribute("productAdminListUrl");
+        // Если в сессии ничего нет (например, сессия истекла), возвращаем дефолтный путь
+        return (url != null && !url.isEmpty()) ? url : "/admin/products";
+    }
 
 }
