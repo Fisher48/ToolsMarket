@@ -68,6 +68,7 @@ services:
 
       APP_UPLOAD_PATH: /app/uploads
       APP_BASE_URL: https://toolsmarket48.ru
+      APP_SECURITY_REMEMBER_ME_KEY: ${APP_SECURITY_REMEMBER_ME_KEY}
 
       # Дополнительные настройки
       JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC"
