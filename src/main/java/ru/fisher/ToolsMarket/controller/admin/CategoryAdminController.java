@@ -1,5 +1,7 @@
 package ru.fisher.ToolsMarket.controller.admin;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,7 @@ public class CategoryAdminController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Long parentId,
+            HttpServletRequest request, HttpSession session,
             Model model) {
 
         String[] sortParams = sort.split(",");
@@ -61,15 +64,22 @@ public class CategoryAdminController {
         model.addAttribute("currentSort", sort);
         model.addAttribute("currentPage", page);
 
+        // Сохраняем текущее состояние (URL + параметры) в сессию
+        String queryString = request.getQueryString();
+        String currentUrl = "/admin/categories" +
+                (queryString != null && !queryString.isEmpty() ? "?" + queryString : "");
+        session.setAttribute("categoryAdminListUrl", currentUrl);
+
         return "admin/categories/index";
     }
 
     // Просмотр категории
     @GetMapping("/{id}")
-    public String show(@PathVariable Long id, Model model) {
+    public String show(@PathVariable Long id, Model model, HttpSession session) {
         Category category = categoryService.findEntityById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
         model.addAttribute("category", category);
+        model.addAttribute("returnUrl", getReturnUrl(session));
         return "admin/categories/show";
     }
 
@@ -87,7 +97,7 @@ public class CategoryAdminController {
                          @Valid @ModelAttribute Category category,
                          @RequestParam(required = false) Long parentId,
                          BindingResult bindingResult,
-                         Model model) {
+                         Model model, HttpSession session) {
 
         log.info("Creating category: {}, title: {}", category.getName(), category.getTitle());
 
@@ -140,7 +150,7 @@ public class CategoryAdminController {
         try {
             categoryService.saveEntity(category);
             log.info("Category created with ID: {}", category.getId());
-            return "redirect:/admin/categories";
+            return "redirect:" + getReturnUrl(session);
 
         } catch (DataIntegrityViolationException e) {
             log.error("Data integrity violation: {}", e.getMessage());
@@ -152,11 +162,12 @@ public class CategoryAdminController {
 
     // Форма редактирования
     @GetMapping("/{id}/edit")
-    public String edit(@PathVariable Long id, Model model) {
+    public String edit(@PathVariable Long id, Model model, HttpSession session) {
         Category category = categoryService.findEntityById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
         model.addAttribute("category", category);
         model.addAttribute("allCategories", categoryService.findAllEntities());
+        model.addAttribute("returnUrl", getReturnUrl(session));
         return "admin/categories/edit";
     }
 
@@ -247,7 +258,7 @@ public class CategoryAdminController {
     // Удаление категории
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id) {
+    public String delete(@PathVariable Long id, HttpSession session) {
         Category category = categoryService.findEntityById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
 
@@ -257,6 +268,12 @@ public class CategoryAdminController {
         }
 
         categoryService.deleteEntity(id);
-        return "redirect:/admin/categories";
+        return "redirect:" + getReturnUrl(session);
+    }
+
+    private String getReturnUrl(HttpSession session) {
+        String url = (String) session.getAttribute("categoryAdminListUrl");
+        // Если в сессии ничего нет (например, сессия истекла), возвращаем дефолтный путь
+        return (url != null && !url.isEmpty()) ? url : "/admin/categories";
     }
 }
