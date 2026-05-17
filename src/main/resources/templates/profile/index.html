@@ -4,344 +4,361 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мой профиль - ToolsMarket</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        .profile-card {
-            max-width: 800px;
-            margin: 0 auto;
+        body {
+            background-color: #f8f9fa;
         }
-        .info-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
+
+        .dashboard-card {
+            background: #fff;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
         }
-        .info-item:last-child {
+
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-widget {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-right: 1rem;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin: 0 auto 1rem;
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+        }
+
+        .info-group {
+            padding: 12px 0;
+            border-bottom: 1px dashed #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .info-group:last-child {
             border-bottom: none;
         }
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            /* Уменьшаем отступы футера */
-            .bg-dark {
-                margin-top: 30px;
-                padding: 20px 0 10px !important;
-            }
-
-            /* Уменьшаем заголовки */
-            .bg-dark h5, .bg-dark h6 {
-                font-size: 1.1rem !important;
-                margin-bottom: 10px !important;
-            }
-
-            /* Компактные списки */
-            .bg-dark ul {
-                margin-bottom: 15px !important;
-            }
-
-            .bg-dark li {
-                margin-bottom: 5px !important;
-                font-size: 0.9rem !important;
-            }
-
-            /* Убираем подчеркивание на мобилках */
-            .bg-dark h5::after, .bg-dark h6::after {
-                width: 30px !important;
-                height: 2px !important;
-                bottom: -5px !important;
-            }
-
-            /* Юридическая информация - компактно */
-            .legal-info {
-                margin-top: 15px !important;
-                padding: 10px !important;
-            }
-
-            .legal-info p {
-                font-size: 0.7rem !important;
-                line-height: 1.3 !important;
-            }
-
-            /* Копирайт */
-            .bg-dark hr {
-                margin: 15px 0 5px !important;
-            }
-
-            .bg-dark .copyright p {
-                font-size: 0.7rem !important;
-                margin-bottom: 5px !important;
-            }
-
-            /* Социальные иконки меньше */
-            .social-links {
-                margin-bottom: 10px;
-            }
-
-            .social-links a {
-                width: 30px !important;
-                height: 30px !important;
-                font-size: 0.9rem !important;
-            }
-
-            .main-swiper .swiper-slide img {
-                height: 350px;
-            }
-
-            .thumb-swiper {
-                height: 70px;
-            }
-
-            .thumb-swiper .swiper-slide {
-                width: 60px;
-                height: 60px;
-            }
-
-            .swiper-button-next,
-            .swiper-button-prev {
-                display: none;
-            }
-
-            .close-modal {
-                top: 10px;
-                right: 20px;
-                font-size: 40px;
-            }
+        .info-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-value {
+            font-weight: 500;
+            text-align: right;
+            color: #212529;
         }
 
-        @media (max-width: 480px) {
-            .main-swiper .swiper-slide img {
-                height: 280px;
-            }
-
-            .thumb-swiper .swiper-slide {
-                width: 50px;
-                height: 50px;
-            }
+        .table-custom {
+            margin-bottom: 0;
+        }
+        .table-custom thead th {
+            border-bottom: 2px solid #e9ecef;
+            color: #6c757d;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 1rem;
+        }
+        .table-custom tbody td {
+            vertical-align: middle;
+            padding: 1rem 0.5rem;
+            border-bottom: 1px solid #f1f3f5;
         }
 
-        /* Адаптивность для мобильных */
-        @media (max-width: 576px) {
-            .subcategory-title {
-                font-size: 0.9rem; /* Чуть меньше на мобилках */
-            }
+        /* Стили для статусов заказов */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-align: center;
+            border-radius: 20px;
+            min-width: 100px;
+        }
 
-            .subcategory-body {
-                padding: 0.75rem;
-                min-height: 70px;
-            }
+        .status-badge.created {
+            background-color: #0d2e67;
+            color: white;
+            box-shadow: 0 2px 6px rgba(13, 46, 103, 0.25);
+        }
+
+        .status-badge.paid {
+            background-color: #198754;
+            color: white;
+            box-shadow: 0 2px 6px rgba(40, 167, 69, 0.25);
+        }
+
+        .status-badge.processing {
+            background-color: #17a2b8;
+            color: white;
+            box-shadow: 0 2px 6px rgba(255, 193, 7, 0.25);
+        }
+
+        .status-badge.completed {
+            background-color: #ffc107;
+            color: white;
+            box-shadow: 0 2px 6px rgba(23, 162, 184, 0.25);
+        }
+
+        .status-badge.cancelled {
+            background-color: #dc3545;
+            color: white;
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.25);
+        }
+
+        .badge {
+            padding: 0.5em 0.8em;
+            font-weight: 500;
+            border-radius: 6px;
+        }
+
+        .quick-action-btn {
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .quick-action-btn i {
+            font-size: 1.5rem;
         }
     </style>
 </head>
 <body>
-<!-- Простой header -->
+
+<!-- Навбар -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand fw-bold" th:href="@{/}">
             <i class="bi bi-hammer"></i> ToolsMarket
         </a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link"
-               th:href="@{/admin}"
-               th:if="${isAdmin or isManager}">
-                <i class="bi bi-gear me-1"></i> Админка
-            </a>
-            <a class="nav-link" th:href="@{/}">На главную</a>
-            <a class="nav-link active" th:href="@{/profile}">Профиль</a>
-            <form th:action="@{/logout}" method="post" class="d-inline">
-                <button type="submit" class="nav-link btn btn-link">Выйти</button>
-            </form>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/admin}" th:if="${isAdmin or isManager}">
+                    <i class="bi bi-gear me-1"></i> Админка
+                </a>
+                <a class="nav-link" th:href="@{/}">На главную</a>
+                <a class="nav-link active" th:href="@{/profile}">Профиль</a>
+                <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="nav-link btn btn-link border-0">Выйти</button>
+                </form>
+            </div>
         </div>
     </div>
 </nav>
 
-<main class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <!-- Навигация профиля -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Личный кабинет</h4>
+<main class="container py-5">
+
+    <!-- Алерт об успехе -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Заголовок страницы -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0 text-dark">Личный кабинет</h2>
+    </div>
+
+    <!-- Верхний ряд: Виджеты статистики -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="dashboard-card stat-widget">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-bag-check"></i>
                 </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Привет, <span th:text="${user.firstName} ?: ${user.username}"></span>!</h5>
-                        <div class="btn-group">
-                            <a th:href="@{/profile/edit}" class="btn btn-outline-primary">
-                                <i class="bi bi-pencil"></i> Редактировать
-                            </a>
-                            <a th:href="@{/profile/orders}" class="btn btn-outline-secondary ms-2">
-                                <i class="bi bi-box-seam"></i> Мои заказы
-                            </a>
-                        </div>
-                    </div>
+                <div>
+                    <h3 class="fw-bold mb-0" th:text="${orderCount ?: 0}">0</h3>
+                    <span class="text-muted small text-uppercase fw-semibold">Всего заказов</span>
                 </div>
             </div>
-
-            <!-- Информация о профиле -->
-            <div class="card profile-card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-person-circle"></i> Информация профиля</h5>
+        </div>
+        <div class="col-md-4">
+            <div class="dashboard-card stat-widget">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-box-seam"></i>
                 </div>
-                <div class="card-body">
-                    <!-- Уведомления -->
-                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle me-2"></i>
-                        <span th:text="${successMessage}"></span>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div>
+                    <h3 class="fw-bold mb-0" th:text="${activeOrderCount ?: 0}">0</h3>
+                    <span class="text-muted small text-uppercase fw-semibold">В обработке</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="dashboard-card stat-widget">
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalSpent) + ' ₽'}">0 ₽</h3>
+                    <span class="text-muted small text-uppercase fw-semibold">Сумма покупок</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной контент: Две колонки -->
+    <div class="row g-4">
+
+        <!-- Левая колонка: Профиль пользователя -->
+        <div class="col-lg-4">
+            <div class="dashboard-card p-4">
+                <div class="text-center mb-4">
+                    <div class="profile-avatar">
+                        <i class="bi bi-person"></i>
                     </div>
-
-                    <div class="row">
-                        <!-- Основная информация -->
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <strong><i class="bi bi-person me-2"></i>Имя пользователя:</strong>
-                                <div class="text-muted" th:text="${user.username}"></div>
-                            </div>
-
-                            <div class="info-item">
-                                <strong><i class="bi bi-envelope me-2"></i>Email:</strong>
-                                <div class="text-muted" th:text="${user.email}"></div>
-                            </div>
-
-                            <div class="info-item">
-                                <strong><i class="bi bi-person-badge me-2"></i>Имя:</strong>
-                                <div class="text-muted" th:text="${user.firstName} ?: 'Не указано'"></div>
-                            </div>
-
-                            <div class="info-item">
-                                <strong><i class="bi bi-person-badge me-2"></i>Фамилия:</strong>
-                                <div class="text-muted" th:text="${user.lastName} ?: 'Не указано'"></div>
-                            </div>
-                        </div>
-
-                        <!-- Дополнительная информация -->
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <strong><i class="bi bi-telephone me-2"></i>Телефон:</strong>
-                                <div class="text-muted" th:text="${user.phone} ?: 'Не указан'"></div>
-                            </div>
-
-                            <div class="info-item">
-                                <strong><i class="bi bi-calendar me-2"></i>Дата регистрации:</strong>
-                                <div class="text-muted"
-                                     th:text="${#temporals.format(user.createdAt, 'dd.MM.yyyy')}"></div>
-                            </div>
-
-                            <div class="info-item">
-                                <strong><i class="bi bi-discount me-2"></i>Тип скидки:</strong>
-                                <div class="text-muted" th:text="${user.userType.getDisplayName()} ?: 'Не указан'"></div>
-                            </div>
-
-                            <div class="info-item">
-                                <strong><i class="bi bi-cart me-2"></i>Корзина:</strong>
-                                <div class="text-muted">
-                                    <a th:href="@{/cart}">Перейти в корзину</a>
-                                </div>
-                            </div>
-
-                            <div class="info-item">
-                                <strong><i class="bi bi-shield-lock me-2"></i>Безопасность:</strong>
-                                <div class="text-muted">
-                                    <a th:href="@{/profile/edit}">Сменить пароль</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <h4 class="fw-bold mb-1" th:text="${user.firstName != null ? user.firstName + ' ' + (user.lastName ?: '') : user.username}">Иван Иванов</h4>
+                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mt-2"
+                          th:text="${user.userType.getDisplayName()} ?: 'Стандартная скидка'">
+                        <i class="bi bi-star-fill text-warning me-1"></i> VIP Клиент
+                    </span>
                 </div>
 
-                <!-- Статистика -->
-                <div class="card-footer bg-light">
-                    <div class="row text-center">
-                        <div class="col">
-                            <h5 th:text="${orderCount} ?: 0">0</h5>
-                            <small class="text-muted">Всего заказов</small>
-                        </div>
-                        <div class="col">
-                            <h5 th:text="${activeOrderCount} ?: 0">0</h5>
-                            <small class="text-muted">Активных заказов</small>
-                        </div>
-                        <div class="col">
-                            <h5 th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
-                                            .format(totalSpent) + ' ₽'}">0 ₽</h5>
-                            <small class="text-muted">Всего потрачено</small>
-                        </div>
-                    </div>
+                <hr class="text-muted mb-4">
+
+                <div class="info-group">
+                    <span class="info-label"><i class="bi bi-person-badge"></i> Логин</span>
+                    <span class="info-value" th:text="${user.username}">user123</span>
+                </div>
+                <div class="info-group">
+                    <span class="info-label"><i class="bi bi-envelope"></i> Email</span>
+                    <span class="info-value" th:text="${user.email}">user@mail.ru</span>
+                </div>
+                <div class="info-group">
+                    <span class="info-label"><i class="bi bi-telephone"></i> Телефон</span>
+                    <span class="info-value" th:text="${user.phone} ?: 'Не указан'">+7 (999) 000-00-00</span>
+                </div>
+                <div class="info-group">
+                    <span class="info-label"><i class="bi bi-calendar-check"></i> На сайте с</span>
+                    <span class="info-value" th:text="${#temporals.format(user.createdAt, 'dd.MM.yyyy')}">01.01.2023</span>
+                </div>
+
+                <div class="mt-4 pt-2">
+                    <a th:href="@{/profile/edit}" class="btn btn-outline-primary w-100 rounded-pill mb-2">
+                        <i class="bi bi-pencil-square me-2"></i>Редактировать данные
+                    </a>
+                    <a th:href="@{/profile/edit}" class="btn btn-light w-100 rounded-pill text-muted">
+                        <i class="bi bi-shield-lock me-2"></i>Сменить пароль
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: Заказы и действия -->
+        <div class="col-lg-8">
+
+            <!-- Быстрые действия -->
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <a th:href="@{/cart}" class="btn btn-outline-primary w-100 quick-action-btn">
+                        <i class="bi bi-cart3"></i>
+                        <span>Перейти в корзину</span>
+                    </a>
+                </div>
+                <div class="col-sm-6">
+                    <a th:href="@{/profile/orders}" class="btn btn-outline-secondary w-100 quick-action-btn">
+                        <i class="bi bi-card-list"></i>
+                        <span>История всех заказов</span>
+                    </a>
                 </div>
             </div>
 
             <!-- Последние заказы -->
-            <div th:if="${not #lists.isEmpty(recentOrders)}" class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i> Последние заказы</h5>
+            <div class="dashboard-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Последние заказы</h5>
+                    <a th:href="@{/profile/orders}" class="text-decoration-none text-primary small fw-semibold">
+                        Все заказы <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                            <tr>
-                                <th>Номер</th>
-                                <th>Дата</th>
-                                <th>Статус</th>
-                                <th>Сумма</th>
-                                <th></th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="order : ${orders}">
-                                <td th:text="${order.orderNumber}">#12345</td>
-                                <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy')}">01.01.2025</td>
-                                <td>
-                                    <span th:if="${order.status.toString() == 'CREATED'}"
-                                          class="badge bg-primary">Создан</span>
-                                    <span th:if="${order.status.toString() == 'PAID'}"
-                                          class="badge bg-success">Оплачен</span>
-                                    <span th:if="${order.status.toString() == 'PROCESSING'}"
-                                          class="badge bg-secondary">В обработке</span>
-                                    <span th:if="${order.status.toString() == 'COMPLETED'}"
-                                          class="badge bg-warning">Завершен</span>
-                                    <span th:if="${order.status.toString() == 'CANCELLED'}"
-                                          class="badge bg-danger">Отменен</span>
-                                </td>
-                                <td th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}">0 ₽</td>
-                                <td>
-                                    <a th:href="@{/profile/orders/{id}(id=${order.id})}"
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="text-center mt-3">
-                        <a th:href="@{/profile/orders}" class="btn btn-outline-secondary">
-                            Посмотреть все заказы
-                        </a>
-                    </div>
+
+                <!-- Сообщение, если заказов нет -->
+                <div th:if="${#lists.isEmpty(orders)}" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 mb-3 d-block opacity-50"></i>
+                    <p>У вас пока нет заказов.</p>
+                    <a th:href="@{/catalog}" class="btn btn-primary rounded-pill mt-2">Перейти в каталог</a>
+                </div>
+
+                <!-- Таблица заказов -->
+                <div th:if="${not #lists.isEmpty(orders)}" class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                        <tr>
+                            <th>Заказ</th>
+                            <th>Дата</th>
+                            <th>Статус</th>
+                            <th>Сумма</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="order : ${orders}">
+                            <td>
+                                <span class="fw-bold text-dark" th:text="'#' + ${order.orderNumber}">#12345</span>
+                            </td>
+                            <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy')}">01.01.2025</td>
+                            <td>
+                                <span th:if="${order.status.toString() == 'CREATED'}"
+                                      class="status-badge created fw-bold">Создан</span>
+                                <span th:if="${order.status.toString() == 'PAID'}"
+                                      class="status-badge paid fw-bold">Оплачен</span>
+                                <span th:if="${order.status.toString() == 'PROCESSING'}"
+                                      class="status-badge processing fw-bold">В обработке</span>
+                                <span th:if="${order.status.toString() == 'COMPLETED'}"
+                                      class="status-badge completed fw-bold">Завершен</span>
+                                <span th:if="${order.status.toString() == 'CANCELLED'}"
+                                      class="status-badge cancelled fw-bold">Отменен</span>
+                            </td>
+                            <td class="fw-bold" th:text="${#numbers.formatDecimal(order.totalPrice, 1, 2) + ' ₽'}">0 ₽</td>
+                            <td class="text-end">
+                                <a th:href="@{/profile/orders/{id}(id=${order.id})}" class="btn btn-sm btn-light text-primary rounded-circle" title="Детали заказа">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- Быстрые действия -->
-            <div class="card mt-4">
-                <div class="card-body">
-                    <h5 class="mb-3">Быстрые действия</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <a th:href="@{/cart}" class="btn btn-outline-primary w-100">
-                                <i class="bi bi-cart3"></i> Корзина
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a th:href="@{/profile/orders}" class="btn btn-outline-success w-100">
-                                <i class="bi bi-box-seam"></i> Мои заказы
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a th:href="@{/profile/edit}" class="btn btn-outline-warning w-100">
-                                <i class="bi bi-pencil"></i> Редактировать профиль
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </main>
@@ -349,6 +366,6 @@
 <!-- Footer -->
 <div th:replace="~{fragments/footer :: #site-footer}"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
