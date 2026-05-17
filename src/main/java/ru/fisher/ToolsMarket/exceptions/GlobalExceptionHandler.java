@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -67,6 +68,27 @@ public class GlobalExceptionHandler {
 //        // Если это другая IOException, логируем как обычно
 //        log.error("I/O error occurred", ex);
 //    }
+
+    @ExceptionHandler(MultipartException.class)
+    public String handleMultipartException(MultipartException e,
+                                           HttpServletRequest request,
+                                           RedirectAttributes redirectAttributes) {
+        // Для отслеживания ботов
+        log.warn("Multipart exception - IP: {}, URI: {}, User-Agent: {}",
+                request.getRemoteAddr(),
+                request.getRequestURI(),
+                request.getHeader("User-Agent"));
+
+        // Для AJAX запросов возвращаем JSON
+        if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid multipart request");
+        }
+
+        // Для обычных запросов - редирект
+        redirectAttributes.addFlashAttribute("errorMessage",
+                "Ошибка загрузки файла. Возможно, файл слишком большой.");
+        return "error/error";
+    }
 
     @ExceptionHandler(OrderNotFoundException.class)
     public String handleOrderNotFound(OrderNotFoundException e, RedirectAttributes redirectAttributes) {
