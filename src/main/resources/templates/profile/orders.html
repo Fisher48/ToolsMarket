@@ -3,116 +3,508 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои заказы - ToolsMarket</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <title>Мои заказы - ToolsMarket48</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        .order-item {
-            border-left: 4px solid;
-            transition: all 0.3s;
+        :root {
+            --primary: #0d2e67;
+            --primary-dark: #0a1f3f;
+            --primary-light: #2a4b8c;
+            --accent: #E63946;
+            --text: #2C3E50;
+            --text-light: #5F6B7A;
+            --bg-body: #f4f6f9;
+            --card-bg: #FFFFFF;
+            --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 6px 25px rgba(0, 0, 0, 0.08);
+            --transition: all 0.2s ease;
         }
-        .order-item:hover {
-            transform: translateX(5px);
+
+        body {
+            background: linear-gradient(135deg, var(--bg-body) 0%, #e9ecef 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text);
         }
-        .status-created { border-left-color: #0d6efd; }
-        .status-processing { border-left-color: #6c757d; }
-        .status-paid { border-left-color: #198754; }
-        .status-completed { border-left-color: #ffc107; }
-        .status-cancelled { border-left-color: #dc3545; }
+
+        /* Хлебные крошки */
+        .breadcrumb {
+            background: rgba(255,255,255,0.9);
+            padding: 12px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--accent);
+        }
+
+        /* Карточки */
+        .dashboard-card {
+            background: var(--card-bg);
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            height: 100%;
+        }
+
+        .dashboard-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Заголовок страницы */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(13, 46, 103, 0.2);
+        }
+
+        .page-header h4 {
+            color: white;
+            font-weight: 700;
+        }
+
+        /* Кнопки */
+        .btn-custom-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 10px 24px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .btn-custom-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 46, 103, 0.3);
+            color: white;
+        }
+
+        .btn-outline-custom {
+            border-radius: 50px;
+            padding: 10px 24px;
+            font-weight: 500;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            background: transparent;
+            transition: var(--transition);
+        }
+
+        .btn-outline-custom:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Фильтр-панель */
+        .filter-panel {
+            background: white;
+            border-radius: 50px;
+            padding: 6px;
+            box-shadow: 0 2px 8px rgba(13, 46, 103, 0.08);
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .filter-btn {
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: 2px solid transparent;
+            background: transparent;
+            color: var(--text);
+            transition: var(--transition);
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .filter-btn:hover {
+            background: rgba(13, 46, 103, 0.05);
+            color: var(--primary);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(13, 46, 103, 0.25);
+        }
+
+        .filter-btn .badge-count {
+            background: rgba(255,255,255,0.3);
+            padding: 2px 8px;
+            border-radius: 50px;
+            margin-left: 6px;
+            font-size: 0.75rem;
+        }
+
+        .filter-btn.active .badge-count {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Карточки заказов */
+        .order-card {
+            background: white;
+            border: 2px solid #eef2f7;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .order-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            border-radius: 0 4px 4px 0;
+            transition: var(--transition);
+        }
+
+        .order-card.status-created::before { background: var(--primary); }
+        .order-card.status-paid::before { background: #198754; }
+        .order-card.status-processing::before { background: #ffc107; }
+        .order-card.status-completed::before { background: #17a2b8; }
+        .order-card.status-cancelled::before { background: var(--accent); }
+
+        .order-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-3px);
+        }
+
+        .order-card.status-cancelled {
+            opacity: 0.8;
+            background: #fafafa;
+        }
+
+        .order-number {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .order-date {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .order-total {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .order-items-count {
+            background: #f4f6f9;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        /* Статус-бейджи */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            border-radius: 50px;
+            letter-spacing: 0.3px;
+        }
+
+        .status-badge.created {
+            background: var(--primary);
+            color: white;
+        }
+        .status-badge.paid {
+            background: #198754;
+            color: white;
+        }
+        .status-badge.processing {
+            background: #ffc107;
+            color: #2C3E50;
+        }
+        .status-badge.completed {
+            background: #17a2b8;
+            color: white;
+        }
+        .status-badge.cancelled {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Пустое состояние */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #e9ecef 0%, #f4f6f9 100%);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .empty-state-icon i {
+            font-size: 3rem;
+            color: var(--primary);
+            opacity: 0.5;
+        }
+
+        /* Статистика */
+        .orders-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-weight: 700;
+            flex: 1;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* Адаптация */
+        @media (max-width: 768px) {
+            .filter-panel {
+                border-radius: 20px;
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .filter-btn {
+                width: 100%;
+                text-align: center;
+                padding: 12px;
+            }
+
+            .order-card {
+                padding: 16px;
+            }
+
+            .orders-stats {
+                flex-direction: column;
+            }
+
+            .order-total {
+                font-size: 1.2rem;
+            }
+
+            .page-header {
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .order-card .d-flex {
+                flex-direction: column;
+            }
+
+            .order-card .text-end {
+                text-align: left !important;
+                margin-top: 12px;
+            }
+
+            .btn-outline-custom {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
+
 <!-- Header -->
 <div th:replace="~{fragments/header :: header}"></div>
 
 <main class="container my-5">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/}">Главная</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/profile}">Профиль</a></li>
+            <li class="breadcrumb-item active">Мои заказы</li>
+        </ol>
+    </nav>
+
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-box-seam"></i> Мои заказы</h4>
+            <!-- Заголовок -->
+            <div class="page-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-box-seam me-2"></i>
+                        Мои заказы
+                    </h4>
+                    <a th:href="@{/profile}" class="btn btn-outline-light btn-sm rounded-pill">
+                        <i class="bi bi-bag me-1"></i> В профиль
+                    </a>
                 </div>
-                <div class="card-body">
-                    <!-- Фильтры статуса -->
-                    <div class="mb-4">
-                        <div class="btn-group" role="group">
-                            <a th:href="@{/profile/orders}"
-                               class="btn btn-outline-primary"
-                               th:classappend="${status == null} ? 'active' : ''">
-                                Все заказы
-                            </a>
-                            <a th:href="@{/profile/orders/status/CREATED}"
-                               class="btn btn-outline-primary">
-                                Созданы
-                            </a>
-                            <a th:href="@{/profile/orders/status/PAID}"
-                               class="btn btn-outline-success">
-                                Оплачены
-                            </a>
-                            <a th:href="@{/profile/orders/status/COMPLETED}"
-                               class="btn btn-outline-warning">
-                                Завершены
-                            </a>
-                            <a th:href="@{/profile/orders/status/CANCELLED}"
-                               class="btn btn-outline-danger">
-                                Отменены
+            </div>
+
+            <!-- Основной контент -->
+            <div class="dashboard-card">
+                <div class="card-body p-4">
+                    <!-- Статистика -->
+                    <div class="orders-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" th:text="${orders != null ? #lists.size(orders) : 0}">0</div>
+                            <div class="stat-label">Всего заказов</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value text-success">
+                                <span th:text="${orders != null ? orders.?[status.toString() != 'CANCELLED'].size() : 0}">0</span>
+                            </div>
+                            <div class="stat-label">Активных</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: var(--primary);">
+                                <span th:text="${orders != null ? orders.?[status.toString() == 'CREATED'].size() : 0}">0</span>
+                            </div>
+                            <div class="stat-label">Новых</div>
+                        </div>
+                    </div>
+
+                    <!-- Фильтры -->
+                    <div class="filter-panel mb-4">
+                        <a th:href="@{/profile/orders}"
+                           class="filter-btn"
+                           th:classappend="${status == null} ? 'active' : ''">
+                            <i class="bi bi-grid me-1"></i> Все заказы
+                            <span class="badge-count" th:text="${orders != null ? #lists.size(orders) : 0}">0</span>
+                        </a>
+                        <a th:href="@{/profile/orders/status/CREATED}"
+                           class="filter-btn"
+                           th:classappend="${status != null and status.toString() == 'CREATED'} ? 'active' : ''">
+                            <i class="bi bi-circle me-1"></i> Созданы
+                        </a>
+                        <a th:href="@{/profile/orders/status/PAID}"
+                           class="filter-btn"
+                           th:classappend="${status != null and status.toString() == 'PAID'} ? 'active' : ''">
+                            <i class="bi bi-check-circle me-1"></i> Оплачены
+                        </a>
+                        <a th:href="@{/profile/orders/status/COMPLETED}"
+                           class="filter-btn"
+                           th:classappend="${status != null and status.toString() == 'COMPLETED'} ? 'active' : ''">
+                            <i class="bi bi-check2-all me-1"></i> Завершены
+                        </a>
+                        <a th:href="@{/profile/orders/status/CANCELLED}"
+                           class="filter-btn"
+                           th:classappend="${status != null and status.toString() == 'CANCELLED'} ? 'active' : ''">
+                            <i class="bi bi-x-circle me-1"></i> Отменены
+                        </a>
+                    </div>
+
+                    <!-- Пустой список -->
+                    <div th:if="${#lists.isEmpty(orders)}">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="bi bi-inbox"></i>
+                            </div>
+                            <h4 class="text-muted mb-2">Заказов пока нет</h4>
+                            <p class="text-muted mb-4">Самое время сделать свой первый заказ!</p>
+                            <a th:href="@{/catalog}" class="btn-custom-primary btn-lg">
+                                <i class="bi bi-bag me-2"></i> Перейти к покупкам
                             </a>
                         </div>
                     </div>
 
-                    <!-- Пустой список -->
-                    <div th:if="${#lists.isEmpty(orders)}" class="text-center py-5">
-                        <i class="bi bi-box display-1 text-muted"></i>
-                        <h4 class="text-muted mt-3">Заказов пока нет</h4>
-                        <p class="text-muted mb-4">Сделайте свой первый заказ!</p>
-                        <a th:href="@{/}" class="btn btn-primary">
-                            <i class="bi bi-bag"></i> Перейти к покупкам
-                        </a>
-                    </div>
-
                     <!-- Список заказов -->
                     <div th:unless="${#lists.isEmpty(orders)}">
-                        <div class="list-group">
-                            <div th:each="order : ${orders}"
-                                 class="list-group-item order-item mb-3"
-                                 th:classappend="${'status-' + order.status.toString().toLowerCase()}">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h5 class="mb-1">
-                                            Заказ #<span th:text="${order.orderNumber}"></span>
+                        <div th:each="order : ${orders}"
+                             class="order-card"
+                             th:classappend="${'status-' + order.status.toString().toLowerCase()}">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <div class="mb-2 mb-md-0">
+                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                        <h5 class="order-number mb-0">
+                                            <i class="bi bi-hash text-muted me-1"></i>
+                                            <span th:text="${order.orderNumber}"></span>
                                         </h5>
-                                        <p class="text-muted mb-1">
-                                            <small th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></small>
+                                        <span class="status-badge"
+                                              th:classappend="${order.status.toString().toLowerCase()}"
+                                              th:switch="${order.status.toString()}">
+                                            <span th:case="'CREATED'">Создан</span>
+                                            <span th:case="'PAID'">Оплачен</span>
+                                            <span th:case="'PROCESSING'">В обработке</span>
+                                            <span th:case="'COMPLETED'">Завершен</span>
+                                            <span th:case="'CANCELLED'">Отменен</span>
+                                        </span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <p class="order-date mb-0">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                           Дата - <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
                                         </p>
-                                        <div>
-                                            <span th:if="${order.status.toString() == 'CREATED'}"
-                                                  class="badge bg-primary">Создан</span>
-                                            <span th:if="${order.status.toString() == 'PAID'}"
-                                                  class="badge bg-success">Оплачен</span>
-                                            <span th:if="${order.status.toString() == 'PROCESSING'}"
-                                                  class="badge bg-secondary">В обработке</span>
-                                            <span th:if="${order.status.toString() == 'COMPLETED'}"
-                                                  class="badge bg-warning">Завершен</span>
-                                            <span th:if="${order.status.toString() == 'CANCELLED'}"
-                                                  class="badge bg-danger">Отменен</span>
+                                        <span class="order-items-count">
+                                            <i class="bi bi-box me-1"></i>
+                                           Количество - <span th:text="${order.orderItems != null ? #aggregates.sum(order.orderItems.![quantity ?: 0]) : 0}"></span> шт.
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                    <div class="text-md-end">
+                                        <small class="text-muted">Итого</small>
+                                        <div class="order-total mb-1"
+                                             th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(order.totalPrice) + ' ₽'}">
+                                            0 ₽
                                         </div>
                                     </div>
-
-                                    <div class="text-end">
-                                        <h5 class="text-primary mb-1"
-                                            th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter)
-                                            .format(order.totalPrice) + ' ₽'}">
-                                            0 ₽
-                                        </h5>
-                                        <p class="text-muted mb-2">
-                                            <span th:text="${order.orderItems != null ?
-                                            #aggregates.sum(order.orderItems.![quantity ?: 0]) : 0}"></span> товар(ов)
-                                        </p>
-                                        <a th:href="@{/profile/orders/{id}(id=${order.id})}"
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i> Подробнее
-                                        </a>
-                                    </div>
+                                    <a th:href="@{/profile/orders/{id}(id=${order.id})}"
+                                       class="btn-outline-custom btn-sm">
+                                        <i class="bi bi-eye me-1"></i> Подробнее
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -123,6 +515,9 @@
     </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: #site-footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
