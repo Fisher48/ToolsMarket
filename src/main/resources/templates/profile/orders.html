@@ -109,6 +109,30 @@
             transform: translateY(-2px);
         }
 
+        /* Компактная версия кнопки */
+        .btn-outline-custom-sm {
+            border-radius: 50px;
+            padding: 6px 16px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            background: transparent;
+            transition: var(--transition);
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .btn-outline-custom-sm:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-color: transparent;
+            color: white !important;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
         /* Фильтр-панель */
         .filter-panel {
             background: white;
@@ -211,6 +235,7 @@
         .order-total {
             font-size: 1.4rem;
             font-weight: 700;
+            color: var(--primary-dark);
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -502,7 +527,7 @@
                                         </div>
                                     </div>
                                     <a th:href="@{/profile/orders/{id}(id=${order.id})}"
-                                       class="btn-outline-custom btn-sm">
+                                       class="btn-outline-custom-sm">
                                         <i class="bi bi-eye me-1"></i> Подробнее
                                     </a>
                                 </div>
