@@ -162,6 +162,7 @@ public class ProductAdminController {
                 .updatedAt(Instant.now())  // Устанавливаем updatedAt
                 .categories(new HashSet<>())
                 .images(new HashSet<>())
+                .views(0L)
                 .productType(productType)
                 .build();
 
