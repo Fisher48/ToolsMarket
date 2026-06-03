@@ -48,6 +48,13 @@ public class GlobalExceptionHandler {
         return "redirect:" + (referer != null ? referer : "/admin/orders");
     }
 
+    @ExceptionHandler(DuplicateSkuException.class)
+    public String handleDuplicateSku(DuplicateSkuException e,
+                                     RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("error", e.getMessage());
+        return "redirect:/admin/products/new";
+    }
+
     // Обработка ошибки при разрыве соединения
     @ExceptionHandler({AsyncRequestNotUsableException.class, ClientAbortException.class})
     @ResponseStatus(HttpStatus.OK)

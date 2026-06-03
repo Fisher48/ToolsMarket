@@ -56,6 +56,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     boolean existsByTitle(String title);
 
+    boolean existsBySku(String sku);
+
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.images LEFT JOIN FETCH p.categories WHERE p.id = :id")
     Optional<Product> findByIdWithImagesAndCategories(@Param("id") Long id);
 

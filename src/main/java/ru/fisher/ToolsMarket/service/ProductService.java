@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fisher.ToolsMarket.dto.*;
+import ru.fisher.ToolsMarket.exceptions.DuplicateSkuException;
 import ru.fisher.ToolsMarket.mapper.ProductImageMapperService;
 import ru.fisher.ToolsMarket.mapper.ProductMapperService;
 import ru.fisher.ToolsMarket.models.Category;
@@ -48,6 +49,10 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Optional<Product> findByIdWithAllRelations(Long id) {
         return productRepository.findByIdWithAllRelations(id);
+    }
+
+    public boolean existsBySku(String sku) {
+        return productRepository.existsBySku(sku);
     }
 
     /**
@@ -155,6 +160,18 @@ public class ProductService {
 
     @Transactional
     public Product saveEntity(Product product) {
+        // Проверка на дубликат SKU
+        if (product.getSku() != null && !product.getSku().isEmpty()) {
+            productRepository.findBySku(product.getSku()).ifPresent(existing -> {
+                // Если это новый товар или SKU принадлежит другому товару
+                if (product.getId() == null || !existing.getId().equals(product.getId())) {
+                    throw new DuplicateSkuException(
+                            "Товар с артикулом '" + product.getSku()
+                                    + "' уже существует (ID: " + existing.getId() + ")"
+                    );
+                }
+            });
+        }
         return productRepository.save(product);
     }
 
