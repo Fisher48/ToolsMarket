@@ -47,8 +47,65 @@
                 <!-- Content -->
                 <div class="card">
                     <div class="card-body">
+
+                        <!-- Блок парсера с сайтов -->
+                        <div class="card border-primary mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-magic me-2"></i> Автозаполнение из SturmTools / Hoztorg / Foxweld
+                            </div>
+                            <div class="card-body">
+                                <form th:action="@{/admin/products/new}" method="get" class="row g-2">
+                                    <div class="col-md-9">
+                                        <input type="url" name="parseUrl" class="form-control"
+                                               placeholder="https://sturmtools.ru/catalog/.../product/"
+                                               th:value="${param.parseUrl}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-download me-1"></i> Спарсить
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <!-- Превью спарсенных данных -->
+                                <div th:if="${parsedImageUrls != null and !parsedImageUrls.empty}" class="mt-4">
+                                    <div class="alert alert-success mb-3">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        Товар успешно спарсен! Заполнены: название, артикул, цена, описание.
+                                        Найдено изображений: <strong th:text="${parsedImageUrls.size()}"></strong>
+                                    </div>
+
+                                    <h6 class="mb-3"><i class="fas fa-images me-2"></i>Изображения товара:</h6>
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        <div th:each="imgUrl : ${parsedImageUrls}" class="position-relative">
+                                            <img th:src="${imgUrl}"
+                                                 style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #dee2e6;"
+                                                 alt="preview">
+                                            <input type="hidden" name="parsedImageUrls" th:value="${imgUrl}">
+                                        </div>
+                                    </div>
+
+                                    <div th:if="${parsedCategorySuggestion != null}" class="alert alert-info mb-0">
+                                        <i class="fas fa-folder-open me-2"></i>
+                                        Категория на сайте: <strong th:text="${parsedCategorySuggestion}"></strong>
+                                    </div>
+                                </div>
+
+                                <div th:if="${error != null}" class="alert alert-danger mt-3 mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span th:text="${error}"></span>
+                                </div>
+                            </div>
+                        </div>
+
                         <form th:action="@{/admin/products}" method="post" enctype="multipart/form-data">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                            <!-- СКРЫТЫЕ ПОЛЯ ДЛЯ СПАРСЕННЫХ URL (ЗДЕСЬ!) -->
+                            <th:block th:each="imgUrl : ${parsedImageUrls}">
+                                <input type="hidden" name="parsedImageUrls" th:value="${imgUrl}">
+                            </th:block>
+
                             <!-- Основная информация -->
                             <div class="row mb-3">
                                 <div class="col-md-6">

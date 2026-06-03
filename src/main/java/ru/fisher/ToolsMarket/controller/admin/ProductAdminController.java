@@ -20,12 +20,18 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.fisher.ToolsMarket.dto.ImageOrderDto;
+import ru.fisher.ToolsMarket.dto.ParsedProductData;
 import ru.fisher.ToolsMarket.dto.ProductAdminDto;
+import ru.fisher.ToolsMarket.exceptions.DuplicateSkuException;
 import ru.fisher.ToolsMarket.exceptions.ValidationException;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.*;
+import ru.fisher.ToolsMarket.util.CustomMultipartFile;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,6 +48,7 @@ public class ProductAdminController {
     private final ImageStorageService imageStorageService;
     private final AttributeService attributeService;
     private final UserService userService;
+    private final ProductParserService parserService;
 
     // Список
     @GetMapping
@@ -96,32 +103,6 @@ public class ProductAdminController {
         return "admin/products/show";
     }
 
-    // Создание — форма
-    @GetMapping("/new")
-    public String newProduct(Model model, HttpSession session) {
-        model.addAttribute("product", new Product());
-        model.addAttribute("categories", categoryService.findAllCategories());
-        model.addAttribute("allProductTypes", ProductType.values());
-        model.addAttribute("returnUrl", getReturnUrl(session));
-        return "admin/products/new";
-    }
-
-    // Сохранение
-//    @PostMapping
-//    public String create(@ModelAttribute @Valid Product product, BindingResult bindingResult, Model model,
-//                         @RequestParam(required = false) List<Long> categoryIds) {
-//        if (bindingResult.hasErrors()) {
-//            return "admin/products/new"; // Возвращаем форму с ошибками
-//        }
-//
-//        if (categoryIds != null && !categoryIds.isEmpty()) {
-//            Set<Category> categories = new HashSet<>(categoryService.findByIds(categoryIds));
-//            product.setCategories(categories);
-//        }
-//        productService.saveEntity(product);
-//        return "redirect:/admin/products";
-//    }
-
     // Обновляем метод создания товара
     @PostMapping
     public String create(@RequestParam String name,
@@ -137,17 +118,19 @@ public class ProductAdminController {
                          @RequestParam(required = false) List<String> imageAlts,
                          @RequestParam(required = false) List<Integer> imageSortOrders,
                          @RequestParam(required = false) ProductType productType,
+                         @RequestParam(required = false) List<String> parsedImageUrls,
                          @AuthenticationPrincipal UserDetails userDetails,
-                         HttpSession session) {
+                         HttpSession session, RedirectAttributes redirectAttributes) {
 
         log.info("Creating product: {}", name);
-        log.info("Received {} images", images != null ? images.size() : 0);
+        log.info("Received {} images, {} parsed URLs",
+                images != null ? images.size() : 0,
+                parsedImageUrls != null ? parsedImageUrls.size() : 0);
 
         Long currentUserId = userService.findByUsername(userDetails.getUsername())
                 .map(User::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
-        // Создаем новый продукт с установкой временных меток
         Product product = Product.builder()
                 .name(name)
                 .title(title)
@@ -158,8 +141,8 @@ public class ProductAdminController {
                 .currency(currency)
                 .active(active)
                 .createdByUserId(currentUserId)
-                .createdAt(Instant.now())  // Устанавливаем createdAt
-                .updatedAt(Instant.now())  // Устанавливаем updatedAt
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .categories(new HashSet<>())
                 .images(new HashSet<>())
                 .views(0L)
@@ -173,18 +156,122 @@ public class ProductAdminController {
         }
 
         // Сохраняем товар, чтобы получить ID
-        Product savedProduct = productService.saveEntity(product);
+        Product savedProduct;
+        try {
+            savedProduct = productService.saveEntity(product);
+        } catch (DuplicateSkuException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/admin/products/new";
+        }
         log.info("Product saved with ID: {}", savedProduct.getId());
 
         // Сохраняем изображения
-        if (images != null && !images.isEmpty()) {
-            log.info("Saving {} images", images.size());
+        boolean hasUploadedFiles = images != null && !images.isEmpty() && !images.get(0).isEmpty();
+
+        if (hasUploadedFiles) {
+            // Пользователь сам загрузил файлы с компьютера
             saveProductImages(savedProduct, images, imageAlts, imageSortOrders);
-            productService.saveEntity(savedProduct);
-            log.info("Images saved successfully");
+        } else if (parsedImageUrls != null && !parsedImageUrls.isEmpty()) {
+            // Скачиваем все картинки из карусели
+            List<MultipartFile> downloadedFiles = new ArrayList<>();
+
+            for (int i = 0; i < parsedImageUrls.size(); i++) {
+                String imgUrl = parsedImageUrls.get(i);
+                try (InputStream in = new URL(imgUrl).openStream()) {
+                    byte[] content = in.readAllBytes();
+                    // Используем наш Custom класс
+                    downloadedFiles.add(new CustomMultipartFile("images", "parsed-image-" + i + ".jpg", "image/jpeg", content));
+                } catch (Exception e) {
+                    log.error("Не удалось скачать картинку парсера: " + imgUrl, e);
+                }
+            }
+
+            if (!downloadedFiles.isEmpty()) {
+                saveProductImages(savedProduct, downloadedFiles, null, null);
+            }
         }
 
+        productService.saveEntity(savedProduct);
+        log.info("Product created successfully");
+
+        redirectAttributes.addFlashAttribute("message", "Товар успешно создан!");
         return "redirect:" + getReturnUrl(session);
+    }
+
+    private void downloadAndSaveParsedImages(Product product, List<String> imageUrls) {
+        List<MultipartFile> downloadedFiles = new ArrayList<>();
+        int maxImages = 10;
+
+        for (int i = 0; i < Math.min(imageUrls.size(), maxImages); i++) {
+            String imgUrl = imageUrls.get(i);
+            try {
+                URL url = new URL(imgUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.setRequestMethod("GET");
+                conn.connect();
+
+                int contentLength = conn.getContentLength();
+                if (contentLength < 10000) {
+                    conn.disconnect();
+                    continue;
+                }
+
+                try (InputStream in = conn.getInputStream()) {
+                    byte[] content = in.readAllBytes();
+                    String filename = "product-" + product.getSku() + "-" + (i + 1) + ".jpg";
+                    downloadedFiles.add(new CustomMultipartFile(
+                            "images", filename, "image/jpeg", content));
+                }
+                conn.disconnect();
+            } catch (Exception e) {
+                log.warn("Failed to download image {}: {}", imgUrl, e.getMessage());
+            }
+        }
+
+        if (!downloadedFiles.isEmpty()) {
+            saveProductImages(product, downloadedFiles, null, null);
+            log.info("Downloaded {} parsed images", downloadedFiles.size());
+        }
+    }
+
+    @GetMapping("/new")
+    public String showCreateForm(@RequestParam(required = false) String parseUrl,
+                                 Model model,
+                                 HttpSession session) {
+        Product product = new Product();
+        product.setPrice(BigDecimal.ZERO);
+        List<String> parsedImageUrls = new ArrayList<>();
+        String parsedCategorySuggestion = null;
+
+        if (parseUrl != null && !parseUrl.isEmpty()) {
+            try {
+                ParsedProductData parsedData = parserService.parse(parseUrl);
+
+                product.setName(parsedData.getName());
+                product.setSku(parsedData.getSku());
+                if (parsedData.getPrice() != null) {
+                    product.setPrice(parsedData.getPrice());
+                }
+                product.setDescription(parsedData.getDescription());
+                product.setShortDescription(parsedData.getShortDescription());
+                parsedImageUrls = parsedData.getImageUrls();
+               // parsedCategorySuggestion = parsedData.getCategorySuggestion();
+
+                model.addAttribute("message", "Товар успешно спарсен! Найдено фото: " + parsedImageUrls.size());
+            } catch (Exception e) {
+                model.addAttribute("error", "Ошибка парсинга: " + e.getMessage());
+            }
+        }
+
+        model.addAttribute("product", product);
+        model.addAttribute("parsedImageUrls", parsedImageUrls);
+       // model.addAttribute("parsedCategorySuggestion", parsedCategorySuggestion);
+        model.addAttribute("categories", categoryService.findAllCategories());
+        model.addAttribute("allProductTypes", ProductType.values());
+        model.addAttribute("returnUrl", "/admin/products");
+        return "admin/products/new";
     }
 
     // Редактирование — форма
@@ -228,131 +315,6 @@ public class ProductAdminController {
         model.addAttribute("returnUrl", getReturnUrl(session));
         return "admin/products/edit";
     }
-
-    // Обновление
-//    @PostMapping("/{id}")
-//    public String update(@PathVariable Long id,
-//                         @ModelAttribute @Valid Product product,
-//                         @RequestParam(required = false) List<Long> categoryIds) {
-//        Product existing = productService.findEntityById(id)
-//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
-//
-//        existing.setName(product.getName());
-//        existing.setTitle(product.getTitle());
-//        existing.setShortDescription(product.getShortDescription());
-//        existing.setDescription(product.getDescription());
-//        existing.setSku(product.getSku());
-//        existing.setPrice(product.getPrice());
-//        existing.setCurrency(product.getCurrency());
-//        existing.setActive(product.isActive());
-//
-//        if (categoryIds != null) {
-//            Set<Category> categories = new HashSet<>(categoryService.findByIds(categoryIds));
-//            existing.setCategories(categories);
-//        }
-//
-//        productService.saveEntity(existing);
-//        return "redirect:/admin/products";
-//    }
-
-    // Обновляем метод редактирования товара
-//    @PostMapping("/{id}")
-//    public String update(
-//            @PathVariable Long id,
-//            @RequestParam String name,
-//            @RequestParam String title,
-//            @RequestParam(required = false) String shortDescription,
-//            @RequestParam(required = false) String description,
-//            @RequestParam(required = false) String sku,
-//            @RequestParam BigDecimal price,
-//            @RequestParam String currency,
-//            @RequestParam(defaultValue = "true") boolean active,
-//            @RequestParam(required = false) List<Long> categoryIds,
-//
-//            // Параметры для изображений
-//            @RequestParam(required = false) List<MultipartFile> newImages,
-//            @RequestParam(required = false) List<String> newImageAlts,
-//            @RequestParam(required = false) List<Integer> newImageOrders,
-//            @RequestParam(required = false) List<Long> deleteImageIds,
-//
-//            // Все остальные параметры для alt и order
-//            @RequestParam Map<String, String> allParams,
-//
-//            RedirectAttributes redirectAttributes) {
-//
-//        try {
-//            log.info("=== ОБНОВЛЕНИЕ ТОВАРА {} ===", id);
-//
-//            // 1. Находим товар
-//            Product product = productService.findWithDetailsById(id)
-//                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
-//
-//            // 2. Обновляем основные поля
-//            product.setName(name);
-//            product.setTitle(title);
-//            product.setShortDescription(shortDescription);
-//            product.setDescription(description);
-//            product.setSku(sku);
-//            product.setPrice(price);
-//            product.setCurrency(currency);
-//            product.setActive(active);
-//            product.setUpdatedAt(Instant.now());
-//
-//            // 3. Обновляем категории
-//            if (categoryIds != null && !categoryIds.isEmpty()) {
-//                Set<Category> categories = new HashSet<>(categoryService.findByIds(categoryIds));
-//                product.setCategories(categories);
-//            }
-//
-//            // 4. ОБРАБОТКА СУЩЕСТВУЮЩИХ ИЗОБРАЖЕНИЙ
-//            if (product.getImages() != null) {
-//                // 4.1. Обновляем alt и order для существующих изображений
-//                for (ProductImage image : product.getImages()) {
-//                    String altKey = "imageAlt_" + image.getId();
-//                    String orderKey = "imageOrder_" + image.getId();
-//
-//                    if (allParams.containsKey(altKey)) {
-//                        image.setAlt(allParams.get(altKey));
-//                    }
-//
-//                    if (allParams.containsKey(orderKey)) {
-//                        try {
-//                            int order = Integer.parseInt(allParams.get(orderKey));
-//                            image.setSortOrder(Math.max(1, order)); // Минимум 1
-//                        } catch (NumberFormatException e) {
-//                            log.warn("Неверный формат порядка для изображения {}: {}",
-//                                    image.getId(), allParams.get(orderKey));
-//                        }
-//                    }
-//                }
-//
-//                // 4.2. Удаляем отмеченные изображения
-//                if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
-//                    removeImages(product, deleteImageIds);
-//                }
-//            }
-//
-//            // 5. ДОБАВЛЕНИЕ НОВЫХ ИЗОБРАЖЕНИЙ
-//            if (newImages != null && !newImages.isEmpty()) {
-//                log.info("Добавление {} новых изображений", newImages.size());
-//                addNewImages(product, newImages, newImageAlts, newImageOrders);
-//            }
-//
-//            // 6. Сохраняем товар (изображения сохранятся каскадно)
-//            productService.saveEntity(product);
-//
-//            log.info("=== ТОВАР УСПЕШНО ОБНОВЛЕН ===");
-//            redirectAttributes.addFlashAttribute("successMessage", "Товар успешно обновлен");
-//
-//        } catch (Exception e) {
-//            log.error("Ошибка при обновлении товара", e);
-//            redirectAttributes.addFlashAttribute("errorMessage",
-//                    "Ошибка при обновлении товара: " + e.getMessage());
-//            return "redirect:/admin/products/" + id + "/edit";
-//        }
-//
-//        return "redirect:/admin/products/" + id;
-//    }
 
     // ============ ОБНОВЛЕНИЕ ОСНОВНОЙ ИНФОРМАЦИИ (БЕЗ MULTIPART) ============
     @PostMapping("/{id}/update-info")
@@ -625,18 +587,6 @@ public class ProductAdminController {
             }
         }
     }
-
-//    private void deleteProductImages(Product product, List<Long> imageIds) {
-//        // Используем итератор для безопасного удаления
-//        Iterator<ProductImage> iterator = product.getImages().iterator();
-//        while (iterator.hasNext()) {
-//            ProductImage image = iterator.next();
-//            if (imageIds.contains(image.getId())) {
-//                imageStorageService.deleteImage(image.getUrl());
-//                iterator.remove(); // Удаляем через итератор
-//            }
-//        }
-//    }
 
     @GetMapping("/{id}/specifications")
     public String specificationsForm(@PathVariable Long id, Model model, HttpSession session) {
