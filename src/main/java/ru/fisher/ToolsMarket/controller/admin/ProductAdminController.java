@@ -270,7 +270,7 @@ public class ProductAdminController {
        // model.addAttribute("parsedCategorySuggestion", parsedCategorySuggestion);
         model.addAttribute("categories", categoryService.findAllCategories());
         model.addAttribute("allProductTypes", ProductType.values());
-        model.addAttribute("returnUrl", "/admin/products");
+        model.addAttribute("returnUrl", getReturnUrl(session));
         return "admin/products/new";
     }
 

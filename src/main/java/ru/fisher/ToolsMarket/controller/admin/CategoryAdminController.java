@@ -85,8 +85,9 @@ public class CategoryAdminController {
 
     // Форма создания
     @GetMapping("/new")
-    public String newCategory(Model model) {
+    public String newCategory(Model model, HttpSession session) {
         model.addAttribute("category", new Category());
+        model.addAttribute("returnUrl", getReturnUrl(session));
         model.addAttribute("allCategories", categoryService.findAllEntities());
         return "admin/categories/new";
     }
