@@ -17,19 +17,19 @@
     <link rel="manifest" href="/site.webmanifest">
 
     <style>
-        /* Премиальные переменные */
         :root {
-            --primary: #0d2e67;
-            --primary-dark: #084298;
-            --primary-light: #0655a3;
-            --accent: #f43300;
-            --text: #212d42;
-            --text-light: #64748b;
-            --bg-glass: rgba(255, 255, 255, 0.9);
+            --primary: #0d1b2a;
+            --primary-dark: #1b263b;
+            --primary-light: #2a3a4d;
+            --accent: #FFD600;
+            --accent-dark: #E6C200;
+            --text: #1a1a1a;
+            --text-light: #5a5a5a;
+            --bg-glass: rgba(255, 255, 255, 0.95);
             --shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
 
-        /* Премиальный header */
+        /* Header */
         .premium-header {
             padding: 0 !important;
             background: var(--bg-glass);
@@ -48,20 +48,32 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
-        /* Логотип */
+        /* Логотип с подложкой */
         .premium-logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: var(--primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
             text-decoration: none;
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
         }
 
         .premium-logo:hover {
             transform: scale(1.02);
+        }
+
+        .premium-logo img {
+            height: 70px;
+            width: auto;
+            display: block;
+            background: white;
+            padding: 6px 14px;
+            border-radius: 6px;
+            /*box-shadow: 0 2px 10px rgba(0,0,0,0.08);*/
+            /*border: 1px solid rgba(0,0,0,0.06);*/
+            transition: all 0.3s ease;
+        }
+
+        .premium-logo:hover img {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         }
 
         /* Поиск */
@@ -82,24 +94,25 @@
         }
 
         .premium-search .form-control:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(10,88,202,0.1);
+            border-color: var(--accent-dark);
+            box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.2);
             background: white;
         }
 
         .premium-search .btn {
             border-radius: 50px;
             padding: 12px 24px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: var(--accent);
             border: none;
-            color: white;
-            font-weight: 500;
+            color: var(--text);
+            font-weight: 600;
             transition: all 0.3s ease;
         }
 
         .premium-search .btn:hover {
+            background: var(--accent-dark);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(10,88,202,0.3);
+            box-shadow: 0 4px 12px rgba(255, 214, 0, 0.35);
         }
 
         /* Навигационные иконки */
@@ -125,8 +138,8 @@
         }
 
         .nav-icon-link:hover {
-            color: var(--primary);
-            background: rgba(10,88,202,0.05);
+            color: var(--text);
+            background: rgba(255, 214, 0, 0.12);
             transform: translateY(-2px);
         }
 
@@ -137,10 +150,12 @@
             background: var(--accent);
             color: var(--text);
             font-size: 0.7rem;
+            font-weight: 700;
             padding: 3px 6px;
             border-radius: 20px;
             min-width: 18px;
             text-align: center;
+            border: 2px solid white;
         }
 
         /* Профиль */
@@ -156,8 +171,8 @@
         }
 
         .profile-dropdown:hover {
-            background: rgba(10,88,202,0.05);
-            color: var(--primary);
+            background: rgba(255, 214, 0, 0.12);
+            color: var(--text);
         }
 
         .profile-dropdown::after {
@@ -184,8 +199,8 @@
         }
 
         .dropdown-item:hover {
-            background: rgba(10,88,202,0.05);
-            color: var(--primary);
+            background: rgba(255, 214, 0, 0.1);
+            color: var(--text);
             transform: translateX(4px);
         }
 
@@ -213,6 +228,10 @@
                 max-width: 100% !important;
                 margin: 12px 0 0 !important;
             }
+            .premium-logo img {
+                height: 44px;
+                padding: 4px 10px;
+            }
         }
     </style>
 </head>
@@ -226,12 +245,8 @@
     <div class="container d-flex align-items-center justify-content-between" style="min-height: 70px; gap: 20px;">
 
         <!-- Логотип - слева -->
-        <a class="premium-logo d-flex align-items-center" th:href="@{/}" style="height: 70px; gap: 8px;">
-            <img th:src="@{/logo.png}"
-                 alt="ToolsMarket48"
-                 height="100"
-                 style="display: block; max-height: 100px; width: auto; transition: transform 0.3s ease;">
-            <span>ToolsMarket48</span>
+        <a class="premium-logo d-flex align-items-center" th:href="@{/}">
+            <img th:src="@{/smallLogo.png}" alt="18Вольт">
         </a>
 
         <!-- Поиск - по центру -->
@@ -250,7 +265,7 @@
         <!-- Правая часть с иконками -->
         <div class="nav-icons" style="justify-content: flex-end;">
 
-            <!-- Избранное (пока заглушка) -->
+            <!-- Избранное -->
             <a class="nav-icon-link" href="#" title="Избранное">
                 <i class="bi bi-heart"></i>
                 <span class="d-none d-lg-inline">Избранное</span>
@@ -347,7 +362,6 @@
 <!-- Скрипт для header -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Добавляем класс при скролле
         window.addEventListener('scroll', function() {
             const header = document.querySelector('.premium-header');
             if (window.scrollY > 50) {
@@ -357,7 +371,6 @@
             }
         });
 
-        // Анимация для поиска
         const searchInput = document.querySelector('.premium-search .form-control');
         if (searchInput) {
             searchInput.addEventListener('focus', function() {
@@ -371,7 +384,6 @@
 </script>
 
 <style>
-    /* Скрываем Alpine.js пока не загрузится */
     [x-cloak] { display: none !important; }
 </style>
 

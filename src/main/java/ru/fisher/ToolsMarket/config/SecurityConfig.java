@@ -44,7 +44,8 @@ public class SecurityConfig {
     public SecurityFilterChain staticResourcesFilterChain(HttpSecurity http) throws Exception {
         http.securityMatcher(
                         "/css/**", "/js/**", "/images/**", "/webjars/**",
-                        "/logo.png", "/favicon.ico", "/favicon-*.png",
+                        "/logo.png","/whiteTextLogo.png", "/blackTextLogo.png",
+                        "/smallLogo.png", "/favicon.ico", "/favicon-*.png",
                         "/apple-touch-icon.png", "/site.webmanifest"
                 )
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
