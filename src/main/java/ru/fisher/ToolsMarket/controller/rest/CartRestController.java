@@ -112,6 +112,29 @@ public class CartRestController {
         }
     }
 
+    @DeleteMapping("/clear")
+    public ResponseEntity<?> clear(@AuthenticationPrincipal UserDetails userDetails) {
+        log.info("Clear cart request");
+
+        try {
+            Long userId = getUserId(userDetails);
+            if (userId == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "User not authenticated"));
+            }
+
+            Cart cart = cartService.getOrCreateCart(userId);
+            cartService.clearCart(cart.getId());
+
+            return ResponseEntity.ok(buildResponse(cart, userId));
+
+        } catch (Exception e) {
+            log.error("Error clearing cart: ", e);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/state")
     public ResponseEntity<?> state(@AuthenticationPrincipal UserDetails userDetails) {
 
