@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <title th:text="${product.name} + ' - ToolStore'">Товар - 18Вольт</title>
+    <title th:text="${product.name} + ' - 18Вольт'">Товар - 18Вольт</title>
 
     <!-- Swiper CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
@@ -15,32 +15,37 @@
 
     <style>
         :root {
-            --primary: #0d2e67;      /* темно-синий */
-            --primary-dark: #0a1f3f; /* еще темнее */
-            --primary-light: #2a4b8c; /* светлее */
-
-            /* Красный акцент для удаления */
-            --accent: #ffffff;
-
-            /* Тени */
-            --shadow-sm: 0 2px 8px rgba(84, 110, 122, 0.08);
-            --shadow-md: 0 4px 16px rgba(84, 110, 122, 0.12);
+            --primary: #0d1b2a;
+            --primary-dark: #1b263b;
+            --primary-light: #2a3a4d;
+            --accent: #FFD600;
+            --accent-dark: #E6C200;
+            --text: #1a1a1a;
+            --text-light: #5a5a5a;
+            --bg: #ffffff;
+            --bg-alt: #f5f6f8;
+            --border: #e2e8f0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            background-color: var(--primary-light);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%) !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; !important
+            color: var(--text) !important;
         }
 
-        /* ===== SWIPER СТИЛИ ===== */
+        /* ===== SWIPER ===== */
         .main-swiper {
             width: 100%;
-            border-radius: 12px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-sm);
+            background: white;
             margin-bottom: 15px;
         }
-
         .main-swiper .swiper-slide {
             background: white;
             display: flex;
@@ -48,234 +53,142 @@
             align-items: center;
             cursor: pointer;
         }
-
         .main-swiper .swiper-slide img {
             width: 100%;
             height: 450px;
             object-fit: contain;
-            background-color: white;
+            background: white;
             transition: opacity 0.2s;
         }
+        .main-swiper .swiper-slide img:active { opacity: 0.9; }
 
-        .main-swiper .swiper-slide img:active {
-            opacity: 0.9;
-        }
-
-        /* Thumbnail Swiper */
-        .thumb-swiper {
-            height: 90px;
-            margin-top: 10px;
-        }
-
+        .thumb-swiper { height: 90px; margin-top: 10px; }
         .thumb-swiper .swiper-slide {
-            width: 80px;
-            height: 80px;
+            width: 80px; height: 80px;
             opacity: 0.6;
             transition: all 0.2s;
             cursor: pointer;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
             border: 2px solid transparent;
+            background: white;
         }
-
         .thumb-swiper .swiper-slide-thumb-active {
             opacity: 1;
-            border-color: var(--primary);
-            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+            border-color: var(--accent);
+            box-shadow: 0 2px 8px rgba(255, 214, 0, 0.3);
         }
+        .thumb-swiper .swiper-slide img { width: 100%; height: 100%; object-fit: cover; }
 
-        .thumb-swiper .swiper-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Навигация */
-        .swiper-button-next,
-        .swiper-button-prev {
-            color: var(--primary);
-            background: rgba(255, 255, 255, 0.9);
-            width: 44px;
-            height: 44px;
+        .swiper-button-next, .swiper-button-prev {
+            color: var(--text);
+            background: var(--accent);
+            width: 44px; height: 44px;
             border-radius: 50%;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
         }
-
-        .swiper-button-next:hover,
-        .swiper-button-prev:hover {
-            background: white;
+        .swiper-button-next:hover, .swiper-button-prev:hover {
+            background: var(--accent-dark);
             transform: scale(1.1);
         }
-
-        .swiper-button-next:after,
-        .swiper-button-prev:after {
-            font-size: 20px;
-            font-weight: bold;
+        .swiper-button-next:after, .swiper-button-prev:after {
+            font-size: 18px; font-weight: 700; color: var(--text);
         }
+        .swiper-pagination-bullet-active { background: var(--accent) !important; }
 
-        .swiper-pagination-bullet-active {
-            background: var(--primary) !important;  /* темно-синий */
-        }
-
-        /* ===== МОДАЛЬНОЕ ОКНО ===== */
+        /* ===== МОДАЛКА ===== */
         .swiper-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
             z-index: 99999;
             display: none;
         }
-
-        .swiper-modal .swiper {
-            height: 100vh;
-            width: 100vw;
-        }
-
+        .swiper-modal .swiper { height: 100vh; width: 100vw; }
         .swiper-modal .swiper-slide {
             background: transparent;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-
-        .swiper-modal .swiper-slide img {
-            width: 100%;
-            height: 100vh;
-            object-fit: contain;
-        }
-
+        .swiper-modal .swiper-slide img { width: 100%; height: 100vh; object-fit: contain; }
         .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            color: var(--primary-dark);
-            font-size: 48px;
-            cursor: pointer;
-            z-index: 100000;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-            line-height: 1;
-            background: none;
-            border: none;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            position: absolute; top: 20px; right: 30px;
+            color: white; font-size: 48px; cursor: pointer;
+            z-index: 100000; opacity: 0.8; transition: opacity 0.2s;
+            line-height: 1; background: none; border: none;
         }
-
-        .close-modal:hover {
-            opacity: 1;
+        .close-modal:hover { opacity: 1; }
+        .swiper-modal .swiper-button-next, .swiper-modal .swiper-button-prev {
+            background: rgba(255,255,255,0.15); color: white;
         }
-
-        .swiper-modal .swiper-button-next,
-        .swiper-modal .swiper-button-prev {
-            background: rgba(255, 255, 255, 0.2);
+        .swiper-modal .swiper-button-next:hover, .swiper-modal .swiper-button-prev:hover {
+            background: rgba(255,255,255,0.25);
         }
+        .swiper-modal .swiper-pagination-bullet { background: white; opacity: 0.5; }
+        .swiper-modal .swiper-pagination-bullet-active { background: var(--accent) !important; opacity: 1; }
 
-        .swiper-modal .swiper-button-next:hover,
-        .swiper-modal .swiper-button-prev:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .swiper-modal .swiper-pagination-bullet {
-            background: white;
-            opacity: 0.5;
-        }
-
-        .swiper-modal .swiper-pagination-bullet-active {
-            background: var(--primary) !important;
-            opacity: 1;
-        }
-
-        /* ===== СТИЛИ ТОВАРА ===== */
+        /* ===== ТОВАР ===== */
         .cart-management-widget {
-            background: #fff;
+            background: white;
             padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid #e9ecef;
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
         }
 
         .quantity-controls-full-width {
-            display: flex;
-            width: 100%;
-            border: 2px solid var(--primary-light);
+            display: flex; width: 100%;
+            border: 2px solid var(--primary);
             border-radius: 50px;
             overflow: hidden;
-            background: var(--primary-light);
+            background: white;
             height: 50px;
         }
-
         .quantity-btn-full-width {
-            flex: 1;
-            height: 100%;
-            border: none;
-            background: var(--primary-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: white;
-            font-size: 24px;
-            font-weight: 600;
-            padding: 0;
+            flex: 1; height: 100%; border: none;
+            background: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease;
+            color: var(--primary); font-size: 22px; font-weight: 700; padding: 0;
         }
-
-        .quantity-btn-full-width:hover {
-            background: var(--accent);
-        }
-
-        .quantity-btn-full-width:active {
-            background: var(--accent);
-        }
-
+        .quantity-btn-full-width:hover { background: var(--accent); color: var(--text); }
+        .quantity-btn-full-width:active { background: var(--accent-dark); }
         .quantity-display-full-width {
-            flex: 1;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
-            color: white;
-            background: var(--black-coral);
-            border-left: 2px solid var(--primary-light);
-            border-right: 2px solid var(--primary-light);
+            flex: 1; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 700; color: var(--text);
+            background: white;
+            border-left: 2px solid var(--primary);
+            border-right: 2px solid var(--primary);
             min-width: 60px;
         }
 
         /* Кнопка "Добавить в корзину" */
         #add-to-cart-btn.btn-primary {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            border: none;
-            border-radius: 50px;
-            font-weight: 700 !important;
-            font-size: 1.3rem !important;
-            color: white;
-            transition: all 0.3s ease;
+            background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%);
+            border: none; border-radius: 50px;
+            font-weight: 700 !important; font-size: 1.2rem !important;
+            color: var(--text) !important;
+            transition: var(--transition);
             box-shadow: var(--shadow-sm);
         }
-
         #add-to-cart-btn.btn-primary:hover {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
             transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 4px 12px rgba(255, 214, 0, 0.35);
         }
 
         /* Кнопка "Перейти к оформлению" */
         a[href="/cart"].btn-primary {
-            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-light) 100%);
-            border: none;
-            border-radius: 50px;
-            font-weight: 600;
-            color: white;
-            transition: all 0.3s ease;
-        }
-
-        a[href="/cart"].btn-primary:hover {
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            border: none; border-radius: 50px;
+            font-weight: 600; color: white;
+            transition: var(--transition);
+        }
+        a[href="/cart"].btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
@@ -283,139 +196,113 @@
         /* Кнопка "Удалить" */
         #remove-btn.btn-outline-danger {
             border-radius: 50px;
-            border: 2px solid var(--accent);
-            color: var(--accent);
-            transition: all 0.3s ease;
+            border: 2px solid #dc3545;
+            color: #dc3545;
+            transition: var(--transition);
+            font-weight: 600;
         }
-
         #remove-btn.btn-outline-danger:hover {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
+            background: #dc3545; border-color: #dc3545; color: white;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
         }
 
         .bg-light-success {
             background-color: rgba(25, 135, 84, 0.08);
+            border-radius: 12px;
+        }
+
+        .breadcrumb {
+            background: white !important;
+            padding: 1rem 1.5rem !important;
+            border-radius: 16px !important;
+            box-shadow: var(--shadow-sm) !important;
+            border: 1px solid var(--border) !important;
+        }
+
+        .nav-tabs .nav-link {
+            border-radius: 12px 12px 0 0;
+            font-weight: 600;
+            color: var(--text-light);
+            border: none;
+            padding: 12px 24px;
+        }
+        .nav-tabs .nav-link.active {
+            background: var(--accent);
+            color: var(--text);
+            font-weight: 700;
+        }
+        .nav-tabs {
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-content {
+            background: white;
+            border-radius: 0 0 16px 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            border-top: none;
+        }
+
+        .badge.bg-success { background: #198754 !important; }
+        .badge.bg-secondary { background: #6c757d !important; }
+
+        .text-primary { color: var(--primary) !important; }
+
+        /* Цена со скидкой (выделение) */
+        .price-discounted {
+            color: #dc3545 !important;  /* Красный цвет для скидки */
+            font-weight: 600 !important;
+            font-size: 2.8rem !important;
+        }
+
+        .price-discounted .currency {
+            font-size: 1.7rem !important;
+        }
+
+        /* Анимация для цены со скидкой */
+        /*.price-discounted {*/
+        /*    animation: pricePulse 2s ease-in-out infinite;*/
+        /*}*/
+
+        @keyframes pricePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* Бейдж скидки */
+        .discount-badge {
+            background: #dc3545 !important;
+            color: white !important;
+            font-weight: 700 !important;
+            font-size: 0.9rem !important;
+            padding: 4px 12px !important;
+            border-radius: 50px !important;
+            display: inline-block !important;
+            animation: discountPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes discountPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         /* Адаптивность */
         @media (max-width: 768px) {
-            /* Уменьшаем отступы футера */
-            .bg-dark {
-                margin-top: 30px;
-                padding: 20px 0 10px !important;
-            }
-
-            /* Уменьшаем заголовки */
-            .bg-dark h5, .bg-dark h6 {
-                font-size: 1.1rem !important;
-                margin-bottom: 10px !important;
-            }
-
-            /* Компактные списки */
-            .bg-dark ul {
-                margin-bottom: 15px !important;
-            }
-
-            .bg-dark li {
-                margin-bottom: 5px !important;
-                font-size: 0.9rem !important;
-            }
-
-            /* Убираем подчеркивание на мобилках */
-            .bg-dark h5::after, .bg-dark h6::after {
-                width: 30px !important;
-                height: 2px !important;
-                bottom: -5px !important;
-            }
-
-            /* Юридическая информация - компактно */
-            .legal-info {
-                margin-top: 15px !important;
-                padding: 10px !important;
-            }
-
-            .legal-info p {
-                font-size: 0.7rem !important;
-                line-height: 1.3 !important;
-            }
-
-            /* Копирайт */
-            .bg-dark hr {
-                margin: 15px 0 5px !important;
-            }
-
-            .bg-dark .copyright p {
-                font-size: 0.7rem !important;
-                margin-bottom: 5px !important;
-            }
-
-            /* Социальные иконки меньше */
-            .social-links {
-                margin-bottom: 10px;
-            }
-
-            .social-links a {
-                width: 30px !important;
-                height: 30px !important;
-                font-size: 0.9rem !important;
-            }
-
-            .main-swiper .swiper-slide img {
-                height: 350px;
-            }
-
-            .thumb-swiper {
-                height: 70px;
-            }
-
-            .thumb-swiper .swiper-slide {
-                width: 60px;
-                height: 60px;
-            }
-
-            .swiper-button-next,
-            .swiper-button-prev {
-                display: none;
-            }
-
-            .close-modal {
-                top: 10px;
-                right: 20px;
-                font-size: 40px;
-            }
+            .main-swiper .swiper-slide img { height: 300px; }
+            .thumb-swiper { height: 70px; }
+            .thumb-swiper .swiper-slide { width: 60px; height: 60px; }
+            .swiper-button-next, .swiper-button-prev { display: none; }
+            .close-modal { top: 10px; right: 20px; font-size: 40px; }
         }
-
         @media (max-width: 480px) {
-            .main-swiper .swiper-slide img {
-                height: 280px;
-            }
-
-            .thumb-swiper .swiper-slide {
-                width: 50px;
-                height: 50px;
-            }
+            .main-swiper .swiper-slide img { height: 250px; }
+            .thumb-swiper .swiper-slide { width: 50px; height: 50px; }
         }
 
-        /* Анимации */
-        .fade-in {
-            animation: fadeIn 0.3s ease;
-        }
-
+        .fade-in { animation: fadeIn 0.3s ease; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        .fade-out {
-            animation: fadeOut 0.3s ease;
-        }
-
-        @keyframes fadeOut {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(10px); }
         }
     </style>
 </head>
@@ -426,12 +313,10 @@
 <main class="container my-4">
     <!-- Breadcrumbs -->
     <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb bg-light p-3 rounded">
+        <ol class="breadcrumb">
             <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Главная</a></li>
             <li th:each="cat : ${product.categories}" class="breadcrumb-item">
-                <a th:href="@{/category/{title}(title=${cat.title})}"
-                   class="text-decoration-none"
-                   th:text="${cat.name}">Категория</a>
+                <a th:href="@{/category/{title}(title=${cat.title})}" class="text-decoration-none" th:text="${cat.name}">Категория</a>
             </li>
             <li class="breadcrumb-item active" th:text="${product.name}">Товар</li>
         </ol>
@@ -439,153 +324,98 @@
 
     <!-- Product Details -->
     <div class="row g-4">
-        <!-- Product Images - SWIPER -->
+        <!-- Product Images -->
         <div class="col-lg-6">
             <th:block th:if="${product.images != null and not #lists.isEmpty(product.images)}">
-                <!-- Основной Swiper -->
                 <div class="swiper main-swiper">
                     <div class="swiper-wrapper">
                         <div th:each="image, stat : ${product.images}" class="swiper-slide">
-                            <img th:src="${image.url}"
-                                 th:alt="${image.alt != null ? image.alt : product.name}"
-                                 th:attr="data-index=${stat.index}"
-                                 onclick="openModalSwiper(this.dataset.index)">
+                            <img th:src="${image.url}" th:alt="${image.alt != null ? image.alt : product.name}" th:attr="data-index=${stat.index}" onclick="openModalSwiper(this.dataset.index)">
                         </div>
                     </div>
                     <div class="swiper-button-next"></div>
                     <div class="swiper-button-prev"></div>
                     <div class="swiper-pagination"></div>
                 </div>
-
-                <!-- Thumbnail Swiper -->
                 <div class="swiper thumb-swiper">
                     <div class="swiper-wrapper">
-                        <div th:each="image, stat : ${product.images}" class="swiper-slide">
-                            <img th:src="${image.url}"
-                                 th:alt="${image.alt != null ? image.alt : product.name}">
+                        <div th:each="image : ${product.images}" class="swiper-slide">
+                            <img th:src="${image.url}" th:alt="${image.alt != null ? image.alt : product.name}">
                         </div>
                     </div>
                 </div>
             </th:block>
-
-            <!-- Placeholder если нет фото -->
             <th:block th:if="${product.images == null or #lists.isEmpty(product.images)}">
-                <div class="bg-light d-flex align-items-center justify-content-center rounded"
-                     style="height: 400px;">
-                    <img src="/static/placeholder.jpg"
-                         alt="Нет изображения"
-                         class="card-img-top product-image"
-                         style="width: 400px; height: 400px; object-fit: contain; opacity: 0.9;">
+                <div class="bg-white d-flex align-items-center justify-content-center rounded-4" style="height: 400px; box-shadow: var(--shadow-sm);">
+                    <img src="/static/placeholder.jpg" alt="Нет изображения" style="width: 300px; height: 300px; object-fit: contain; opacity: 0.4;">
                 </div>
             </th:block>
         </div>
 
         <!-- Product Info -->
         <div class="col-lg-6">
-            <h1 class="mb-3" th:text="${product.name}">Название товара</h1>
+            <h1 class="mb-3 fw-bold" th:text="${product.name}">Название товара</h1>
 
             <!-- Price -->
             <div class="mb-4">
                 <div th:if="${product.hasDiscount != null and product.hasDiscount}">
-                    <div class="d-flex align-items-center gap-2">
-                            <span class="display-5 fw-bold text-danger"
-                                  th:text="${product.formattedDiscountedPrice}">1 990 ₽</span>
-                        <span class="text-muted text-decoration-line-through fs-4"
-                              th:text="${product.formattedPrice}">2 990 ₽</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Новая цена со скидкой (КРАСНАЯ) -->
+                        <span class="price-discounted" th:text="${product.formattedDiscountedPrice}">1 990 ₽</span>
+                        <!-- Старая цена (зачёркнутая) -->
+                        <span class="text-muted text-decoration-line-through fs-4" th:text="${product.formattedPrice}">2 990 ₽</span>
+
+                        <!-- Бейдж скидки -->
+                        <span class="discount-badge">
+                            <i class="bi bi-percent me-1"></i>
+                            Скидка
+                        </span>
                     </div>
                 </div>
                 <div th:unless="${product.hasDiscount != null and product.hasDiscount}">
-                        <span class="display-5 fw-bold text-primary"
-                              th:text="${product.formattedPrice}">1 990 ₽</span>
+                    <span class="display-5 fw-bold" style="color: var(--primary);" th:text="${product.formattedPrice}">1 990 ₽</span>
                 </div>
-                <span th:if="${product.sku != null and !product.sku.isEmpty()}"
-                      class="text-muted ms-2"
-                      th:text="'Артикул: ' + ${product.sku}">
-                    </span>
+                <span th:if="${product.sku != null and !product.sku.isEmpty()}" class="text-muted ms-2" th:text="'Артикул: ' + ${product.sku}"></span>
             </div>
 
             <!-- Status -->
             <div class="mb-4">
-                    <span th:if="${product.active}"
-                          class="badge bg-success fs-6 px-3 py-2">
-                        <i class="bi bi-check-circle me-1"></i> В наличии
-                    </span>
-                <span th:if="${product.active != null and !product.active}"
-                      class="badge bg-secondary fs-6 px-3 py-2">
-                        <i class="bi bi-x-circle me-1"></i> Недоступен
-                    </span>
+                <span th:if="${product.active}" class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-circle me-1"></i> В наличии</span>
+                <span th:if="${product.active != null and !product.active}" class="badge bg-secondary fs-6 px-3 py-2"><i class="bi bi-x-circle me-1"></i> Недоступен</span>
             </div>
 
             <!-- Short Description -->
-            <div th:if="${product.shortDescription != null and !product.shortDescription.isEmpty()}"
-                 class="lead mb-4 p-3 bg-light rounded"
-                 th:text="${product.shortDescription}">
-            </div>
+            <div th:if="${product.shortDescription != null and !product.shortDescription.isEmpty()}" class="lead mb-4 p-3 bg-white rounded-3" style="border: 1px solid var(--border);" th:text="${product.shortDescription}"></div>
 
             <!-- Add to Cart -->
             <div class="mb-4" id="cart-section" th:data-product-id="${product.id}">
-                <!-- Блок управления (товар в корзине) -->
                 <div id="cart-management-section" class="cart-management-widget" style="display: none;">
                     <div class="alert alert-success border-0 bg-light-success mb-3">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-check-circle-fill text-success fs-3"></i>
                             <div class="ms-3">
-                                <h6 class="mb-1">Товар в корзине</h6>
-                                <p class="mb-0">
-                                    Количество:
-                                    <span class="badge bg-success rounded-pill fs-6 px-3 py-2"
-                                          id="cartQuantity">0</span>
-                                </p>
+                                <h6 class="mb-1 fw-bold">Товар в корзине</h6>
+                                <p class="mb-0">Количество: <span class="badge bg-success rounded-pill fs-6 px-3 py-2" id="cartQuantity">0</span></p>
                             </div>
                         </div>
                     </div>
-
                     <div class="mb-4">
                         <div class="mb-2 fw-medium">Изменить количество:</div>
                         <div class="quantity-controls-full-width">
-                            <button type="button"
-                                    class="quantity-btn-full-width"
-                                    onclick="decreaseFromCart(this)"
-                                    id="decrease-btn">
-                                <i class="bi bi-dash-lg"></i>
-                            </button>
+                            <button type="button" class="quantity-btn-full-width" onclick="decreaseFromCart(this)" id="decrease-btn"><i class="bi bi-dash-lg"></i></button>
                             <span class="quantity-display-full-width" id="cartQuantityValue">0</span>
-                            <button type="button"
-                                    class="quantity-btn-full-width"
-                                    onclick="addToCart(this)"
-                                    id="increase-btn">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
+                            <button type="button" class="quantity-btn-full-width" onclick="addToCart(this)" id="increase-btn"><i class="bi bi-plus-lg"></i></button>
                         </div>
                     </div>
-
                     <div class="d-grid gap-2">
-                        <a th:href="@{/cart}" class="btn btn-primary btn-lg py-3">
-                            <i class="bi bi-cart-check me-2"></i>Перейти к оформлению
-                        </a>
-                        <button type="button"
-                                class="btn btn-outline-danger btn-lg py-3"
-                                onclick="removeFromCart(this)"
-                                id="remove-btn">
-                            <i class="bi bi-trash me-2"></i>Удалить
-                        </button>
+                        <a th:href="@{/cart}" class="btn btn-primary btn-lg py-3"><i class="bi bi-cart-check me-2"></i>Перейти к оформлению</a>
+                        <button type="button" class="btn btn-outline-danger btn-lg py-3" onclick="removeFromCart(this)" id="remove-btn"><i class="bi bi-trash me-2"></i>Удалить</button>
                     </div>
                 </div>
 
-                <!-- Блок "Добавить в корзину" -->
                 <div id="add-to-cart-section" style="display: none;">
-                    <button th:if="${product.active}"
-                            type="button"
-                            class="btn btn-primary btn-lg w-100 py-3 fw-bold"
-                            onclick="addToCart(this)"
-                            id="add-to-cart-btn">
-                        <i class="bi bi-cart-plus me-2"></i>
-                        <span class="btn-text">Добавить в корзину</span>
-                    </button>
-                    <button th:if="${product.active != null and !product.active}"
-                            class="btn btn-secondary btn-lg w-100 py-3" disabled>
-                        <i class="bi bi-envelope me-2"></i> Уведомить о поступлении
-                    </button>
+                    <button th:if="${product.active}" type="button" class="btn btn-primary btn-lg w-100 py-3 fw-bold" onclick="addToCart(this)" id="add-to-cart-btn"><i class="bi bi-cart-plus me-2"></i><span class="btn-text">Добавить в корзину</span></button>
+                    <button th:if="${product.active != null and !product.active}" class="btn btn-secondary btn-lg w-100 py-3" disabled><i class="bi bi-envelope me-2"></i> Уведомить о поступлении</button>
                 </div>
             </div>
 
@@ -593,12 +423,7 @@
             <div th:if="${product.categories != null and not #lists.isEmpty(product.categories)}">
                 <strong>Категории:</strong>
                 <div class="mt-2">
-                    <a th:each="cat : ${product.categories}"
-                       th:href="@{/category/{title}(title=${cat.title})}"
-                       class="badge bg-light text-dark text-decoration-none me-1 p-2"
-                       th:text="${cat.name}">
-                        Категория
-                    </a>
+                    <a th:each="cat : ${product.categories}" th:href="@{/category/{title}(title=${cat.title})}" class="badge bg-light text-dark text-decoration-none me-1 p-2" style="background: var(--bg-alt) !important; border: 1px solid var(--border);" th:text="${cat.name}">Категория</a>
                 </div>
             </div>
         </div>
@@ -609,29 +434,16 @@
         <div class="col-12">
             <ul class="nav nav-tabs" id="productTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="description-tab" data-bs-toggle="tab"
-                            data-bs-target="#description" type="button" role="tab">
-                        Описание
-                    </button>
+                    <button class="nav-link active" id="description-tab" data-bs-toggle="tab" data-bs-target="#description" type="button" role="tab">Описание</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="specs-tab" data-bs-toggle="tab"
-                            data-bs-target="#specs" type="button" role="tab">
-                        Характеристики
-                    </button>
+                    <button class="nav-link" id="specs-tab" data-bs-toggle="tab" data-bs-target="#specs" type="button" role="tab">Характеристики</button>
                 </li>
             </ul>
-
-            <div class="tab-content p-4 border border-top-0 rounded-bottom bg-white">
+            <div class="tab-content p-4">
                 <div class="tab-pane fade show active" id="description" role="tabpanel">
-                    <div th:if="${product.description != null and !product.description.isEmpty()}"
-                         th:utext="${product.description}">
-                    </div>
-                    <div th:unless="${product.description != null and !product.description.isEmpty()}"
-                         class="text-muted text-center py-4">
-                        <i class="bi bi-file-text fs-1"></i>
-                        <p class="mt-2">Описание товара отсутствует</p>
-                    </div>
+                    <div th:if="${product.description != null and !product.description.isEmpty()}" th:utext="${product.description}"></div>
+                    <div th:unless="${product.description != null and !product.description.isEmpty()}" class="text-muted text-center py-4"><i class="bi bi-file-text fs-1"></i><p class="mt-2">Описание товара отсутствует</p></div>
                 </div>
                 <div class="tab-pane fade" id="specs" role="tabpanel">
                     <div th:if="${product.attributeValues != null and not #lists.isEmpty(product.attributeValues)}">
@@ -639,21 +451,12 @@
                             <tbody>
                             <tr th:each="attrValue : ${product.attributeValues}">
                                 <th style="width: 40%" th:text="${attrValue.attributeName}">Характеристика</th>
-                                <td>
-                                    <span th:text="${attrValue.value}">Значение</span>
-                                    <small th:if="${attrValue.attributeUnit != null and !attrValue.attributeUnit.isEmpty()}"
-                                           class="text-muted ms-1"
-                                           th:text="${attrValue.attributeUnit}"></small>
-                                </td>
+                                <td><span th:text="${attrValue.value}">Значение</span><small th:if="${attrValue.attributeUnit != null and !attrValue.attributeUnit.isEmpty()}" class="text-muted ms-1" th:text="${attrValue.attributeUnit}"></small></td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div th:unless="${product.attributeValues != null and not #lists.isEmpty(product.attributeValues)}"
-                         class="text-center text-muted py-5">
-                        <i class="bi bi-info-circle fs-1"></i>
-                        <p class="mt-3">Характеристики товара отсутствуют</p>
-                    </div>
+                    <div th:unless="${product.attributeValues != null and not #lists.isEmpty(product.attributeValues)}" class="text-center text-muted py-5"><i class="bi bi-info-circle fs-1"></i><p class="mt-3">Характеристики товара отсутствуют</p></div>
                 </div>
             </div>
         </div>
@@ -674,222 +477,67 @@
     </div>
 </div>
 
-<!-- Скрипты -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
-    // Глобальные переменные
-    let modalSwiper = null;
-    let mainSwiper = null;
-
-    // Инициализация при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function() {
-        // Инициализация основного Swiper
-        mainSwiper = new Swiper('.main-swiper', {
-            slidesPerView: 1,
-            spaceBetween: 0,
-            loop: false,
-            pagination: {
-                el: '.swiper-pagination',
-                clickable: true,
-            },
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            thumbs: {
-                swiper: new Swiper('.thumb-swiper', {
-                    slidesPerView: 'auto',
-                    spaceBetween: 10,
-                    freeMode: true,
-                    watchSlidesProgress: true,
-                    breakpoints: {
-                        320: { slidesPerView: 3 },
-                        480: { slidesPerView: 4 },
-                        768: { slidesPerView: 5 },
-                        1024: { slidesPerView: 6 }
-                    }
-                })
-            }
-        });
-
-        // Загрузка состояния корзины
-        loadCartState();
-    });
-
-    // ===== ФУНКЦИИ МОДАЛКИ =====
-    window.openModalSwiper = function(index) {
-        // Преобразуем строку в число
-        index = parseInt(index, 10);
-        console.log('📸 Открываем фото №', index + 1);
-
-        const modal = document.getElementById('modalSwiper');
-        const wrapper = document.getElementById('modalSwiperWrapper');
-
-        // Получаем все изображения
-        const images = Array.from(document.querySelectorAll('.main-swiper .swiper-slide img')).map(img => ({
-            url: img.src,
-            alt: img.alt
-        }));
-
-        if (images.length === 0) return;
-
-        // Очищаем и наполняем wrapper
-        wrapper.innerHTML = '';
-        images.forEach(img => {
-            const slide = document.createElement('div');
-            slide.className = 'swiper-slide';
-            slide.innerHTML = `
-            <div class="swiper-zoom-container">
-                <img src="${img.url}" alt="${img.alt}">
-            </div>
-        `;
-            wrapper.appendChild(slide);
-        });
-
-        // Показываем модалку
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-
-        // Уничтожаем старый Swiper
-        if (modalSwiper) {
-            modalSwiper.destroy(true, true);
-        }
-
-        // СОЗДАЁМ НОВЫЙ С УКАЗАННЫМ ИНДЕКСОМ
-        modalSwiper = new Swiper('.modal-main-swiper', {
-            initialSlide: index,  // ← ВАЖНО: ставим нужный индекс
-            slidesPerView: 1,
-            spaceBetween: 0,
-            loop: false,
-            pagination: {
-                el: '.swiper-pagination',
-                clickable: true,
-            },
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            zoom: {
-                maxRatio: 3,
-                minRatio: 1,
-                toggle: true,
-            }
-        });
-    };
-
-    window.closeModalSwiper = function() {
-        const modal = document.getElementById('modalSwiper');
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    };
-
-    // Закрытие по Escape
-    document.addEventListener('keydown', function(e) {
-        const modal = document.getElementById('modalSwiper');
-        if (modal && modal.style.display === 'block' && e.key === 'Escape') {
-            closeModalSwiper();
-        }
-    });
-
-    // ===== ФУНКЦИИ КОРЗИНЫ =====
+    let modalSwiper = null, mainSwiper = null;
     const productId = /*[[${product.id}]]*/ null;
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
+    document.addEventListener('DOMContentLoaded', function() {
+        mainSwiper = new Swiper('.main-swiper', {
+            slidesPerView: 1, spaceBetween: 0, loop: false,
+            pagination: { el: '.swiper-pagination', clickable: true },
+            navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+            thumbs: { swiper: new Swiper('.thumb-swiper', { slidesPerView: 'auto', spaceBetween: 10, freeMode: true, watchSlidesProgress: true, breakpoints: { 320: { slidesPerView: 3 }, 480: { slidesPerView: 4 }, 768: { slidesPerView: 5 }, 1024: { slidesPerView: 6 } } }) }
+        });
+        loadCartState();
+    });
+
+    window.openModalSwiper = function(index) {
+        index = parseInt(index, 10);
+        const modal = document.getElementById('modalSwiper');
+        const wrapper = document.getElementById('modalSwiperWrapper');
+        const images = Array.from(document.querySelectorAll('.main-swiper .swiper-slide img')).map(img => ({ url: img.src, alt: img.alt }));
+        if (images.length === 0) return;
+        wrapper.innerHTML = '';
+        images.forEach(img => { const slide = document.createElement('div'); slide.className = 'swiper-slide'; slide.innerHTML = `<div class="swiper-zoom-container"><img src="${img.url}" alt="${img.alt}"></div>`; wrapper.appendChild(slide); });
+        modal.style.display = 'block'; document.body.style.overflow = 'hidden';
+        if (modalSwiper) modalSwiper.destroy(true, true);
+        modalSwiper = new Swiper('.modal-main-swiper', { initialSlide: index, slidesPerView: 1, spaceBetween: 0, loop: false, pagination: { el: '.swiper-pagination', clickable: true }, navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }, zoom: { maxRatio: 3, minRatio: 1, toggle: true } });
+    };
+    window.closeModalSwiper = function() { document.getElementById('modalSwiper').style.display = 'none'; document.body.style.overflow = 'auto'; };
+    document.addEventListener('keydown', function(e) { const m = document.getElementById('modalSwiper'); if (m && m.style.display === 'block' && e.key === 'Escape') closeModalSwiper(); });
+
     async function cartRequest(endpoint, data = {}) {
-        const headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        };
-
-        if (csrfToken && csrfHeader) {
-            headers[csrfHeader] = csrfToken;
-        }
-
-        try {
-            const response = await fetch(`/api/cart${endpoint}`, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(data)
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const result = await response.json();
-
-            // Отправляем событие для header
-            window.dispatchEvent(new CustomEvent('cart-updated', {
-                detail: { totalQuantity: result.totalQuantity }
-            }));
-
-            return result;
-        } catch (error) {
-            console.error('Cart request error:', error);
-            showNotification(error.message || 'Ошибка запроса', 'danger');
-            throw error;
-        }
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        const response = await fetch(`/api/cart${endpoint}`, { method: 'POST', headers, body: JSON.stringify(data) });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const result = await response.json();
+        window.dispatchEvent(new CustomEvent('cart-updated', { detail: { totalQuantity: result.totalQuantity } }));
+        return result;
     }
 
     async function addToCart(button) {
-        if (!productId) {
-            showNotification('ID товара не найден', 'danger');
-            return;
-        }
-
-        const originalText = button.innerHTML;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        button.disabled = true;
-
-        try {
-            const result = await cartRequest('/add', { productId, quantity: 1 });
-            updateCartUI(result);
-            showNotification('Товар добавлен в корзину', 'success');
-        } finally {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
+        if (!productId) { showNotification('ID товара не найден', 'danger'); return; }
+        const originalText = button.innerHTML; button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; button.disabled = true;
+        try { const result = await cartRequest('/add', { productId, quantity: 1 }); updateCartUI(result); showNotification('Товар добавлен в корзину', 'success'); }
+        finally { button.innerHTML = originalText; button.disabled = false; }
     }
-
     async function decreaseFromCart(button) {
-        if (!productId) {
-            showNotification('ID товара не найден', 'danger');
-            return;
-        }
-
-        button.disabled = true;
-
-        try {
-            const result = await cartRequest('/decrease', { productId });
-            updateCartUI(result);
-            const quantity = result.quantities?.[productId] || 0;
-            showNotification(quantity === 0 ? 'Товар удален из корзины' : 'Количество уменьшено', 'info');
-        } finally {
-            button.disabled = false;
-        }
+        if (!productId) return; button.disabled = true;
+        try { const result = await cartRequest('/decrease', { productId }); updateCartUI(result); const q = result.quantities?.[productId] || 0; showNotification(q === 0 ? 'Товар удален' : 'Количество уменьшено', q === 0 ? 'info' : 'success'); }
+        finally { button.disabled = false; }
     }
-
     async function removeFromCart(button) {
-        if (!productId) {
-            showNotification('ID товара не найден', 'danger');
-            return;
-        }
-
-        if (!confirm('Удалить товар из корзины?')) return;
-
-        const originalText = button.innerHTML;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        button.disabled = true;
-
-        try {
-            const result = await cartRequest('/remove', { productId });
-            updateCartUI(result);
-            showNotification('Товар удален из корзины', 'info');
-        } finally {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
+        if (!productId) return; if (!confirm('Удалить товар из корзины?')) return;
+        const originalText = button.innerHTML; button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; button.disabled = true;
+        try { const result = await cartRequest('/remove', { productId }); updateCartUI(result); showNotification('Товар удален', 'info'); }
+        finally { button.innerHTML = originalText; button.disabled = false; }
     }
 
     function updateCartUI(result) {
@@ -899,78 +547,30 @@
         const quantityBadge = document.getElementById('cartQuantity');
         const quantityValue = document.getElementById('cartQuantityValue');
         const decreaseBtn = document.getElementById('decrease-btn');
-
         if (quantityBadge) quantityBadge.textContent = quantity;
         if (quantityValue) quantityValue.textContent = quantity;
         if (decreaseBtn) decreaseBtn.disabled = quantity <= 1;
-
         updateHeaderBadge(result.totalQuantity);
-
-        if (quantity > 0) {
-            cartSection.style.display = 'block';
-            cartSection.classList.add('fade-in');
-            addSection.style.display = 'none';
-        } else {
-            cartSection.style.display = 'none';
-            addSection.style.display = 'block';
-            addSection.classList.add('fade-in');
-        }
+        if (quantity > 0) { cartSection.style.display = 'block'; cartSection.classList.add('fade-in'); addSection.style.display = 'none'; }
+        else { cartSection.style.display = 'none'; addSection.style.display = 'block'; addSection.classList.add('fade-in'); }
     }
-
     function updateHeaderBadge(totalQuantity) {
         let badge = document.getElementById('cart-badge');
         const container = document.querySelector('.cart-indicator a');
-
-        if (totalQuantity > 0) {
-            if (!badge && container) {
-                badge = document.createElement('span');
-                badge.id = 'cart-badge';
-                badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                container.appendChild(badge);
-            }
-            if (badge) {
-                badge.textContent = totalQuantity;
-                badge.style.display = 'inline-block';
-            }
-        } else if (badge) {
-            badge.style.display = 'none';
-        }
+        if (totalQuantity > 0) { if (!badge && container) { badge = document.createElement('span'); badge.id = 'cart-badge'; badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger'; container.appendChild(badge); } if (badge) { badge.textContent = totalQuantity; badge.style.display = 'inline-block'; } }
+        else if (badge) badge.style.display = 'none';
     }
-
     function showNotification(message, type = 'success') {
         let container = document.getElementById('notification-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'notification-container';
-            container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
-            document.body.appendChild(container);
-        }
-
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${type} alert-dismissible fade show mb-2 shadow`;
+        if (!container) { container = document.createElement('div'); container.id = 'notification-container'; container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;'; document.body.appendChild(container); }
+        const alert = document.createElement('div'); alert.className = `alert alert-${type} alert-dismissible fade show mb-2 shadow`;
         const icon = type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle';
-        alert.innerHTML = `
-            <div class="d-flex align-items-center">
-                <i class="bi bi-${icon} fs-5 me-2"></i>
-                <div class="flex-grow-1">${message}</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-
-        container.appendChild(alert);
-        setTimeout(() => alert.remove(), 3000);
+        alert.innerHTML = `<div class="d-flex align-items-center"><i class="bi bi-${icon} fs-5 me-2"></i><div class="flex-grow-1">${message}</div><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        container.appendChild(alert); setTimeout(() => alert.remove(), 3000);
     }
-
     async function loadCartState() {
-        try {
-            const response = await fetch('/api/cart/state');
-            if (response.ok) {
-                const result = await response.json();
-                updateCartUI(result);
-            }
-        } catch (error) {
-            console.error('Error loading cart state:', error);
-        }
+        try { const response = await fetch('/api/cart/state'); if (response.ok) { const result = await response.json(); updateCartUI(result); } }
+        catch (error) { console.error('Error loading cart state:', error); }
     }
     /*]]>*/
 </script>

@@ -10,21 +10,42 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
     <style>
         :root {
-            --primary: #0d2e67;      /* темно-синий */
-            --primary-dark: #0a1f3f; /* еще темнее */
-            --primary-light: #2a4b8c; /* светлее */
+            --primary: #0d1b2a;
+            --primary-dark: #1b263b;
+            --primary-light: #2a3a4d;
+            --accent: #FFD600;
+            --accent-dark: #E6C200;
+            --text: #1a1a1a;
+            --text-light: #5a5a5a;
+            --bg: #ffffff;
+            --bg-alt: #f5f6f8;
+            --border: #e2e8f0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-            /* Тени */
-            --shadow-sm: 0 2px 8px rgba(84, 110, 122, 0.08);
-            --shadow-md: 0 4px 16px rgba(84, 110, 122, 0.12);
-            --shadow-lg: 0 8px 24px rgba(84, 110, 122, 0.15);
+        body {
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: var(--text);
+        }
+
+        .cart-icon {
+            color: var(--primary-light);
+            border-radius: 24px;
         }
 
         .cart-item {
             transition: all 0.2s ease;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: white;
         }
         .cart-item:hover {
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent);
         }
 
         .hover-primary:hover {
@@ -32,11 +53,17 @@
         }
 
         .product-image {
-            border: 1px solid #dee2e6;
+            width: 100px !important;
+            height: 100px !important;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
             transition: transform 0.2s;
+            background: white;
+            padding: 4px;
+            object-fit: contain;
         }
         .product-image:hover {
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
 
         .btn-loading {
@@ -54,7 +81,7 @@
             100% { transform: scale(1); }
         }
 
-        /* Кнопки + и - в нашем стиле */
+        /* Кнопки + и - */
         .quantity-controls-full {
             display: flex;
             width: 100%;
@@ -77,18 +104,18 @@
             cursor: pointer;
             transition: all 0.2s ease;
             color: var(--primary);
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 24px;
+            font-weight: 700;
             padding: 0;
         }
 
         .quantity-btn-full:hover {
-            background: #f0f0f0;
-            color: var(--primary-dark);
+            background: var(--accent);
+            color: var(--text);
         }
 
         .quantity-btn-full:active {
-            background: #e0e0e0;
+            background: var(--accent-dark);
             transform: scale(0.96);
         }
 
@@ -98,153 +125,105 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--primary);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
             background: white;
             border-left: 2px solid var(--primary);
             border-right: 2px solid var(--primary);
         }
 
-        /* Кнопка добавления */
-        .add-to-cart-btn {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+        /* Кнопка оформления */
+        .btn-checkout {
+            background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%) !important;
             border: none;
-            border-radius: 50px;
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: white;
-            transition: all 0.3s ease;
-            height: 48px;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 50px !important;
+            font-weight: 700 !important;
+            font-size: 1.2rem !important;
+            color: var(--text) !important;
+            transition: var(--transition) !important;
+            box-shadow: var(--shadow-sm) !important;
+        }
+        .btn-checkout:hover {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(255, 214, 0, 0.35) !important;
+            color: var(--text) !important;
+        }
+
+        /* Цены */
+        .text-primary { color: var(--primary) !important; }
+
+        .btn-outline-primary {
+            color: var(--primary) !important;
+            border-color: var(--primary) !important;
+            border-radius: 50px !important;
+            font-weight: 600 !important;
+            transition: var(--transition) !important;
+        }
+        .btn-outline-primary:hover {
+            background: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: white !important;
+        }
+
+        .btn-outline-danger {
+            border-radius: 50px !important;
+            font-weight: 600 !important;
+            transition: var(--transition) !important;
+        }
+
+        .alert-light {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        .card {
+            border-radius: 20px;
+            border: 1px solid var(--border);
             box-shadow: var(--shadow-sm);
         }
-
-        .add-to-cart-btn:hover {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+        .card-header {
+            background: var(--bg-alt);
+            border-bottom: 1px solid var(--border);
+            border-radius: 20px 20px 0 0 !important;
         }
 
-        .add-to-cart-btn:active {
-            background: var(--primary-dark);
-            transform: translateY(0) scale(0.98);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* Цена со скидкой (красная, жирная) */
+        .price-discounted-cart {
+            color: #dc3545 !important;  /* Красный цвет */
+            font-weight: 800 !important;
+            font-size: 1.2rem !important;
         }
+
+        /* Бейдж скидки для корзины */
+        .discount-badge-cart {
+            background: #dc3545 !important;
+            color: white !important;
+            font-weight: 700 !important;
+            font-size: 0.7rem !important;
+            padding: 2px 10px !important;
+            border-radius: 50px !important;
+            display: inline-block !important;
+            margin-left: 8px !important;
+        }
+
+        /* Зачёркнутая старая цена */
+        .old-price-cart {
+            color: #6c757d !important;
+            text-decoration: line-through !important;
+            font-size: 0.9rem !important;
+        }
+
+        /* Итоговая цена со скидкой */
+        .total-discounted-cart {
+            color: #dc3545 !important;
+            font-weight: 800 !important;
+            font-size: 1.3rem !important;
+        }
+
         /* Адаптивность */
-        @media (max-width: 768px) {
-            /* Уменьшаем отступы футера */
-            .bg-dark {
-                margin-top: 30px;
-                padding: 20px 0 10px !important;
-            }
-
-            /* Уменьшаем заголовки */
-            .bg-dark h5, .bg-dark h6 {
-                font-size: 1.1rem !important;
-                margin-bottom: 10px !important;
-            }
-
-            /* Компактные списки */
-            .bg-dark ul {
-                margin-bottom: 15px !important;
-            }
-
-            .bg-dark li {
-                margin-bottom: 5px !important;
-                font-size: 0.9rem !important;
-            }
-
-            /* Убираем подчеркивание на мобилках */
-            .bg-dark h5::after, .bg-dark h6::after {
-                width: 30px !important;
-                height: 2px !important;
-                bottom: -5px !important;
-            }
-
-            /* Юридическая информация - компактно */
-            .legal-info {
-                margin-top: 15px !important;
-                padding: 10px !important;
-            }
-
-            .legal-info p {
-                font-size: 0.7rem !important;
-                line-height: 1.3 !important;
-            }
-
-            /* Копирайт */
-            .bg-dark hr {
-                margin: 15px 0 5px !important;
-            }
-
-            .bg-dark .copyright p {
-                font-size: 0.7rem !important;
-                margin-bottom: 5px !important;
-            }
-
-            /* Социальные иконки меньше */
-            .social-links {
-                margin-bottom: 10px;
-            }
-
-            .social-links a {
-                width: 30px !important;
-                height: 30px !important;
-                font-size: 0.9rem !important;
-            }
-
-            .main-swiper .swiper-slide img {
-                height: 350px;
-            }
-
-            .thumb-swiper {
-                height: 70px;
-            }
-
-            .thumb-swiper .swiper-slide {
-                width: 60px;
-                height: 60px;
-            }
-
-            .swiper-button-next,
-            .swiper-button-prev {
-                display: none;
-            }
-
-            .close-modal {
-                top: 10px;
-                right: 20px;
-                font-size: 40px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .main-swiper .swiper-slide img {
-                height: 280px;
-            }
-
-            .thumb-swiper .swiper-slide {
-                width: 50px;
-                height: 50px;
-            }
-        }
-
-        /* Адаптивность для мобильных */
-        @media (max-width: 576px) {
-            .subcategory-title {
-                font-size: 0.9rem; /* Чуть меньше на мобилках */
-            }
-
-            .subcategory-body {
-                padding: 0.75rem;
-                min-height: 70px;
-            }
-        }
-
         @media (max-width: 768px) {
             .product-image-container {
                 text-align: center;
@@ -270,7 +249,9 @@
         <div class="col-12">
             <!-- Заголовок -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h2 fw-bold"><i class="bi bi-cart3 text-primary me-2"></i>Корзина покупок</h1>
+                <h1 class="h2 fw-bold">
+                    <i class="bi bi-cart3 cart-icon me-2">
+                    </i>Корзина покупок</h1>
                 <div>
                     <a th:href="@{/}" class="btn btn-outline-primary me-2">
                         <i class="bi bi-arrow-left me-1"></i> Продолжить покупки
@@ -288,7 +269,7 @@
                 <i class="bi bi-cart-x display-1 text-muted mb-4"></i>
                 <h3 class="text-muted mb-3">Корзина пуста</h3>
                 <p class="text-muted mb-4">Вы еще не добавили товары в корзину</p>
-                <a th:href="@{/}" class="btn btn-primary btn-lg">
+                <a th:href="@{/}" class="btn btn-checkout btn-lg px-5">
                     <i class="bi bi-bag me-2"></i> Перейти к покупкам
                 </a>
             </div>
@@ -299,7 +280,7 @@
                 <div class="alert alert-light d-flex align-items-center mb-4">
                     <i class="bi bi-info-circle text-primary me-2"></i>
                     <span class="fw-medium">
-                        В корзине <span class="text-primary" id="items-count" th:text="${#lists.size(items)}"></span> товар(ов)
+                        В корзине <span class="text-primary fw-bold" id="items-count" th:text="${#lists.size(items)}"></span> товар(ов)
                         <span th:if="${hasDiscounts}" id="total-discount-info">
                             (скидка <span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2)}"></span> ₽)
                         </span>
@@ -310,9 +291,9 @@
                     <!-- Левая колонка - товары -->
                     <div class="col-lg-8 mb-4 mb-lg-0">
                         <!-- Товары в корзине -->
-                        <div th:each="item, stat : ${items}" class="card cart-item border mb-3"
+                        <div th:each="item, stat : ${items}" class="card cart-item border-0 mb-3 p-3"
                              th:id="'cart-item-' + ${item.productId}">
-                            <div class="card-body">
+                            <div class="card-body p-0">
                                 <div class="row align-items-center">
                                     <!-- Изображение товара -->
                                     <div class="col-md-2 col-3">
@@ -321,7 +302,7 @@
                                                 <th:block th:if="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
                                                     <img th:src="@{${item.productImageUrl}}"
                                                          th:alt="${item.productImageAlt != null ? item.productImageAlt : item.productName}"
-                                                         class="img-fluid rounded product-image"
+                                                         class="img-fluid product-image"
                                                          style="width: 80px; height: 80px; object-fit: contain;">
                                                 </th:block>
                                                 <th:block th:unless="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
@@ -329,8 +310,8 @@
                                                          style="width: 80px; height: 80px;">
                                                         <img src="/static/placeholder.jpg"
                                                              alt="Нет изображения"
-                                                             class="card-img-top product-image"
-                                                             style="width: 80px; height: 80px; object-fit: contain; opacity: 0.9;">
+                                                             class="img-fluid"
+                                                             style="width: 60px; height: 60px; object-fit: contain; opacity: 0.5;">
                                                     </div>
                                                 </th:block>
                                             </a>
@@ -354,16 +335,18 @@
                                         <div class="mb-2">
                                             <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="text-muted text-decoration-line-through me-2 small old-unit-price"
+                                                    <span class="price-discounted-cart unit-price"
                                                           th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
                                                           th:data-price="${item.unitPrice}"></span>
-                                                    <span class="text-success fw-bold unit-price"
+                                                    <span class="old-price-cart old-unit-price ms-2"
+                                                          style="color: var(--primary);"
                                                           th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPriceWithDiscount) + ' ₽'}"
                                                           th:data-price="${item.unitPriceWithDiscount}"></span>
                                                 </div>
                                             </div>
                                             <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                                <span class="text-success fw-bold unit-price"
+                                                <span class="discount-badge-cart"
+                                                      style="color: var(--primary);"
                                                       th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
                                                       th:data-price="${item.unitPrice}"></span>
                                             </div>
@@ -395,24 +378,24 @@
                                     <!-- Сумма и удаление -->
                                     <div class="col-md-3 col-12 mt-3 mt-md-0 text-md-end item-total">
                                         <div class="item-total-price">
-                                            <p class="fw-bold fs-5 text-primary mb-2">
+                                            <p class="fw-bold fs-5 mb-2" style="color: var(--primary);">
                                                 <span th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                                    <span class="text-muted text-decoration-line-through me-2 small d-block old-total-price"
+                                                    <span class="old-price-cart d-block small old-total-price"
                                                           th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}"
                                                           th:data-price="${item.totalPrice}"></span>
-                                                    <span class="current-total-price"
+                                                    <span class="total-discounted-cart current-total-price"
                                                           th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPriceWithDiscount) + ' ₽'}"
                                                           th:data-price="${item.totalPriceWithDiscount}"></span>
                                                 </span>
                                                 <span th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                                    <span class="current-total-price"
+                                                    <span class="fw-bold current-total-price"
                                                           th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}"
                                                           th:data-price="${item.totalPrice}"></span>
                                                 </span>
                                             </p>
                                         </div>
                                         <button type="button"
-                                                class="btn btn-outline-danger btn-sm"
+                                                class="btn btn-outline-danger btn-sm rounded-pill"
                                                 th:data-product-id="${item.productId}"
                                                 onclick="removeItem(this)">
                                             <i class="bi bi-trash me-1"></i> Удалить
@@ -425,8 +408,8 @@
 
                     <!-- Правая колонка - итоги -->
                     <div class="col-lg-4">
-                        <div class="card border">
-                            <div class="card-header bg-light">
+                        <div class="card border-0">
+                            <div class="card-header">
                                 <h5 class="card-title mb-0">
                                     <i class="bi bi-receipt me-2"></i>Итог заказа
                                 </h5>
@@ -459,13 +442,13 @@
                                     <hr>
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <span class="fw-bold">Итого к оплате:</span>
-                                        <span class="fw-bold fs-4 text-primary" id="summary-total-with-discount"
+                                        <span class="fw-bold fs-4" style="color: var(--primary);" id="summary-total-with-discount"
                                               th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalWithDiscount) + ' ₽'}"
                                               th:data-price="${totalWithDiscount}"></span>
                                     </div>
 
                                     <!-- Экономия если есть скидка -->
-                                    <div th:if="${hasDiscounts}" class="alert alert-success p-2 small mb-0" id="savings-alert">
+                                    <div th:if="${hasDiscounts}" class="alert alert-success p-2 small mb-0" id="savings-alert" style="border-radius: 12px;">
                                         <i class="bi bi-piggy-bank me-1"></i>
                                         Ваша экономия:
                                         <strong id="savings-amount"
@@ -476,7 +459,7 @@
                                 <!-- Кнопка оформления -->
                                 <div class="mb-3">
                                     <div th:if="${currentUser != null}">
-                                        <a th:href="@{/order/checkout}" class="btn btn-warning w-100 py-3 fw-bold">
+                                        <a th:href="@{/order/checkout}" class="btn btn-checkout w-100 py-3">
                                             <i class="bi bi-credit-card me-2"></i> Оформить заказ
                                         </a>
                                     </div>
@@ -617,13 +600,37 @@
         if (!confirm('Очистить всю корзину?')) return;
 
         try {
-            const result = await cartRequest('/clear', {});
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
 
+            const response = await fetch('/api/cart/clear', {
+                method: 'DELETE',
+                headers: headers
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            // Удаляем все товары из UI
             const cartItems = document.querySelectorAll('.cart-item');
             cartItems.forEach(item => item.remove());
 
+            // Обновляем итоги
             updateCartSummary(result);
             showNotification('Корзина очищена', 'info');
+
+            // Обновляем бейдж в хедере
+            window.dispatchEvent(new CustomEvent('cart-updated', {
+                detail: { totalQuantity: 0 }
+            }));
 
         } catch (error) {
             console.error('Error clearing cart:', error);

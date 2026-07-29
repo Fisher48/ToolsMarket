@@ -3,53 +3,485 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Заказ #<span th:text="${order.orderNumber}"></span> - ToolsMarket</title>
+    <title>Заказ #<span th:text="${order.orderNumber}"></span> — 18Вольт</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="icon" type="image/png" href="/smallLogo.png">
+
     <style>
-        .product-image {
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 4px;
+        :root {
+            --primary: #0d1b2a;
+            --primary-dark: #1b263b;
+            --primary-light: #2a3a4d;
+            --accent: #FFD600;
+            --accent-light: #FFE033;
+            --accent-dark: #E6C200;
+            --text: #1a1a1a;
+            --text-light: #5a5a5a;
+            --bg: #FFFFFF;
+            --bg-alt: #F5F6F8;
+            --card-bg: #FFFFFF;
+            --border: #E0E4E8;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .premium-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 40px;
+            position: relative;
+        }
+
+        /* Cards */
+        .premium-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .premium-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .premium-card .card-body {
+            padding: 1.75rem;
+        }
+
+        .premium-card .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .premium-card .card-title i {
+            color: var(--accent);
+        }
+
+        /* Order Header */
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .order-header h4 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .order-date {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* Table */
+        .table-premium {
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .table-premium thead th {
+            background: var(--bg-alt);
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 0.875rem 1rem;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .table-premium tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-premium tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-premium tbody tr:hover td {
+            background: rgba(255, 214, 0, 0.02);
+        }
+
+        /* Product Image */
+        .product-image {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 4px;
+            transition: var(--transition);
+        }
+
+        .product-image:hover {
+            transform: scale(1.05);
+        }
+
+        .product-image-placeholder {
+            width: 56px;
+            height: 56px;
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+        }
+
+        /* Product Link */
+        .product-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
         .product-link:hover {
-            color: #0d6efd !important;
+            color: var(--accent-dark);
             text-decoration: underline;
         }
+
+        .product-sku {
+            color: var(--text-light);
+            font-size: 0.8rem;
+            margin-top: 0.2rem;
+        }
+
+        /* Price Styles */
+        .price-original {
+            color: var(--text-light);
+            text-decoration: line-through;
+            font-size: 0.8rem;
+            display: block;
+        }
+
+        .price-discounted {
+            color: #dc3545;
+            font-weight: 700;
+        }
+
+        .price-regular {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Table Footer */
+        .table-footer-row td {
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+        }
+
+        .table-footer-row.total td {
+            padding-top: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .table-footer-row .footer-label {
+            text-align: right;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .table-footer-row.total .footer-label {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .table-footer-row .footer-value {
+            text-align: right;
+            font-weight: 700;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .table-footer-row.discount .footer-value {
+            color: #28a745;
+        }
+
+        .table-footer-row.total .footer-value {
+            font-size: 1.35rem;
+            color: var(--primary);
+        }
+
+        /* Savings Alert */
+        .savings-alert {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 1px solid #b1dfbb;
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .savings-alert i {
+            font-size: 2rem;
+            color: #28a745;
+        }
+
+        .savings-alert h6 {
+            color: #155724;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .savings-alert p {
+            color: #155724;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .status-created { background: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+        .status-paid { background: rgba(25, 135, 84, 0.1); color: #198754; }
+        .status-processing { background: rgba(255, 193, 7, 0.15); color: #b38600; }
+        .status-shipped { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
+        .status-delivered { background: rgba(25, 135, 84, 0.1); color: #198754; }
+        .status-cancelled { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+        .status-refunded { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
+
+        /* Timeline */
         .order-timeline {
             position: relative;
-            padding-left: 30px;
+            padding-left: 28px;
         }
+
         .order-timeline::before {
             content: '';
             position: absolute;
-            left: 15px;
-            top: 0;
-            bottom: 0;
+            left: 8px;
+            top: 6px;
+            bottom: 6px;
             width: 2px;
-            background-color: #e9ecef;
+            background: var(--border);
+            border-radius: 1px;
         }
+
         .timeline-item {
             position: relative;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
+            padding-left: 0.5rem;
         }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
         .timeline-item::before {
             content: '';
             position: absolute;
-            left: -23px;
-            top: 5px;
-            width: 12px;
-            height: 12px;
+            left: -24px;
+            top: 6px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background-color: #6c757d;
+            background: var(--border);
             border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--border);
+            transition: var(--transition);
         }
+
         .timeline-item.active::before {
-            background-color: #0d6efd;
+            background: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        .timeline-item.active h6 {
+            color: var(--primary);
+        }
+
+        .timeline-item h6 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.2rem;
+        }
+
+        .timeline-item p {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 0.2rem;
+        }
+
+        .timeline-item small {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            opacity: 0.7;
+        }
+
+        /* Info List */
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .info-list li:last-child {
+            border-bottom: none;
+        }
+
+        .info-list li i {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            margin-top: 0.1rem;
+        }
+
+        .info-list .label {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .info-list .value {
+            color: var(--primary);
+            font-weight: 600;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        /* Note Card */
+        .note-text {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            background: var(--bg-alt);
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 0;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--primary);
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-action:hover {
+            background: var(--bg-alt);
+            border-color: var(--accent);
+            color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-action i {
+            color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .premium-container {
+                padding: 0 20px;
+            }
+            .table-premium {
+                font-size: 0.85rem;
+            }
+            .product-image, .product-image-placeholder {
+                width: 44px;
+                height: 44px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .order-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .table-responsive {
+                border-radius: 12px;
+                border: 1px solid var(--border);
+            }
+            .premium-card .card-body {
+                padding: 1.25rem;
+            }
+        }
+
+        /* Print */
+        @media print {
+            nav, footer, .btn-action {
+                display: none !important;
+            }
+            .premium-card {
+                border: 1px solid #000 !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+            }
+            body {
+                background: white !important;
+            }
         }
     </style>
 </head>
@@ -58,22 +490,22 @@
 <!-- Header -->
 <div th:replace="~{fragments/header :: header}"></div>
 
-<main class="container my-4">
+<main class="premium-container my-5">
     <div class="row">
         <div class="col-lg-8">
-            <div class="card mb-4">
+            <!-- Заказ -->
+            <div class="premium-card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-2">Заказ #<span th:text="${order.orderNumber}"></span></h4>
-                        <small class="text-muted">
-                            <i class="bi bi-calendar me-1"></i>
+                    <div class="order-header">
+                        <h4>Заказ #<span th:text="${order.orderNumber}"></span></h4>
+                        <div class="order-date">
+                            <i class="bi bi-calendar3"></i>
                             <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
-                        </small>
+                        </div>
                     </div>
 
-                    <!-- Таблица товаров заказа -->
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table-premium">
                             <thead>
                             <tr>
                                 <th style="width: 60px">Фото</th>
@@ -86,99 +518,58 @@
                             <tbody>
                             <tr th:each="item : ${orderItems}">
                                 <td>
-                                    <img th:if="${item.productImageUrl}"
-                                         th:src="${item.productImageUrl}"
-                                         class="product-image"
-                                         th:alt="${item.productName}">
-                                    <div th:unless="${item.productImageUrl}" class="product-image d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-tools text-muted"></i>
+                                    <img th:if="${item.productImageUrl}" th:src="${item.productImageUrl}" class="product-image" th:alt="${item.productName}">
+                                    <div th:unless="${item.productImageUrl}" class="product-image-placeholder">
+                                        <i class="bi bi-tools"></i>
                                     </div>
                                 </td>
                                 <td>
-                                    <a th:href="@{'/product/' + ${item.productTitle}}"
-                                       class="text-decoration-none text-dark product-link">
-                                        <span th:text="${item.productName}"></span>
-                                    </a>
-                                    <br>
-                                    <small class="text-muted" th:text="${item.productSku}"></small>
+                                    <a th:href="@{'/product/' + ${item.productTitle}}" class="product-link" th:text="${item.productName}"></a>
+                                    <div class="product-sku" th:text="${item.productSku}"></div>
                                 </td>
                                 <td class="text-center" th:text="${item.quantity} + ' шт.'"></td>
                                 <td class="text-end">
                                     <div th:if="${item.hasDiscount}">
-                                        <small class="text-muted text-decoration-line-through d-block">
-                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.originalPrice) + ' ₽'}">
-                                                </span>
-                                        </small>
-                                        <span class="text-danger">
-                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}">
-                                                </span>
-                                            </span>
+                                        <span class="price-original" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.originalPrice) + ' ₽'}"></span>
+                                        <span class="price-discounted" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"></span>
                                     </div>
                                     <div th:unless="${item.hasDiscount}">
-                                            <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.originalPrice) + ' ₽'}">
-                                            </span>
+                                        <span class="price-regular" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.originalPrice) + ' ₽'}"></span>
                                     </div>
                                 </td>
                                 <td class="text-end">
                                     <div th:if="${item.hasDiscount}">
-                                        <small class="text-muted text-decoration-line-through d-block">
-                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}">
-                                                </span>
-                                        </small>
-                                        <span class="text-danger fw-bold">
-                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPriceWithDiscount) + ' ₽'}">
-                                                </span>
-                                            </span>
+                                        <span class="price-original" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}"></span>
+                                        <span class="price-discounted" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPriceWithDiscount) + ' ₽'}"></span>
                                     </div>
                                     <div th:unless="${item.hasDiscount}">
-                                            <span class="fw-bold">
-                                                <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}">
-                                                </span>
-                                            </span>
+                                        <span class="price-regular" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.totalPrice) + ' ₽'}"></span>
                                     </div>
                                 </td>
                             </tr>
                             </tbody>
                             <tfoot>
-                            <tr>
-                                <td colspan="4" class="text-end">Общая стоимость:</td>
-                                <td class="text-end">
-                                        <span class="fw-bold" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(originalTotal) + ' ₽'}">
-                                        </span>
-                                </td>
+                            <tr class="table-footer-row">
+                                <td colspan="4" class="footer-label">Общая стоимость:</td>
+                                <td class="footer-value" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(originalTotal) + ' ₽'}"></td>
                             </tr>
-                            <tr th:if="${hasDiscounts}">
-                                <td colspan="4" class="text-end text-success">Скидка:</td>
-                                <td class="text-end text-success">
-                                        <span class="fw-bold">-<span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}">
-                                        </span></span>
-                                </td>
+                            <tr th:if="${hasDiscounts}" class="table-footer-row discount">
+                                <td colspan="4" class="footer-label">Скидка:</td>
+                                <td class="footer-value">-<span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}"></span></td>
                             </tr>
-                            <tr>
-                                <td colspan="4" class="text-end fw-bold">Итого к оплате:</td>
-                                <td class="text-end">
-                                        <span class="fw-bold h5 text-primary">
-                                            <span th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(order.totalPrice) + ' ₽'}">
-                                            </span>
-                                        </span>
-                                </td>
+                            <tr class="table-footer-row total">
+                                <td colspan="4" class="footer-label">Итого к оплате:</td>
+                                <td class="footer-value" th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(order.totalPrice) + ' ₽'}"></td>
                             </tr>
                             </tfoot>
                         </table>
                     </div>
 
-                    <!-- Информация о скидке (если есть) -->
-                    <div th:if="${hasDiscounts}" class="alert alert-success mt-4">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-piggy-bank fs-4 me-3"></i>
-                            <div>
-                                <h6 class="mb-1">Ваша экономия</h6>
-                                <p class="mb-0">
-                                    Благодаря скидке вы сэкономили
-                                    <strong th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}">
-                                    </strong>
-                                </p>
-                            </div>
+                    <div th:if="${hasDiscounts}" class="savings-alert">
+                        <i class="bi bi-piggy-bank-fill"></i>
+                        <div>
+                            <h6>Ваша экономия</h6>
+                            <p>Благодаря скидке вы сэкономили <strong th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(totalDiscount) + ' ₽'}"></strong></p>
                         </div>
                     </div>
                 </div>
@@ -186,115 +577,110 @@
         </div>
 
         <div class="col-lg-4">
-            <!-- Статус заказа -->
-            <div class="card mb-4">
+            <!-- Статус -->
+            <div class="premium-card">
                 <div class="card-body">
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-info-circle me-2"></i>
+                    <h5 class="card-title">
+                        <i class="bi bi-info-circle"></i>
                         Статус заказа
                     </h5>
 
-                    <!-- Бейдж статуса -->
                     <div class="mb-3">
-                        <span th:switch="${order.status}" class="badge rounded-pill">
-                            <span th:case="CREATED" class="badge bg-primary">Создан</span>
-                            <span th:case="PAID" class="badge bg-success">Оплачен</span>
-                            <span th:case="PROCESSING" class="badge bg-warning">В обработке</span>
-                            <span th:case="SHIPPED" class="badge bg-info">Отправлен</span>
-                            <span th:case="DELIVERED" class="badge bg-success">Доставлен</span>
-                            <span th:case="CANCELLED" class="badge bg-secondary">Отменен</span>
-                            <span th:case="REFUNDED" class="badge bg-danger">Возвращен</span>
+                        <span th:switch="${order.status}" class="status-badge">
+                            <span th:case="CREATED" class="status-created"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Создан</span>
+                            <span th:case="PAID" class="status-paid"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Оплачен</span>
+                            <span th:case="PROCESSING" class="status-processing"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> В обработке</span>
+                            <span th:case="SHIPPED" class="status-shipped"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Отправлен</span>
+                            <span th:case="DELIVERED" class="status-delivered"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Доставлен</span>
+                            <span th:case="CANCELLED" class="status-cancelled"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Отменен</span>
+                            <span th:case="REFUNDED" class="status-refunded"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Возвращен</span>
                         </span>
                     </div>
 
-                    <!-- Таймлайн статусов -->
-                    <h6 class="mb-2">История статусов:</h6>
+                    <h6 style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">История статусов</h6>
                     <div class="order-timeline">
-                            <div th:class="${order.status.toString() == 'CREATED' ? 'timeline-item active' : 'timeline-item'}">
-                                <h6 class="mb-1">Создан</h6>
-                                <p class="text-muted small mb-0">Заказ создан и ожидает обработки</p>
-                                <small class="text-muted"
-                                       th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></small>
-                            </div>
-                            <div th:class="${order.status.toString() == 'PAID' ? 'timeline-item active' : 'timeline-item'}">
-                                <h6 class="mb-1">Оплачен</h6>
-                                <p class="text-muted small mb-0">Заказ оплачен клиентом</p>
-                            </div>
-                            <div th:class="${order.status.toString() == 'PROCESSING' ? 'timeline-item active' : 'timeline-item'}">
-                                <h6 class="mb-1">В обработке</h6>
-                                <p class="text-muted small mb-0">Заказ обрабатывается менеджером</p>
-                            </div>
-                            <div th:class="${order.status.toString() == 'COMPLETED' ? 'timeline-item active' : 'timeline-item'}">
-                                <h6 class="mb-1">Завершен</h6>
-                                <p class="text-muted small mb-0">Заказ выполнен и доставлен</p>
-                            </div>
+                        <div th:class="${order.status.toString() == 'CREATED' ? 'timeline-item active' : 'timeline-item'}">
+                            <h6>Создан</h6>
+                            <p>Заказ создан и ожидает обработки</p>
+                            <small th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}"></small>
+                        </div>
+                        <div th:class="${order.status.toString() == 'PAID' ? 'timeline-item active' : 'timeline-item'}">
+                            <h6>Оплачен</h6>
+                            <p>Заказ оплачен клиентом</p>
+                        </div>
+                        <div th:class="${order.status.toString() == 'PROCESSING' ? 'timeline-item active' : 'timeline-item'}">
+                            <h6>В обработке</h6>
+                            <p>Заказ обрабатывается менеджером</p>
+                        </div>
+                        <div th:class="${order.status.toString() == 'COMPLETED' ? 'timeline-item active' : 'timeline-item'}">
+                            <h6>Завершен</h6>
+                            <p>Заказ выполнен и доставлен</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Контактная информация (если авторизован) -->
-            <div th:if="${currentUser != null}" class="card mb-4">
+            <!-- Контакты -->
+            <div th:if="${currentUser != null}" class="premium-card">
                 <div class="card-body">
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-person me-2"></i>
+                    <h5 class="card-title">
+                        <i class="bi bi-person"></i>
                         Информация о получателе
                     </h5>
-                    <ul class="list-unstyled small">
-                        <li class="mb-2">
-                            <i class="bi bi-person-circle me-2 text-muted"></i>
-                            <span class="fw-medium">Получатель:</span>
-                            <span th:text="${currentUser.firstName} + ' ' + ${currentUser.lastName}"></span>
+                    <ul class="info-list">
+                        <li>
+                            <i class="bi bi-person-circle"></i>
+                            <span class="label">Получатель:</span>
+                            <span class="value" th:text="${currentUser.firstName} + ' ' + ${currentUser.lastName}"></span>
                         </li>
-                        <li class="mb-2" th:if="${currentUser.email}">
-                            <i class="bi bi-envelope me-2 text-muted"></i>
-                            <span class="fw-medium">Email:</span>
-                            <span th:text="${currentUser.email}"></span>
+                        <li th:if="${currentUser.email}">
+                            <i class="bi bi-envelope"></i>
+                            <span class="label">Email:</span>
+                            <span class="value" th:text="${currentUser.email}"></span>
                         </li>
-                        <li class="mb-2" th:if="${currentUser.phone}">
-                            <i class="bi bi-telephone me-2 text-muted"></i>
-                            <span class="fw-medium">Телефон:</span>
-                            <span th:text="${currentUser.phone}"></span>
+                        <li th:if="${currentUser.phone}">
+                            <i class="bi bi-telephone"></i>
+                            <span class="label">Телефон:</span>
+                            <span class="value" th:text="${currentUser.phone}"></span>
                         </li>
                     </ul>
                 </div>
             </div>
 
-            <div th:if="${order.note != null and !order.note.isEmpty()}" class="card mb-4">
+            <!-- Примечание -->
+            <div th:if="${order.note != null and !order.note.isEmpty()}" class="premium-card">
                 <div class="card-body">
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-chat-text me-2"></i>
+                    <h5 class="card-title">
+                        <i class="bi bi-chat-text"></i>
                         Примечание к заказу
                     </h5>
-                    <p class="mb-0 text-muted" th:text="${order.note}"></p>
+                    <p class="note-text" th:text="${order.note}"></p>
                 </div>
             </div>
 
             <!-- Действия -->
-            <div class="card">
+            <div class="premium-card">
                 <div class="card-body">
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-lightning me-2"></i>
+                    <h5 class="card-title">
+                        <i class="bi bi-lightning"></i>
                         Действия
                     </h5>
-                    <div class="d-grid gap-2">
-                        <a th:href="@{/}" class="btn btn-outline-primary">
-                            <i class="bi bi-house me-2"></i> На главную
+                    <a th:href="@{/}" class="btn-action">
+                        <i class="bi bi-house"></i> На главную
+                    </a>
+                    <button class="btn-action" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Распечатать заказ
+                    </button>
+                    <th:block th:if="${currentUser == null}">
+                        <a th:href="@{/auth/login}" class="btn-action">
+                            <i class="bi bi-box-arrow-in-right"></i> Войти для отслеживания
                         </a>
-                        <button class="btn btn-outline-success" onclick="window.print()">
-                            <i class="bi bi-printer me-2"></i> Распечатать заказ
-                        </button>
-                        <th:block th:if="${currentUser == null}">
-                            <a th:href="@{/auth/login}" class="btn btn-outline-warning">
-                                <i class="bi bi-box-arrow-in-right me-2"></i>
-                                Войти для отслеживания заказов
-                            </a>
-                        </th:block>
-                        <th:block th:if="${currentUser != null}">
-                            <a th:href="@{/profile/orders}" class="btn btn-outline-secondary">
-                                <i class="bi bi-list-ul me-2"></i> К списку заказов
-                            </a>
-                        </th:block>
-                    </div>
+                    </th:block>
+                    <th:block th:if="${currentUser != null}">
+                        <a th:href="@{/profile/orders}" class="btn-action">
+                            <i class="bi bi-list-ul"></i> К списку заказов
+                        </a>
+                    </th:block>
                 </div>
             </div>
         </div>
