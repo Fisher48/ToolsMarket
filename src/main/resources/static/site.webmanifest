@@ -1,26 +1,39 @@
 {
-  "name": "18Вольт",
-  "short_name": "18В",
-  "description": "Интернет-магазин профессиональных инструментов",
+  "name": "18Вольт — Интернет-магазин инструментов",
+  "short_name": "18Вольт",
+  "description": "Профессиональные инструменты и оборудование для любых задач",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#546E7A",
+  "theme_color": "#0d1b2a",
+  "categories": ["shopping", "business", "tools"],
+  "lang": "ru",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/favicon-16x16.png",
       "sizes": "16x16",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/favicon-32x32.png",
       "sizes": "32x32",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "apple touch icon"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
