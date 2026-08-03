@@ -18,16 +18,11 @@ import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderStatus;
-import ru.fisher.ToolsMarket.service.DiscountService;
 import ru.fisher.ToolsMarket.service.OrderService;
-import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+
 
 @Controller
 @RequestMapping("/admin/orders")
@@ -37,8 +32,6 @@ import java.util.stream.Collectors;
 public class AdminOrderController {
 
     private final OrderService orderService;
-    private final UserService userService;
-    private final DiscountService discountService;
 
     private static final String SUCCESS_MSG = "successMessage";
     private static final String ERROR_MSG = "errorMessage";
@@ -46,33 +39,36 @@ public class AdminOrderController {
 
 
     @GetMapping
-    public String listOrders(@RequestParam(required = false) String status,
-                             @RequestParam(required = false) String search,
-                             @RequestParam(required = false) Long userId, // Добавил параметр userId
-                             Model model) {
+    public String listOrders(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long userId,
+            Model model) {
+
         try {
-            List<Order> orders = getFilteredOrders(status, search, userId); // Добавил userId
-            addOrderStatisticsToModel(model);
+            long start = System.currentTimeMillis();
 
-            // Добавляем список пользователей для фильтрации
-            model.addAttribute("users", userService.findAll());
+            List<OrderAdminDto> orders = orderService.getOrdersForAdmin(status, search, userId);
+            OrderStatisticsDto stats = orderService.getOrderStatistics(status, search, userId);
+            List<UserFilterDto> users = orderService.getUsersForOrderFilter();
+
             model.addAttribute("orders", orders);
+            model.addAttribute("users", users);
             model.addAttribute("searchQuery", search);
-            model.addAttribute("selectedUserId", userId); // Добавил для сохранения выбора в форме
+            model.addAttribute("selectedUserId", userId);
+            model.addAttribute("selectedStatus", status);
 
-            // Если фильтруем по пользователю, добавляем информацию о нем
-            if (userId != null) {
-                userService.findById(userId).ifPresent(user -> {
-                    model.addAttribute("selectedUser", user);
-                });
-            }
+            model.addAttribute("newOrdersCount", stats.getNewOrdersCount());
+            model.addAttribute("paidOrdersCount", stats.getPaidOrdersCount());
+            model.addAttribute("completedOrdersCount", stats.getCompletedOrdersCount());
+            model.addAttribute("cancelledOrdersCount", stats.getCancelledOrdersCount());
 
+            log.info("Страница заказов загружена: {} мс", System.currentTimeMillis() - start);
             return "admin/orders/index";
 
         } catch (Exception e) {
-            log.error("Ошибка при получении списка заказов: статус={}, поиск={}, userId={}",
-                    status, search, userId, e);
-            model.addAttribute(ERROR_MSG, "Ошибка при загрузке списка заказов");
+            log.error("Ошибка при получении списка заказов", e);
+            model.addAttribute("errorMsg", "Ошибка при загрузке списка заказов");
             return "admin/orders/index";
         }
     }

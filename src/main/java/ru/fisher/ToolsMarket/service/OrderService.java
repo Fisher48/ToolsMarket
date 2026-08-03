@@ -16,17 +16,13 @@ import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
 import ru.fisher.ToolsMarket.models.*;
-import ru.fisher.ToolsMarket.repository.CartItemRepository;
-import ru.fisher.ToolsMarket.repository.CartRepository;
-import ru.fisher.ToolsMarket.repository.OrderRepository;
-import ru.fisher.ToolsMarket.repository.UserRepository;
+import ru.fisher.ToolsMarket.repository.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -38,8 +34,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
-    private final UserRepository userRepository;
+    private final OrderAdminJdbcRepository orderAdminJdbc;
     private final DiscountService discountService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -252,14 +247,6 @@ public class OrderService {
         return orderRepository.searchByProductSku("%" + query + "%");
     }
 
-    public long countAllOrders() {
-        return orderRepository.count();
-    }
-
-    public BigDecimal calculateTotalRevenue() {
-        return orderRepository.calculateTotalRevenue();
-    }
-
     public void addNote(Long orderId, String note) {
         validateNote(note);
 
@@ -268,12 +255,6 @@ public class OrderService {
         order.setUpdatedAt(Instant.now());
 
         orderRepository.save(order);
-    }
-
-    // Метод для получения заказов за последние N дней
-    public List<Order> getRecentOrders(int days) {
-        Instant since = Instant.now().minus(days, ChronoUnit.DAYS);
-        return orderRepository.findByCreatedAtAfterOrderByCreatedAtDesc(since);
     }
 
     private boolean isValidTransition(OrderStatus from, OrderStatus to) {
@@ -346,8 +327,23 @@ public class OrderService {
         return Long.parseLong(numberStr); // Пример: 2412151830123456
     }
 
-    public List<Order> findOrdersByUserId(Long userId) {
-        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    @Transactional(readOnly = true)
+    public List<OrderAdminDto> getOrdersForAdmin(String status, String search, Long userId) {
+        long start = System.currentTimeMillis();
+        List<OrderAdminDto> orders = orderAdminJdbc.findOrdersForAdmin(status, search, userId);
+        log.debug("Загрузка заказов для админки: {} записей, {} мс",
+                orders.size(), System.currentTimeMillis() - start);
+        return orders;
+    }
+
+    @Transactional(readOnly = true)
+    public OrderStatisticsDto getOrderStatistics(String status, String search, Long userId) {
+        return orderAdminJdbc.getOrderStatistics(status, search, userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserFilterDto> getUsersForOrderFilter() {
+        return orderAdminJdbc.findUsersWithOrders();
     }
 
 }

@@ -39,14 +39,19 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "ORDER BY o.createdAt DESC")
     List<Order> findByUserIdWithItems(@Param("userId") Long userId);
 
-    // 1. Для всех заказов
+    // Для всех заказов
     @EntityGraph(attributePaths = {"user", "user.userType", "orderItems"})
     @Query("SELECT o FROM Order o ORDER BY o.createdAt DESC")
     List<Order> findAllByOrderByCreatedAtDesc();
 
-    // 2. Для заказов по статусу
-    @EntityGraph(attributePaths = {"user", "user.userType", "orderItems"})
-    @Query("SELECT o FROM Order o WHERE o.status = :status ORDER BY o.createdAt DESC")
+    // Загружаем заказы с пользователем и товарами
+    @Query("""
+        SELECT DISTINCT o FROM Order o
+        LEFT JOIN FETCH o.user
+        LEFT JOIN FETCH o.orderItems
+        WHERE o.status = :status
+        ORDER BY o.createdAt DESC
+    """)
     List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
 
     long countByStatus(OrderStatus status);
