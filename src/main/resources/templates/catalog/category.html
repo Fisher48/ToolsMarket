@@ -384,8 +384,8 @@
                         <div class="card product-card border-0">
                             <div class="position-relative">
                                 <a th:href="@{/product/{title}(title=${product.title})}" class="text-decoration-none">
-                                    <img th:if="${not #lists.isEmpty(product.images)}" th:src="${product.images[0].url}" class="card-img-top product-image" th:alt="${product.images[0].alt} ?: ${product.name}">
-                                    <img th:if="${#lists.isEmpty(product.images)}" src="/static/placeholder.jpg" class="card-img-top product-image" alt="No image">
+                                    <img th:if="${product.mainImageUrl != null}" th:src="@{${product.mainImageUrl}}" class="card-img-top product-image" th:alt="${product.name}">
+                                    <img th:if="${product.mainImageUrl == null}" src="/static/placeholder.jpg" class="card-img-top product-image" alt="Нет изображения">
                                 </a>
 
                                 <!-- Статус -->

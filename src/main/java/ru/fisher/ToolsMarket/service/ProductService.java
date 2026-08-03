@@ -10,11 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fisher.ToolsMarket.dto.ProductDTO.*;
 import ru.fisher.ToolsMarket.exceptions.DuplicateSkuException;
-import ru.fisher.ToolsMarket.mapper.ProductImageMapperService;
 import ru.fisher.ToolsMarket.mapper.ProductMapperService;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.models.Product;
-import ru.fisher.ToolsMarket.models.ProductImage;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
@@ -31,10 +29,8 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapperService productMapperService;
-    private final ProductImageMapperService productImageMapperService;
     private final AttributeService attributeService;
     private final UserService userService;
-    private final DiscountService discountService;
 
     @Transactional(readOnly = true)
     public List<Product> findAllEntities() {
@@ -188,32 +184,6 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    public Optional<ProductDto> findByTitle(String title) {
-        return productRepository.findByTitle(title)
-                .map(productMapperService::toDto);
-    }
-
-    public List<ProductDto> findAll() {
-        return productRepository.findAll()
-                .stream()
-                .map(productMapperService::toDto)
-                .toList();
-    }
-
-    public Page<ProductListDto> findAll(Pageable pageable) {
-        return productRepository.findAll(pageable)
-                .map(productMapperService::toListDto);
-    }
-
-    @Transactional
-    public void addImage(Long productId, ProductImageDto imageDto) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        ProductImage image = productImageMapperService.toEntity(imageDto, product);
-        product.getImages().add(image);
-        productRepository.save(product);
-    }
 
     public Optional<Product> findEntityById(Long id) {
         return productRepository.findById(id);
@@ -222,11 +192,6 @@ public class ProductService {
     public Optional<ProductDto> findById(Long id) {
         return productRepository.findById(id)
                 .map(productMapperService::toDto);
-    }
-
-    public Page<ProductListDto> findByCategory(Long categoryId, Pageable pageable) {
-        return productRepository.findActiveByCategory(categoryId, pageable)
-                .map(productMapperService::toListDto);
     }
 
     public Page<ProductListDto> search(String query, Pageable pageable) {
@@ -293,28 +258,6 @@ public class ProductService {
         return productRepository.findWithDetailsById(id);
     }
 
-    // Метод для страницы характеристик
-    public Optional<Product> findWithAttributesById(Long id) {
-        return productRepository.findWithAttributesById(id);
-    }
-
-    public Optional<ProductDto> findWithAttributesByTitle(String title) {
-        return productRepository.findByTitleWithAttributes(title)
-                .map(productMapperService::toDto);
-    }
-
-    /**
-     * Поиск по категории с учетом скидок
-     */
-    public Page<ProductListDto> findByCategoryWithDiscounts(Long categoryId, User user, Pageable pageable) {
-        Page<Product> products = productRepository.findActiveByCategory(categoryId, pageable);
-
-        return products.map(product -> {
-            ProductListDto dto = productMapperService.toListDto(product, user);
-            return dto;
-        });
-    }
-
     /**
      * Поиск с учетом скидок
      */
@@ -335,11 +278,4 @@ public class ProductService {
                 .map(product -> productMapperService.toDto(product, user));
     }
 
-    /**
-     * Получение по ID с учетом скидок
-     */
-    public Optional<ProductDto> findByIdWithDiscounts(Long id, User user) {
-        return productRepository.findById(id)
-                .map(product -> productMapperService.toDto(product, user));
-    }
 }

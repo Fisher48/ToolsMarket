@@ -17,6 +17,20 @@ public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSp
 
     Optional<Category> findByTitle(String title);
 
+    @Query("""
+        SELECT DISTINCT c FROM Category c
+        LEFT JOIN FETCH c.parent
+        LEFT JOIN FETCH c.children
+        WHERE c.title = :title
+    """)
+    Optional<Category> findByTitleWithJoins(@Param("title") String title);
+
+    @Query("""
+        SELECT DISTINCT c FROM Category c
+        LEFT JOIN FETCH c.children
+        WHERE c.parent IS NULL
+        ORDER BY c.sortOrder
+    """)
     List<Category> findByParentIsNullOrderBySortOrderAsc();
 
     // Загрузка всех атрибутов и связанных категорий

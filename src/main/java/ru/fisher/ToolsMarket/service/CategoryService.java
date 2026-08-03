@@ -1,9 +1,11 @@
 package ru.fisher.ToolsMarket.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,23 +16,31 @@ import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryPageData;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategorySpecification;
 import ru.fisher.ToolsMarket.dto.ProductDTO.ProductCardDto;
 import ru.fisher.ToolsMarket.mapper.CategoryMapperService;
+import ru.fisher.ToolsMarket.models.Cart;
 import ru.fisher.ToolsMarket.models.Category;
+import ru.fisher.ToolsMarket.repository.CategoryJdbcRepository;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final CartService cartService;
+    private final CategoryJdbcRepository categoryJdbcRepository;
     private final CategoryMapperService categoryMapperService;
 
     @Transactional(readOnly = true)
     public List<Category> findAllEntities() {
-        return categoryRepository.findAllWithAttributes(); // ← Используйте метод с JOIN FETCH
+        return categoryRepository.findAllWithAttributes(); // метод с JOIN FETCH
     }
 
     public Optional<Category> findEntityById(Long id) {
@@ -60,28 +70,20 @@ public class CategoryService {
 
     // Метод для получения только родительских категорий для главной страницы
     public List<CategoryDto> getParentCategoriesForHome() {
-        List<Category> parentCategories = categoryRepository.findByParentIsNullOrderBySortOrderAsc();
-        return categoryMapperService.toDtoList(parentCategories);
+        long start = System.nanoTime();
+
+        try {
+            List<Category> categories = categoryRepository.findByParentIsNullOrderBySortOrderAsc();
+            return categoryMapperService.toDtoList(categories);
+
+        } finally {
+            long duration = System.nanoTime() - start;
+            log.debug("Загрузка категорий заняла: {} мс", duration / 1_000_000);
+        }
     }
 
-//    public List<Category> getParentCategories() {
-//        return categoryRepository.findByParentIsNullOrderBySortOrderAsc();
-//    }
-
-//    public List<CategoryWithChildrenDto> getRootCategoriesWithChildren() {
-//        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
-//                .map(categoryMapperService::toWithChildrenDto)
-//                .toList();
-//    }
-
-//    public List<CategoryTreeDto> getCategoryTree() {
-//        return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
-//                .map(categoryMapperService::toTreeDto)
-//                .toList();
-//    }
-
     public Optional<CategoryDto> findByTitle(String title) {
-        return categoryRepository.findByTitle(title)
+        return categoryRepository.findByTitleWithJoins(title)
                 .map(categoryMapperService::toDto);
     }
 
@@ -134,44 +136,53 @@ public class CategoryService {
         return categoryRepository.findAllWithParentOrdered();
     }
 
-//    @Transactional
-//    public CategoryDto update(Long id, CategoryUpdateDto categoryDto) {
-//        Category category = categoryRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("Category not found"));
-//
-//        // Обновляем поля
-//        if (categoryDto.getTitle() != null) category.setTitle(categoryDto.getTitle());
-//        if (categoryDto.getName() != null) category.setName(categoryDto.getName());
-//        if (categoryDto.getDescription() != null) category.setDescription(categoryDto.getDescription());
-//        if (categoryDto.getSortOrder() != null) category.setSortOrder(categoryDto.getSortOrder());
-//
-//        // Обновляем родителя
-//        if (categoryDto.getParentId() != null) {
-//            Category parent = categoryRepository.findById(categoryDto.getParentId())
-//                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
-//            category.setParent(parent);
-//        } else {
-//            category.setParent(null);
-//        }
-//
-//        Category updated = categoryRepository.save(category);
-//        return categoryMapperService.toDto(updated);
-//    }
+    /**
+     * Получение всех данных для страницы категории
+     */
+    @Transactional(readOnly = true)
+    public CategoryPageData getCategoryPage(String title, Long userId, String sort, int page, int size) {
+        // 1. Категория
+        CategoryDto category = findByTitle(title)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-//    @Transactional
-//    public CategoryDto save(CategoryCreateDto categoryDto) {
-//        Category category = categoryMapperService.toEntity(categoryDto);
-//
-//        // Установка родительской категории
-//        if (categoryDto.getParentId() != null) {
-//            Category parent = categoryRepository.findById(categoryDto.getParentId())
-//                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
-//            category.setParent(parent);
-//        }
-//
-//        Category saved = categoryRepository.save(category);
-//        return categoryMapperService.toDto(saved);
-//    }
+        // 2. Товары через JDBC
+        Page<ProductCardDto> products = categoryJdbcRepository.findProductsByCategory(
+                category.getId(), userId, sort, page, size
+        );
+
+        // 3. Количество товаров в корзине (для авторизованных)
+        Map<Long, Integer> cartProductQuantities = getCartQuantities(userId);
+
+        // 4. Общее количество товаров в категории
+        long total = categoryJdbcRepository.countProductsByCategory(category.getId());
+
+        return CategoryPageData.builder()
+                .category(category)
+                .products(products)
+                .cartProductQuantities(cartProductQuantities)
+                .totalElements(total)
+                .build();
+    }
+
+    private Map<Long, Integer> getCartQuantities(Long userId) {
+        if (userId == null) return new HashMap<>();
+
+        try {
+            Cart cart = cartService.getOrCreateCart(userId);
+            List<CartItemDto> cartItems = cartService.getCartItems(cart.getId());
+
+            return cartItems.stream()
+                    .filter(item -> item.getProductId() != null)
+                    .collect(Collectors.toMap(
+                            CartItemDto::getProductId,
+                            CartItemDto::getQuantity,
+                            (existing, replacement) -> existing
+                    ));
+        } catch (Exception e) {
+            log.warn("Ошибка при получении корзины для userId={}: {}", userId, e.getMessage());
+            return new HashMap<>();
+        }
+    }
 
     @Transactional
     public void delete(Long id) {

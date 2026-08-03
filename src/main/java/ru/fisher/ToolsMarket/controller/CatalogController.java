@@ -39,7 +39,8 @@ public class CatalogController {
     private final UserService userService;
     private final CartService cartService;
 
-    public CatalogController(ProductService productService, CategoryService categoryService, UserService userService, CartService cartService) {
+    public CatalogController(ProductService productService, CategoryService categoryService,
+                             UserService userService, CartService cartService) {
         this.productService = productService;
         this.categoryService = categoryService;
         this.userService = userService;
@@ -194,9 +195,6 @@ public class CatalogController {
     }
 
 
-    /**
-     * Страница категории
-     */
     @GetMapping("/category/{title}")
     public String category(@PathVariable String title,
                            @RequestParam(defaultValue = "0") int page,
@@ -204,68 +202,102 @@ public class CatalogController {
                            @AuthenticationPrincipal UserDetails userDetails,
                            Model model) {
 
-        User user = null;
+        long start = System.currentTimeMillis();
+
+        Long userId = null;
         if (userDetails != null) {
-            user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            userId = userService.findByUsername(userDetails.getUsername())
+                    .map(User::getId)
+                    .orElse(null);
         }
 
-        CategoryDto category = categoryService.findByTitle(title)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        CategoryPageData pageData = categoryService.getCategoryPage(title, userId, sort, page, 12);
 
-        // Создаем PageRequest с сортировкой
-        PageRequest pageRequest = PageRequest.of(page, 12, productService.getSort(sort));
-        Page<ProductListDto> products = productService.findByCategoryWithDiscounts(
-                category.getId(), user, pageRequest);
+        model.addAttribute("category", pageData.getCategory());
+        model.addAttribute("products", pageData.getProducts());
+        model.addAttribute("cartProductQuantities", pageData.getCartProductQuantities());
+        model.addAttribute("totalElements", pageData.getTotalElements());
+        model.addAttribute("currentSort", sort);
 
-        // Проверка товаров в корзине (только для авторизованных)
-        Map<Long, Integer> cartProductQuantities = new HashMap<>();
-
-        if (user != null) {
-            try {
-                Cart cart = cartService.getOrCreateCart(user.getId());
-                List<CartItemDto> cartItems = cartService.getCartItems(cart.getId());
-
-                for (CartItemDto cartItem : cartItems) {
-                    if (cartItem.getProductId() != null) {
-                        cartProductQuantities.put(cartItem.getProductId(), cartItem.getQuantity());
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Ошибка при проверке корзины: {}", e.getMessage());
-            }
-        }
-
-        // Добавляем информацию о товарах в корзине в каждый продукт
-        List<ProductListDto> productsWithCartInfo = products.getContent().stream()
-                .map(product -> {
-                    ProductListDto enhancedProduct = new ProductListDto();
-                    BeanUtils.copyProperties(product, enhancedProduct);
-
-                    Integer cartQuantity = cartProductQuantities.get(product.getId());
-                    if (cartQuantity != null && cartQuantity > 0) {
-                        enhancedProduct.setInCart(true);
-                        enhancedProduct.setCartQuantity(cartQuantity);
-                    } else {
-                        enhancedProduct.setInCart(false);
-                        enhancedProduct.setCartQuantity(0);
-                    }
-
-                    return enhancedProduct;
-                })
-                .toList();
-
-        Page<ProductListDto> enhancedProducts = new PageImpl<>(
-                productsWithCartInfo,
-                products.getPageable(),
-                products.getTotalElements()
-        );
-
-        model.addAttribute("category", category);
-        model.addAttribute("products", enhancedProducts);
-        model.addAttribute("cartProductQuantities", cartProductQuantities);
-        model.addAttribute("currentSort", sort); // Передаем текущую сортировку в модель для UI
-
+        log.debug("Страница Товаров в категории #{} загружена: {} мс",
+                title, System.currentTimeMillis() - start);
         return "catalog/category";
     }
+
+    /**
+     * Страница категории
+     */
+//    @GetMapping("/category/{title}")
+//    public String category(@PathVariable String title,
+//                           @RequestParam(defaultValue = "0") int page,
+//                           @RequestParam(defaultValue = "name_asc") String sort,
+//                           @AuthenticationPrincipal UserDetails userDetails,
+//                           Model model) {
+//        long start = System.currentTimeMillis();
+//        User user = null;
+//        if (userDetails != null) {
+//            user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+//        }
+//
+//        CategoryDto category = categoryService.findByTitle(title)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+//
+//        // Создаем PageRequest с сортировкой
+//        PageRequest pageRequest = PageRequest.of(page, 12, productService.getSort(sort));
+//        Page<ProductListDto> products = productService.findByCategoryWithDiscounts(
+//                category.getId(), user, pageRequest);
+//
+//        // Проверка товаров в корзине (только для авторизованных)
+//        Map<Long, Integer> cartProductQuantities = new HashMap<>();
+//
+//        if (user != null) {
+//            try {
+//                Cart cart = cartService.getOrCreateCart(user.getId());
+//                List<CartItemDto> cartItems = cartService.getCartItems(cart.getId());
+//
+//                for (CartItemDto cartItem : cartItems) {
+//                    if (cartItem.getProductId() != null) {
+//                        cartProductQuantities.put(cartItem.getProductId(), cartItem.getQuantity());
+//                    }
+//                }
+//            } catch (Exception e) {
+//                log.warn("Ошибка при проверке корзины: {}", e.getMessage());
+//            }
+//        }
+//
+//        // Добавляем информацию о товарах в корзине в каждый продукт
+//        List<ProductListDto> productsWithCartInfo = products.getContent().stream()
+//                .map(product -> {
+//                    ProductListDto enhancedProduct = new ProductListDto();
+//                    BeanUtils.copyProperties(product, enhancedProduct);
+//
+//                    Integer cartQuantity = cartProductQuantities.get(product.getId());
+//                    if (cartQuantity != null && cartQuantity > 0) {
+//                        enhancedProduct.setInCart(true);
+//                        enhancedProduct.setCartQuantity(cartQuantity);
+//                    } else {
+//                        enhancedProduct.setInCart(false);
+//                        enhancedProduct.setCartQuantity(0);
+//                    }
+//
+//                    return enhancedProduct;
+//                })
+//                .toList();
+//
+//        Page<ProductListDto> enhancedProducts = new PageImpl<>(
+//                productsWithCartInfo,
+//                products.getPageable(),
+//                products.getTotalElements()
+//        );
+//
+//        model.addAttribute("category", category);
+//        model.addAttribute("products", enhancedProducts);
+//        model.addAttribute("cartProductQuantities", cartProductQuantities);
+//        model.addAttribute("currentSort", sort); // Передаем текущую сортировку в модель для UI
+//
+//        log.info("Страница Товаров в категории #{} загружена: {} мс",
+//                category.getName(), System.currentTimeMillis() - start);
+//        return "catalog/category";
+//    }
 
 }
