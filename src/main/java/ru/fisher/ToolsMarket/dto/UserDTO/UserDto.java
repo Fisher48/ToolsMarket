@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.UserDTO;
 
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.*;

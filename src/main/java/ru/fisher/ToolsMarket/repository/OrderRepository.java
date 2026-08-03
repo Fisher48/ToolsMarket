@@ -24,9 +24,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @EntityGraph(attributePaths = {
             "orderItems",
-            "orderItems.product",  // Загружаем продукт через цепочку
-            "orderItems.product.images",  // Если нужны изображения
-            "user",  // Добавляем загрузку user
+            "orderItems.product",
+            "orderItems.product.images",
+            "user",
             "user.userType"
     })
     @Query("SELECT o FROM Order o WHERE o.id = :id")

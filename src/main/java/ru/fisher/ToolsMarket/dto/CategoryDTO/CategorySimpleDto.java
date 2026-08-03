@@ -1,20 +1,23 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.CategoryDTO;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CategoryUpdateDto {
-    @NotBlank(message = "Название обязательно")
+public class CategorySimpleDto {
+    private Long id;
     private String title;
     private String name;
     private String description;
+    private String imageUrl;
+    private String thumbnailUrl;
     private Integer sortOrder;
-    private Long parentId;
+    private Instant createdAt;
 }

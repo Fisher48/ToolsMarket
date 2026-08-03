@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import ru.fisher.ToolsMarket.dto.UserRegistrationEvent;
+import ru.fisher.ToolsMarket.dto.UserDTO.UserRegistrationEvent;
 import ru.fisher.ToolsMarket.service.EmailService;
 
 @Component

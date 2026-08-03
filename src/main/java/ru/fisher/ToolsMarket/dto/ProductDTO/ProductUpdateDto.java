@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.ProductDTO;
 
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;

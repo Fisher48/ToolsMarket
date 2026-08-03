@@ -71,7 +71,7 @@ public class CustomErrorController implements ErrorController {
                 case 403 -> "error/403";
                 case 404 -> "error/404";
                 case 500 -> "error/500";
-                default -> "error/error";  // Убедитесь, что этот шаблон существует!
+                default -> "error/error";
             };
         }
 

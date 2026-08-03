@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.CartDTO;
 
 import java.util.List;
 import java.util.Map;

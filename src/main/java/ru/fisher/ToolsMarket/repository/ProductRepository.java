@@ -80,7 +80,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Query("SELECT p FROM Product p WHERE p.id = :id")
     Optional<Product> findWithAttributesById(@Param("id") Long id);
 
-    // ИСПРАВЛЕННЫЙ МЕТОД - загружаем только одну коллекцию
+    // Загружаем только одну коллекцию
     @EntityGraph(attributePaths = {"categories", "attributeValues", "attributeValues.attribute"})
     @Query("SELECT p FROM Product p " +
             "LEFT JOIN FETCH p.attributeValues av " +

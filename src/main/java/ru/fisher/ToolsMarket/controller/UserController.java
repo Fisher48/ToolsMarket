@@ -11,8 +11,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import ru.fisher.ToolsMarket.dto.OrderItemDto;
-import ru.fisher.ToolsMarket.dto.UserProfileUpdateDto;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderItemDto;
+import ru.fisher.ToolsMarket.dto.UserDTO.UserProfileUpdateDto;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderStatus;
 import ru.fisher.ToolsMarket.models.User;
@@ -30,9 +30,6 @@ public class UserController {
 
     private final UserService userService;
     private final OrderService orderService;
-    private final DiscountService discountService;
-    private final CartService cartService;
-    private final ProductService productService;
 
     @GetMapping
     public String profilePage(Model model, Authentication authentication) {
@@ -98,6 +95,7 @@ public class UserController {
         if (userId == null) {
             return "redirect:/auth/login";
         }
+        long start = System.currentTimeMillis();
 
         Order order = orderService.getOrderWithProducts(id);
 
@@ -108,10 +106,9 @@ public class UserController {
         // Получаем текущего пользователя
         User currentUser = userService.findById(userId).orElseThrow();
 
-        // ИСПРАВЛЕНО: Используем метод БЕЗ DiscountService
         List<OrderItemDto> orderItemDtos = order.getOrderItems()
                 .stream()
-                .map(OrderItemDto::fromEntity) // ← Без discountService!
+                .map(OrderItemDto::fromEntity)
                 .toList();
 
         // Рассчитываем итоги из сохраненных данных
@@ -129,7 +126,6 @@ public class UserController {
             }
         }
 
-        // Если в Dto нет метода getTotalWithoutDiscount, добавим локальную переменную
         BigDecimal totalWithoutDiscount = orderItemDtos.stream()
                 .map(dto -> dto.getOriginalPrice().multiply(
                         BigDecimal.valueOf(dto.getQuantity())))
@@ -153,7 +149,7 @@ public class UserController {
         if (order.getUser().getUserType() != null) {
             model.addAttribute("userTypeDisplay", order.getUser().getUserType().getDisplayName());
         }
-
+        log.debug("Страница заказа #{} загружена: {} мс", id, System.currentTimeMillis() - start);
         return "profile/order-detail";
     }
 

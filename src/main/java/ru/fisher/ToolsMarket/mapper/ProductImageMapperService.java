@@ -3,7 +3,7 @@ package ru.fisher.ToolsMarket.mapper;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-import ru.fisher.ToolsMarket.dto.ProductImageDto;
+import ru.fisher.ToolsMarket.dto.ProductDTO.ProductImageDto;
 import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.ProductImage;
 
@@ -27,7 +27,6 @@ public class ProductImageMapperService {
         return dto;
     }
 
-    // Добавляем недостающий метод
     public ProductImage toEntity(ProductImageDto imageDto, Product product) {
         if (imageDto == null) return null;
 

@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.OrderDTO;
 
 
 import java.math.BigDecimal;

@@ -8,7 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.fisher.ToolsMarket.dto.*;
+import ru.fisher.ToolsMarket.dto.ProductDTO.*;
 import ru.fisher.ToolsMarket.exceptions.DuplicateSkuException;
 import ru.fisher.ToolsMarket.mapper.ProductImageMapperService;
 import ru.fisher.ToolsMarket.mapper.ProductMapperService;
@@ -87,6 +87,9 @@ public class ProductService {
             BigDecimal maxPrice,
             Pageable pageable) {
 
+        long start = System.nanoTime();
+
+        try {
         Specification<Product> spec =
                 (root, query, cb) -> cb.conjunction();
 
@@ -118,6 +121,11 @@ public class ProductService {
                 productRepository.findAll(spec, pageable);
 
         return productPage.map(this::mapToDto);
+
+        } finally {
+            long duration = System.nanoTime() - start;
+            log.debug("Загрузка списка товаров заняла: {} мс", duration / 1_000_000);
+        }
     }
 
     private ProductAdminDto mapToDto(Product product) {

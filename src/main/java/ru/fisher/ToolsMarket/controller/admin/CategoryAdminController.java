@@ -18,7 +18,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import ru.fisher.ToolsMarket.dto.CategoryAdminDto;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryAdminDto;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.ImageStorageService;
@@ -141,7 +141,6 @@ public class CategoryAdminController {
                 log.info("Thumbnail generated: {}", thumbnailUrl);
             } catch (Exception e) {
                 log.error("Failed to save category image: {}", e.getMessage(), e);
-                // Можно добавить сообщение об ошибке в модель
                 model.addAttribute("error", "Ошибка при сохранении изображения: " + e.getMessage());
                 model.addAttribute("allCategories", categoryService.findAllEntities());
                 return "admin/categories/new";

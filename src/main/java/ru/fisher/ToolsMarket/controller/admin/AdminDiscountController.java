@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Controller
-@RequestMapping("/admin/discounts")  // Обратите внимание на другой путь!
+@RequestMapping("/admin/discounts")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminDiscountController {

@@ -3,7 +3,9 @@ package ru.fisher.ToolsMarket.mapper;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-import ru.fisher.ToolsMarket.dto.*;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryAdminDto;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryDto;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategorySimpleDto;
 import ru.fisher.ToolsMarket.models.Category;
 
 import java.util.Collections;
@@ -32,19 +34,18 @@ public class CategoryMapperService {
                 .createdAt(category.getCreatedAt())
                 .build();
 
-        // Родитель - только ID и имя (НЕ объект)
+        // Родитель - только ID и имя
         if (category.getParent() != null) {
             dto.setParentId(category.getParent().getId());
             dto.setParentName(category.getParent().getName());
             dto.setParentTitle(category.getParent().getTitle());
-            // НЕ создаем объект parentDto!
         }
 
-        // Дети - только простой DTO (НЕ полный CategoryDto)
+        // Дети - простой DTO
         if (category.getChildren() != null && !category.getChildren().isEmpty()) {
             dto.setChildrenCount(category.getChildren().size());
             dto.setChildren(category.getChildren().stream()
-                    .map(this::toSimpleDto) // Используем toSimpleDto а не toDto
+                    .map(this::toSimpleDto)
                     .sorted(Comparator.comparing(CategorySimpleDto::getSortOrder)
                             .thenComparing(CategorySimpleDto::getName))
                     .toList());
@@ -58,8 +59,6 @@ public class CategoryMapperService {
 
     public CategorySimpleDto toSimpleDto(Category category) {
         if (category == null) return null;
-
-        // Для простого DTO можно использовать ModelMapper
         return modelMapper.map(category, CategorySimpleDto.class);
     }
 
@@ -92,57 +91,5 @@ public class CategoryMapperService {
                 .createdAt(category.getCreatedAt())
                 .build();
     }
-
-//    public CategoryWithParentDto toWithParentDto(Category category) {
-//        if (category == null) return null;
-//
-//        CategoryWithParentDto dto = modelMapper.map(category, CategoryWithParentDto.class);
-//
-//        // Маппим только простого родителя (без детей)
-//        if (category.getParent() != null) {
-//            dto.setParent(toSimpleDto(category.getParent()));
-//        }
-//
-//        return dto;
-//    }
-
-//    public CategoryWithChildrenDto toWithChildrenDto(Category category) {
-//        if (category == null) return null;
-//
-//        CategoryWithChildrenDto dto = modelMapper.map(category, CategoryWithChildrenDto.class);
-//
-//        // Маппим только простых детей (без внуков)
-//        if (category.getChildren() != null) {
-//            dto.setChildren(category.getChildren().stream()
-//                    .map(this::toSimpleDto)
-//                    .collect(Collectors.toList()));
-//        }
-//
-//        return dto;
-//    }
-
-//    public CategoryTreeDto toTreeDto(Category category) {
-//        if (category == null) return null;
-//
-//        CategoryTreeDto dto = modelMapper.map(category, CategoryTreeDto.class);
-//
-//        // Для дерева маппим только первый уровень детей
-//        if (category.getChildren() != null) {
-//            dto.setChildren(category.getChildren().stream()
-//                    .map(child -> {
-//                        CategoryTreeDto childDto = modelMapper.map(child, CategoryTreeDto.class);
-//                        // Не маппим детей детей, чтобы избежать рекурсии
-//                        childDto.setChildren(null);
-//                        return childDto;
-//                    })
-//                    .collect(Collectors.toList()));
-//        }
-//
-//        return dto;
-//    }
-
-//    public Category toEntity(CategoryCreateDto dto) {
-//        return modelMapper.map(dto, Category.class);
-//    }
 
 }

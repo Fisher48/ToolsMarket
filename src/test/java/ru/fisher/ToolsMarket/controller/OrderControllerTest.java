@@ -10,7 +10,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.fisher.ToolsMarket.PostgresTestConfig;
-import ru.fisher.ToolsMarket.dto.CartItemDto;
+import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.models.*;

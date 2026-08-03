@@ -1,4 +1,6 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.OrderDTO;
+
+import ru.fisher.ToolsMarket.dto.SimpleOrderItemDto;
 
 import java.math.BigDecimal;
 import java.util.List;

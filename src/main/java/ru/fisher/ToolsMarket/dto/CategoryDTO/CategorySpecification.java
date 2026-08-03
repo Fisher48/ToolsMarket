@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.CategoryDTO;
 
 import org.springframework.data.jpa.domain.Specification;
 import ru.fisher.ToolsMarket.models.Category;

@@ -6,7 +6,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.fisher.ToolsMarket.dto.*;
+import org.springframework.web.server.ResponseStatusException;
+import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryAdminDto;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryDto;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryPageData;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategorySpecification;
+import ru.fisher.ToolsMarket.dto.ProductDTO.ProductCardDto;
 import ru.fisher.ToolsMarket.mapper.CategoryMapperService;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
@@ -21,12 +27,6 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapperService categoryMapperService;
-
-
-    // Методы для админки
-//    public List<Category> findAllEntities() {
-//        return categoryRepository.findAll();
-//    }
 
     @Transactional(readOnly = true)
     public List<Category> findAllEntities() {
@@ -89,11 +89,6 @@ public class CategoryService {
         return categoryRepository.findById(id)
                 .map(categoryMapperService::toDto);
     }
-
-//    public Optional<CategorySimpleDto> findSimpleById(Long id) {
-//        return categoryRepository.findById(id)
-//                .map(categoryMapperService::toSimpleDto);
-//    }
 
     public List<CategoryDto> findAll() {
         return categoryRepository.findAll().stream()

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import ru.fisher.ToolsMarket.dto.OrderEmailPayload;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderEmailPayload;
 
 import java.time.Instant;
 

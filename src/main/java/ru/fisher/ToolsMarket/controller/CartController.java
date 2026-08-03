@@ -9,7 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import ru.fisher.ToolsMarket.dto.CartItemDto;
+import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
 import ru.fisher.ToolsMarket.models.Cart;
 import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.User;

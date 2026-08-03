@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.ProductDTO;
 
 import lombok.*;
 import ru.fisher.ToolsMarket.models.AttributeType;

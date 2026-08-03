@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import ru.fisher.ToolsMarket.PostgresTestConfig;
-import ru.fisher.ToolsMarket.dto.CartItemDto;
+import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
 import ru.fisher.ToolsMarket.models.Cart;
 import ru.fisher.ToolsMarket.models.CartItem;
 import ru.fisher.ToolsMarket.models.Product;

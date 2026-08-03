@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.CategoryDTO;
 
 import lombok.Builder;
 import lombok.Data;

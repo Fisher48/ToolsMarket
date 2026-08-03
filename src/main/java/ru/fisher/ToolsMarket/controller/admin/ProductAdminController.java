@@ -21,7 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.fisher.ToolsMarket.dto.ImageOrderDto;
 import ru.fisher.ToolsMarket.dto.ParsedProductData;
-import ru.fisher.ToolsMarket.dto.ProductAdminDto;
+import ru.fisher.ToolsMarket.dto.ProductDTO.ProductAdminDto;
 import ru.fisher.ToolsMarket.exceptions.DuplicateSkuException;
 import ru.fisher.ToolsMarket.exceptions.ValidationException;
 import ru.fisher.ToolsMarket.models.*;
@@ -309,9 +309,6 @@ public class ProductAdminController {
         model.addAttribute("productCategoryIds", productCategoryIds);
         model.addAttribute("currentValues", currentValues);
         model.addAttribute("allProductTypes", ProductType.values());
-
-//        model.addAttribute("product", product);
-//        model.addAttribute("categories", categoryService.findAllCategories());
         model.addAttribute("returnUrl", getReturnUrl(session));
         return "admin/products/edit";
     }

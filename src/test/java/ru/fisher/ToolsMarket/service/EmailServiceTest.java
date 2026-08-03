@@ -13,8 +13,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import ru.fisher.ToolsMarket.PostgresTestConfig;
-import ru.fisher.ToolsMarket.dto.OrderCreatedEvent;
-import ru.fisher.ToolsMarket.dto.OrderItemDto;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderCreatedEvent;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderItemDto;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.repository.FailedEmailRepository;
 

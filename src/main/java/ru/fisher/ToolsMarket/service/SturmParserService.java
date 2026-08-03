@@ -92,7 +92,7 @@ public class SturmParserService implements ProductPageParser {
             if (src != null && !src.isEmpty() && !src.contains("data:image/gif")) { // Игнорируем заглушки lazyload
                 // Если ссылка относительная (/upload/iblock/...), добавляем домен
                 if (!src.startsWith("http")) {
-                    src = "https://sturmtools.ru" + src;
+                    src = BASE_URL + src;
                 }
 
                 // Проверяем, чтобы не добавить дубликаты

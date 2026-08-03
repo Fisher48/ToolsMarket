@@ -10,7 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import ru.fisher.ToolsMarket.dto.UserDto;
+import ru.fisher.ToolsMarket.dto.UserDTO.UserDto;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.recaptcha.CaptchaService;
 import ru.fisher.ToolsMarket.recaptcha.RecaptchaConfig;

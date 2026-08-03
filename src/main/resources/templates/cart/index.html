@@ -281,9 +281,6 @@
                     <i class="bi bi-info-circle text-primary me-2"></i>
                     <span class="fw-medium">
                         В корзине <span class="text-primary fw-bold" id="items-count" th:text="${#lists.size(items)}"></span> товар(ов)
-                        <span th:if="${hasDiscounts}" id="total-discount-info">
-                            (скидка <span th:text="${#numbers.formatDecimal(totalDiscount, 1, 2)}"></span> ₽)
-                        </span>
                     </span>
                 </div>
 
@@ -330,27 +327,6 @@
                                             <i class="bi bi-upc me-1"></i>
                                             Артикул: <span th:text="${item.productSku}"></span>
                                         </p>
-
-                                        <!-- Цена со скидкой -->
-                                        <div class="mb-2">
-                                            <div th:if="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                                <div class="d-flex align-items-center">
-                                                    <span class="price-discounted-cart unit-price"
-                                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
-                                                          th:data-price="${item.unitPrice}"></span>
-                                                    <span class="old-price-cart old-unit-price ms-2"
-                                                          style="color: var(--primary);"
-                                                          th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPriceWithDiscount) + ' ₽'}"
-                                                          th:data-price="${item.unitPriceWithDiscount}"></span>
-                                                </div>
-                                            </div>
-                                            <div th:unless="${item.discountPercentage != null and item.discountPercentage > 0}">
-                                                <span class="discount-badge-cart"
-                                                      style="color: var(--primary);"
-                                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}"
-                                                      th:data-price="${item.unitPrice}"></span>
-                                            </div>
-                                        </div>
                                     </div>
 
                                     <!-- Управление количеством -->

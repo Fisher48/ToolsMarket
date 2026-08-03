@@ -1,4 +1,4 @@
-package ru.fisher.ToolsMarket.dto;
+package ru.fisher.ToolsMarket.dto.OrderDTO;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +27,6 @@ public class OrderItemDto {
     private BigDecimal discountAmount;
     private boolean hasDiscount;
 
-    // НЕ ИСПОЛЬЗУЕМ DiscountService - работаем только с сохраненными данными
     public static OrderItemDto fromEntity(OrderItem item) {
         OrderItemDto dto = new OrderItemDto();
         dto.setProductId(item.getProduct().getId());
@@ -79,7 +78,6 @@ public class OrderItemDto {
                 : unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
 
-    // В класс OrderItemDto добавьте:
     public BigDecimal getTotalPrice() {
         // Общая сумма без скидки
         if (originalPrice != null && quantity != null) {

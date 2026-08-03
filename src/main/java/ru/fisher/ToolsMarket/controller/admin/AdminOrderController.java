@@ -8,7 +8,10 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import ru.fisher.ToolsMarket.dto.OrderItemDto;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderAdminDto;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderItemDto;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderStatisticsDto;
+import ru.fisher.ToolsMarket.dto.UserDTO.UserFilterDto;
 import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
@@ -39,8 +42,7 @@ public class AdminOrderController {
 
     private static final String SUCCESS_MSG = "successMessage";
     private static final String ERROR_MSG = "errorMessage";
-    private static final String REDIRECT_ORDER_DETAILS = "redirect:/admin/orders/";
-    private static final String REDIRECT_ORDERS_LIST = "redirect:/admin/orders";
+    private static final String REDIRECT_ORDERS_LIST = "redirect:/admin/orders/";
 
 
     @GetMapping
@@ -82,10 +84,9 @@ public class AdminOrderController {
         try {
             Order order = orderService.getOrderWithProducts(id);
 
-            // ИСПРАВЛЕНО: Используем метод БЕЗ discountService
             List<OrderItemDto> orderItemDtos = order.getOrderItems()
                     .stream()
-                    .map(OrderItemDto::fromEntity) // ← Без discountService!
+                    .map(OrderItemDto::fromEntity)
                     .toList();
 
             // Рассчитываем итоги как у пользователя
@@ -93,7 +94,7 @@ public class AdminOrderController {
                     .map(OrderItemDto::getTotalWithoutDiscount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // ИСПРАВЛЕНО: Проверяем hasDiscount перед получением discountAmount
+            // Проверяем hasDiscount перед получением discountAmount
             BigDecimal totalDiscount = orderItemDtos.stream()
                     .map(dto -> dto.isHasDiscount() && dto.getDiscountAmount() != null
                             ? dto.getDiscountAmount()
@@ -136,17 +137,15 @@ public class AdminOrderController {
             return "admin/orders/show";
 
         } catch (OrderNotFoundException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/admin/orders";
+            handleOrderNotFound(id, model);
+            return REDIRECT_ORDERS_LIST;
         } catch (Exception e) {
             log.error("Ошибка при получении заказа: id={}", id, e);
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Ошибка при загрузке заказа");
-            return "redirect:/admin/orders";
+            return REDIRECT_ORDERS_LIST;
         }
     }
-
-    // Все остальные методы остаются БЕЗ изменений...
 
     @PostMapping("/{id}/status")
     public String updateOrderStatus(@PathVariable Long id,
@@ -182,7 +181,7 @@ public class AdminOrderController {
             addErrorMessage(redirectAttributes, "Ошибка при обновлении статуса");
         }
 
-        return REDIRECT_ORDER_DETAILS + id;
+        return REDIRECT_ORDERS_LIST + id;
     }
 
     @PostMapping("/{id}/cancel")
@@ -210,7 +209,7 @@ public class AdminOrderController {
             addErrorMessage(redirectAttributes, "Ошибка при отмене заказа");
         }
 
-        return REDIRECT_ORDER_DETAILS + id;
+        return REDIRECT_ORDERS_LIST + id;
     }
 
     @PostMapping("/{id}/note")
@@ -234,71 +233,10 @@ public class AdminOrderController {
             addErrorMessage(redirectAttributes, "Ошибка при добавлении примечания");
         }
 
-        return REDIRECT_ORDER_DETAILS + id;
-    }
-
-    @GetMapping("/statistics")
-    public String showStatistics(Model model) {
-        try {
-            Map<String, Long> statusCounts = getStatusCounts();
-            model.addAttribute("statusCounts", statusCounts);
-            model.addAttribute("totalOrders", orderService.countAllOrders());
-            model.addAttribute("totalRevenue", orderService.calculateTotalRevenue());
-
-            return "admin/orders/statistics";
-
-        } catch (Exception e) {
-            log.error("Ошибка при загрузке статистики", e);
-            return handleGeneralError("Ошибка при загрузке статистики", model);
-        }
+        return REDIRECT_ORDERS_LIST + id;
     }
 
     // =========== Вспомогательные приватные методы ===========
-
-    private List<Order> getFilteredOrders(String status, String search, Long userId) {
-        // Добавил userId параметр
-        if (userId != null) {
-            // Фильтруем по пользователю
-            return orderService.getUserOrders(userId);
-        } else if (StringUtils.hasText(search)) {
-            return searchOrders(search.trim());
-        } else if (StringUtils.hasText(status)) {
-            OrderStatus orderStatus = OrderStatus.valueOf(status);
-            return orderService.getOrdersByStatus(orderStatus);
-        } else {
-            return orderService.getAllOrders();
-        }
-    }
-
-    private List<Order> searchOrders(String searchQuery) {
-        try {
-            Long orderNumber = Long.parseLong(searchQuery);
-            Order order = orderService.findByOrderNumber(orderNumber);
-            return order != null ? List.of(order) : List.of();
-        } catch (OrderNotFoundException e) {
-            log.info("Заказ не найден по номеру: {}", searchQuery);
-            return List.of();
-        } catch (NumberFormatException e) {
-            return orderService.searchOrders(searchQuery);
-        }
-    }
-
-    private void addOrderStatisticsToModel(Model model) {
-        model.addAttribute("newOrdersCount", orderService.countOrdersByStatus(OrderStatus.CREATED));
-        model.addAttribute("paidOrdersCount", orderService.countOrdersByStatus(OrderStatus.PAID));
-        model.addAttribute("completedOrdersCount", orderService.countOrdersByStatus(OrderStatus.COMPLETED));
-        model.addAttribute("cancelledOrdersCount", orderService.countOrdersByStatus(OrderStatus.CANCELLED));
-    }
-
-    private Map<String, Long> getStatusCounts() {
-        return Arrays.stream(OrderStatus.values())
-                .collect(Collectors.toMap(
-                        OrderStatus::name,
-                        orderService::countOrdersByStatus,
-                        (v1, v2) -> v1,
-                        LinkedHashMap::new
-                ));
-    }
 
     private String getStatusUpdateMessage(OrderStatus status, Long orderNumber) {
         return switch (status) {
@@ -318,11 +256,6 @@ public class AdminOrderController {
 
     private String handleOrderNotFound(Long id, Model model) {
         model.addAttribute(ERROR_MSG, String.format("Заказ #%d не найден", id));
-        return REDIRECT_ORDERS_LIST;
-    }
-
-    private String handleGeneralError(String message, Model model) {
-        model.addAttribute(ERROR_MSG, message);
         return REDIRECT_ORDERS_LIST;
     }
 

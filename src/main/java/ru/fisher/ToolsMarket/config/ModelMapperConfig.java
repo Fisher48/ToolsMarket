@@ -4,7 +4,7 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.fisher.ToolsMarket.dto.CategoryDto;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryDto;
 import ru.fisher.ToolsMarket.models.Category;
 
 @Configuration

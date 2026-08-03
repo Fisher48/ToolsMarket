@@ -29,7 +29,7 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
         // Получаем IP клиента
         String ip = recaptchaValidationFilter.getClientIp(request);
 
-        // ВАЖНО: увеличиваем счетчик неудачных попыток
+        // Увеличиваем счетчик неудачных попыток
         loginAttemptService.loginFailed(ip);
 
         log.info("Authentication failed for IP: {}, attempts now: {}",

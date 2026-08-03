@@ -6,7 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import ru.fisher.ToolsMarket.dto.CategoryDto;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryDto;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.UserService;
@@ -28,9 +28,8 @@ public class HomeController {
         List<CategoryDto> parentCategories = categoryService.getParentCategoriesForHome();
 
         model.addAttribute("allCategories", parentCategories);
-        model.addAttribute("categories", parentCategories);  // Для меню тоже
+        model.addAttribute("categories", parentCategories);
 
-        // Остальной код без изменений...
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Optional<User> user = userService.findByUsername(auth.getName());
         model.addAttribute("user", user);

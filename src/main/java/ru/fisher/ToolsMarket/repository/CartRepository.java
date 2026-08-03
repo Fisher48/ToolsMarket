@@ -15,7 +15,7 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
 
     boolean existsByUserId(Long userId);
 
-    // Новый метод для поиска по пользователю с предзагрузкой items
+    // Метод для поиска по пользователю с предзагрузкой items
     @EntityGraph(attributePaths = {"items"})
     Optional<Cart> findWithItemsByUserId(Long userId);
 
@@ -23,7 +23,7 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     @Query("DELETE FROM Cart c WHERE c.user = :userId")
     void deleteByUserId(@Param("userId") Long userId);
 
-    // Оптимизированный запрос с загрузкой продуктов
+    // Запрос с загрузкой продуктов
     @Query("""
         SELECT DISTINCT c FROM Cart c
         LEFT JOIN FETCH c.items ci
@@ -53,11 +53,4 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     """)
     Optional<Cart> findBySessionIdWithProducts(@Param("sessionId") String sessionId);
 
-//    // Старый метод для обратной совместимости
-//    @Query("""
-//        SELECT c FROM Cart c
-//        LEFT JOIN FETCH c.items
-//        WHERE c.user.id = :userId
-//    """)
-//    Optional<Cart> findWithItemsByUserId(@Param("userId") Long userId);
 }
