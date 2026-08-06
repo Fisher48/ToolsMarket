@@ -101,4 +101,8 @@ public class CartItemDto {
         }
         return BigDecimal.ZERO;
     }
+
+    public boolean hasDiscount() {
+        return discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0;
+    }
 }
