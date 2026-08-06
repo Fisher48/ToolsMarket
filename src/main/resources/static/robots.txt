@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Secure admin
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /profile/
+Disallow: /cart/
+Disallow: /order/
+
+# API no index
+Disallow: /api/
+
+Sitemap: https://18wolt.ru/sitemap.xml
