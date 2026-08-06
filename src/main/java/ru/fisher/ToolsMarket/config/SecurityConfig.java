@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.savedrequest.CookieRequestCache;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import ru.fisher.ToolsMarket.recaptcha.RecaptchaValidationFilter;
 import ru.fisher.ToolsMarket.service.UserDetailServiceImpl;
@@ -47,7 +48,8 @@ public class SecurityConfig {
                         "/css/**", "/js/**", "/images/**", "/webjars/**",
                         "/logo.png","/whiteTextLogo.png", "/blackTextLogo.png",
                         "/smallLogo.png", "/favicon.ico", "/favicon-*.png",
-                        "/apple-touch-icon.png", "/site.webmanifest"
+                        "/apple-touch-icon.png", "/site.webmanifest",
+                        "/robots.txt", "/sitemap.xml", "/icons/**"
                 )
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .sessionManagement(session ->
@@ -68,6 +70,9 @@ public class SecurityConfig {
                 .csrf(csrf ->
                         csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .ignoringRequestMatchers("/actuator/**"))
+                .requestCache(requestCache ->
+                        requestCache.requestCache(new CookieRequestCache())
+                )
                 .authorizeHttpRequests(auth -> auth
 
                         // Actuator
