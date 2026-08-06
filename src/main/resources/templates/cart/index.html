@@ -327,6 +327,28 @@
                                             <i class="bi bi-upc me-1"></i>
                                             Артикул: <span th:text="${item.productSku}"></span>
                                         </p>
+
+                                        <!-- Цена со скидкой -->
+                                        <div class="mb-2">
+                                            <!-- Цена за единицу -->
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="text-muted small">Цена за 1 шт.</span>
+                                                <!-- Текущая цена (со скидкой или без) -->
+                                                <span th:if="${item.hasDiscount()}"
+                                                      class="price-discounted-cart unit-price fw-bold text-danger"
+                                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPriceWithDiscount) + ' ₽'}">
+                                                </span>
+                                                <span th:unless="${item.hasDiscount()}"
+                                                      class="unit-price fw-bold fs-5"
+                                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}">
+                                                </span>
+                                                <!-- Старая цена (зачёркнутая) — ТОЛЬКО если есть скидка -->
+                                                <span th:if="${item.hasDiscount()}"
+                                                      class="old-price-cart text-muted text-decoration-line-through small"
+                                                      th:text="${T(ru.fisher.ToolsMarket.util.PriceFormatter).format(item.unitPrice) + ' ₽'}">
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <!-- Управление количеством -->
