@@ -19,6 +19,9 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     Optional<Product> findBySku(String sku);
 
+    @Query("SELECT p.title as title, p.createdAt as createdAt, p.updatedAt as updatedAt FROM Product p")
+    List<Object[]> findAllForSitemap();
+
     /**
      * Найти все продукты по списку SKU (для массовых операций)
      */

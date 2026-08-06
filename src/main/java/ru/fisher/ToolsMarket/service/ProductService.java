@@ -278,4 +278,8 @@ public class ProductService {
                 .map(product -> productMapperService.toDto(product, user));
     }
 
+    public List<Object[]> findAllForSitemap() {
+        return productRepository.findAllForSitemap();
+    }
+
 }

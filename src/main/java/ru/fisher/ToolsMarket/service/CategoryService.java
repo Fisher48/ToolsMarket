@@ -184,6 +184,10 @@ public class CategoryService {
         }
     }
 
+    public List<Object[]> findAllForSitemap() {
+        return categoryRepository.findAllForSitemap();
+    }
+
     @Transactional
     public void delete(Long id) {
         categoryRepository.deleteById(id);
