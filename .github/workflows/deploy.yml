@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: fisher48/tools-market-app  # ← Твой Docker Hub логин/репозиторий
+  IMAGE_NAME: fisher48/tools-market-app  # ← Docker Hub логин/репозиторий
 
 jobs:
   build-and-push:
