@@ -3,12 +3,9 @@
     <div class="row g-4">
 
       <!-- Колонка 1: О магазине -->
-      <div class="col-lg-4 col-md-6">
-        <a class="d-flex align-items-center text-decoration-none mb-3"
-           style="gap: 10px;">
-          <img th:src="@{/blackTextLogo.png}"
-               alt="18Вольт"
-               height="100"
+      <div class="col-lg-3 col-md-6">
+        <a class="d-flex align-items-center text-decoration-none mb-3" style="gap: 10px;">
+          <img th:src="@{/blackTextLogo.png}" alt="18Вольт" height="100"
                style="display: block; height: 100px; width: auto;">
         </a>
         <p class="text-muted mb-4" style="line-height: 1.8;">
@@ -16,13 +13,13 @@
         </p>
         <div class="social-links d-flex gap-3">
           <a href="https://t.me/toolsmarket48" class="social-link" title="Telegram">
-            <i class="bi bi-telegram"></i>
+            <i class="bi bi-telegram tg-icon"></i>
           </a>
-          <a href="#" class="social-link" title="WhatsApp">
-            <i class="bi bi-whatsapp"></i>
+          <a href="https://max.ru" class="social-link" title="MAX" target="_blank" rel="noopener">
+            <img th:src="@{/Max_logo_black-24x24.png}" alt="MAX" class="max-icon">
           </a>
-          <a href="#" class="social-link" title="VK">
-            <i class="bi bi-vk"></i>
+          <a href="https://vk.ru" class="social-link" title="VK" target="_blank" rel="noopener">
+            <img th:src="@{/VK_logo_Black_40x40.svg}" alt="VK" class="vk-icon">
           </a>
         </div>
       </div>
@@ -158,6 +155,29 @@
       border-radius: 2px;
       /*box-shadow: 0 2px 10px rgba(0,0,0,0.06);*/
       /*border: 1px solid rgba(0,0,0,0.05);*/
+    }
+
+    .social-link .max-icon {
+      /*background: url('https://maxicons.ru/icons/Max_logo_black.svg') center/contain no-repeat;*/
+      width: fit-content;
+      height: fit-content;
+      object-fit: contain;
+      display: block;
+    }
+
+    .social-link .vk-icon {
+      width: fit-content;
+      height: fit-content;
+      object-fit: contain;
+      display: block;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Telegram иконка */
+    .social-link i {
+      font-size: 25px;
+      line-height: 1;
     }
 
     .social-link {
