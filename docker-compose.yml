@@ -100,6 +100,7 @@ services:
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd
       - ./nginx/letsencrypt:/etc/letsencrypt
       - ./nginx/certbot:/var/www/certbot
+      - /etc/localtime:/etc/localtime:ro
       # - ./uploads:/app/uploads:ro
       - uploads:/app/uploads:ro  # Доступ к изображениям
     depends_on:
