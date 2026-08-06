@@ -203,7 +203,7 @@ public class OrderService {
         order.setUpdatedAt(Instant.now());
 
         Order saved = orderRepository.save(order);
-        log.info("Статус заказа обновлен: id={}, номер={}, старый статус={}, новый статус={}",
+        log.debug("Статус заказа обновлен: id={}, номер={}, старый статус={}, новый статус={}",
                 orderId, saved.getOrderNumber(), order.getStatus(), newStatus);
 
         return saved;

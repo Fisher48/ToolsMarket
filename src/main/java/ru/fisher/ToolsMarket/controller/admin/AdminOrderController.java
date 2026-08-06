@@ -63,7 +63,7 @@ public class AdminOrderController {
             model.addAttribute("completedOrdersCount", stats.getCompletedOrdersCount());
             model.addAttribute("cancelledOrdersCount", stats.getCancelledOrdersCount());
 
-            log.info("Страница заказов загружена: {} мс", System.currentTimeMillis() - start);
+            log.debug("Страница заказов загружена: {} мс", System.currentTimeMillis() - start);
             return "admin/orders/index";
 
         } catch (Exception e) {
