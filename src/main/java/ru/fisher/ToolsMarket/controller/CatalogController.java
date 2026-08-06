@@ -1,5 +1,6 @@
 package ru.fisher.ToolsMarket.controller;
 
+import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -24,6 +25,8 @@ import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.ProductService;
 import ru.fisher.ToolsMarket.service.UserService;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +124,7 @@ public class CatalogController {
      */
     @GetMapping("/search")
     public String search(@RequestParam(required = false) String q,
-                         @RequestParam(defaultValue = "0") int page,
+                         @RequestParam(defaultValue = "0") @Min(0) int page,
                          @RequestParam(defaultValue = "name_asc") String sort,
                          @AuthenticationPrincipal UserDetails userDetails,
                          Model model) {
@@ -184,6 +187,14 @@ public class CatalogController {
                 searchResults.getTotalElements()
         );
 
+        // Защита: если page больше максимума — редирект на последнюю
+        int totalPages = searchResults.getTotalPages();
+        if (totalPages > 0 && page >= totalPages) {
+            return "redirect:/search?q=" + encode(q)
+                    + "&page=" + (totalPages - 1)
+                    + "&sort=" + sort;
+        }
+
         model.addAttribute("currentUser", user);
         model.addAttribute("query", q);
         model.addAttribute("results", enhancedProducts);
@@ -194,10 +205,14 @@ public class CatalogController {
         return "catalog/search";
     }
 
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
 
     @GetMapping("/category/{title}")
     public String category(@PathVariable String title,
-                           @RequestParam(defaultValue = "0") int page,
+                           @RequestParam(defaultValue = "0") @Min(0) int page,
                            @RequestParam(defaultValue = "name_asc") String sort,
                            @AuthenticationPrincipal UserDetails userDetails,
                            Model model) {
@@ -212,6 +227,14 @@ public class CatalogController {
         }
 
         CategoryPageData pageData = categoryService.getCategoryPage(title, userId, sort, page, 12);
+
+        // Защита: если page больше максимума — редирект на последнюю
+        int totalPages = pageData.getProducts().getTotalPages();
+        if (totalPages > 0 && page >= totalPages) {
+            return "redirect:/category/" + encode(title)
+                    + "?page=" + (totalPages - 1)
+                    + "&sort=" + sort;
+        }
 
         model.addAttribute("category", pageData.getCategory());
         model.addAttribute("products", pageData.getProducts());
