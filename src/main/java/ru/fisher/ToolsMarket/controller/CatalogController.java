@@ -124,7 +124,7 @@ public class CatalogController {
      */
     @GetMapping("/search")
     public String search(@RequestParam(required = false) String q,
-                         @RequestParam(defaultValue = "0") @Min(0) int page,
+                         @RequestParam(defaultValue = "0") int page,
                          @RequestParam(defaultValue = "name_asc") String sort,
                          @AuthenticationPrincipal UserDetails userDetails,
                          Model model) {
@@ -140,7 +140,7 @@ public class CatalogController {
             searchResults = Page.empty();
         } else {
             // Создаем PageRequest с сортировкой
-            PageRequest pageRequest = PageRequest.of(page, 12, productService.getSort(sort));
+            PageRequest pageRequest = PageRequest.of(Math.max(page, 0), 12, productService.getSort(sort));
             searchResults = productService.searchWithDiscounts(q.trim(), user, pageRequest);
         }
 
@@ -212,7 +212,7 @@ public class CatalogController {
 
     @GetMapping("/category/{title}")
     public String category(@PathVariable String title,
-                           @RequestParam(defaultValue = "0") @Min(0) int page,
+                           @RequestParam(defaultValue = "0") int page,
                            @RequestParam(defaultValue = "name_asc") String sort,
                            @AuthenticationPrincipal UserDetails userDetails,
                            Model model) {
@@ -226,7 +226,7 @@ public class CatalogController {
                     .orElse(null);
         }
 
-        CategoryPageData pageData = categoryService.getCategoryPage(title, userId, sort, page, 12);
+        CategoryPageData pageData = categoryService.getCategoryPage(title, userId, sort, Math.max(page, 0), 12);
 
         // Защита: если page больше максимума — редирект на последнюю
         int totalPages = pageData.getProducts().getTotalPages();
