@@ -64,6 +64,8 @@ public class CategoryJdbcRepository {
          ORDER BY pi.sort_order LIMIT 1) as main_image_url,
         ud.discount_percentage,
         ROUND(p.price * (1 - COALESCE(ud.discount_percentage, 0) / 100), 2) as discounted_price,
+        CASE WHEN ud.discount_percentage IS NOT NULL AND ud.is_active = true
+             THEN true ELSE false END as has_discount,
         CASE WHEN ci.id IS NOT NULL THEN true ELSE false END as in_cart,
         COALESCE(ci.quantity, 0) as cart_quantity
     FROM product p
@@ -94,6 +96,7 @@ public class CategoryJdbcRepository {
                         .mainImageUrl(rs.getString("main_image_url"))  // ← добавить
                         .discountPercentage(rs.getBigDecimal("discount_percentage"))
                         .discountedPrice(rs.getBigDecimal("discounted_price"))
+                        .hasDiscount(rs.getBoolean("has_discount"))
                         .inCart(rs.getBoolean("in_cart"))
                         .cartQuantity(rs.getInt("cart_quantity"))
                         .build()
