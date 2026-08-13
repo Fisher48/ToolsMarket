@@ -1,6 +1,5 @@
 package ru.fisher.ToolsMarket.controller;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -10,25 +9,38 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.fisher.ToolsMarket.PostgresTestConfig;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderAdminDto;
+import ru.fisher.ToolsMarket.dto.OrderDTO.OrderStatisticsDto;
 import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
-import ru.fisher.ToolsMarket.models.*;
+import ru.fisher.ToolsMarket.models.Order;
+import ru.fisher.ToolsMarket.models.OrderItem;
+import ru.fisher.ToolsMarket.models.OrderStatus;
+import ru.fisher.ToolsMarket.models.Product;
+import ru.fisher.ToolsMarket.models.User;
+import ru.fisher.ToolsMarket.models.UserType;
 import ru.fisher.ToolsMarket.service.OrderService;
 import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -44,93 +56,151 @@ class OrderAdminControllerTest {
     @MockitoBean
     private UserService userService;
 
+    private OrderStatisticsDto emptyStats() {
+        return OrderStatisticsDto.builder().build();
+    }
+
+    private OrderAdminDto adminDto(Long id, Long orderNumber, String status) {
+        return OrderAdminDto.builder()
+                .id(id)
+                .orderNumber(orderNumber)
+                .status(status)
+                .totalPrice(BigDecimal.valueOf(1000))
+                .createdAt(Instant.now())
+                .build();
+    }
+
+    private Order createOrder(Long id, String status) {
+        Product product = new Product();
+        product.setId(1L);
+        product.setName("Тестовый товар");
+        product.setTitle("Тестовый товар");
+        product.setImages(new LinkedHashSet<>());
+
+        OrderItem orderItem = OrderItem.builder()
+                .id(1L)
+                .product(product)
+                .productName("Тестовый товар")
+                .productSku("SKU-1")
+                .quantity(2)
+                .unitPrice(BigDecimal.valueOf(500))
+                .subtotal(BigDecimal.valueOf(1000))
+                .build();
+
+        User user = User.builder()
+                .id(1L)
+                .username("user")
+                .email("user@example.com")
+                .userType(UserType.REGULAR)
+                .build();
+
+        Order order = Order.builder()
+                .id(id)
+                .orderNumber(10000L + id)
+                .status(OrderStatus.valueOf(status))
+                .totalPrice(BigDecimal.valueOf(1000))
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .user(user)
+                .orderItems(Set.of(orderItem))
+                .build();
+        orderItem.setOrder(order);
+        return order;
+    }
+
     // =========== Тесты для списка заказов ===========
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminOrderListReturnsAllOrders() throws Exception {
-        List<Order> orders = List.of(
-                createOrder(1L, "CREATED"),
-                createOrder(2L, "PAID")
+        List<OrderAdminDto> orders = List.of(
+                adminDto(1L, 10001L, "CREATED"),
+                adminDto(2L, 10002L, "PAID")
         );
+        OrderStatisticsDto stats = OrderStatisticsDto.builder()
+                .newOrdersCount(1)
+                .paidOrdersCount(1)
+                .build();
 
-        when(orderService.getAllOrders()).thenReturn(orders);
-        when(orderService.countOrdersByStatus(OrderStatus.CREATED)).thenReturn(1L);
-        when(orderService.countOrdersByStatus(OrderStatus.PAID)).thenReturn(1L);
-        when(orderService.countOrdersByStatus(OrderStatus.COMPLETED)).thenReturn(0L);
-        when(orderService.countOrdersByStatus(OrderStatus.CANCELLED)).thenReturn(0L);
+        when(orderService.getOrdersForAdmin(null, null, null)).thenReturn(orders);
+        when(orderService.getOrderStatistics(null, null, null)).thenReturn(stats);
+        when(orderService.getUsersForOrderFilter()).thenReturn(List.of());
 
         mockMvc.perform(get("/admin/orders").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/orders/index"))
-                .andExpect(model().attributeExists("orders", "newOrdersCount", "paidOrdersCount"))
+                .andExpect(model().attributeExists("orders", "users"))
                 .andExpect(model().attribute("orders", orders))
                 .andExpect(model().attribute("newOrdersCount", 1L))
                 .andExpect(model().attribute("paidOrdersCount", 1L));
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminOrderListWithStatusFilterReturnsFilteredOrders() throws Exception {
-        List<Order> paidOrders = List.of(createOrder(2L, "PAID"));
+        List<OrderAdminDto> paidOrders = List.of(adminDto(2L, 10002L, "PAID"));
 
-        when(orderService.getOrdersByStatus(OrderStatus.PAID)).thenReturn(paidOrders);
-        when(orderService.countOrdersByStatus(any())).thenReturn(0L);
+        when(orderService.getOrdersForAdmin("PAID", null, null)).thenReturn(paidOrders);
+        when(orderService.getOrderStatistics("PAID", null, null)).thenReturn(emptyStats());
+        when(orderService.getUsersForOrderFilter()).thenReturn(List.of());
 
         mockMvc.perform(get("/admin/orders").with(csrf())
                         .param("status", "PAID"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/orders/index"))
-                .andExpect(model().attributeExists("orders"))
-                .andExpect(model().attribute("orders", paidOrders));
+                .andExpect(model().attribute("orders", paidOrders))
+                .andExpect(model().attribute("selectedStatus", "PAID"));
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminOrderListWithSearchByOrderNumber() throws Exception {
-        Long orderNumber = 123456L;
-        Order foundOrder = createOrder(1L, "CREATED");
-        foundOrder.setOrderNumber(orderNumber);
+        String search = "123456";
+        List<OrderAdminDto> found = List.of(adminDto(1L, 123456L, "CREATED"));
 
-        when(orderService.findByOrderNumber(orderNumber)).thenReturn(foundOrder);
-        when(orderService.countOrdersByStatus(any())).thenReturn(0L);
+        when(orderService.getOrdersForAdmin(null, search, null)).thenReturn(found);
+        when(orderService.getOrderStatistics(null, search, null)).thenReturn(emptyStats());
+        when(orderService.getUsersForOrderFilter()).thenReturn(List.of());
 
         mockMvc.perform(get("/admin/orders").with(csrf())
-                        .param("search", orderNumber.toString()))
+                        .param("search", search))
                 .andExpect(status().isOk())
-                .andExpect(model().attribute("orders", List.of(foundOrder)));
+                .andExpect(model().attribute("orders", found))
+                .andExpect(model().attribute("searchQuery", search));
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminOrderListWithSearchByProductSku() throws Exception {
-        String sku = "TOOL-123";
-        List<Order> foundOrders = List.of(createOrder(1L, "CREATED"));
+        String search = "TOOL-123";
+        List<OrderAdminDto> found = List.of(adminDto(1L, 10001L, "CREATED"));
 
-        when(orderService.searchOrders(sku)).thenReturn(foundOrders);
-        when(orderService.countOrdersByStatus(any())).thenReturn(0L);
+        when(orderService.getOrdersForAdmin(null, search, null)).thenReturn(found);
+        when(orderService.getOrderStatistics(null, search, null)).thenReturn(emptyStats());
+        when(orderService.getUsersForOrderFilter()).thenReturn(List.of());
 
         mockMvc.perform(get("/admin/orders").with(csrf())
-                        .param("search", sku))
+                        .param("search", search))
                 .andExpect(status().isOk())
-                .andExpect(model().attribute("orders", foundOrders));
+                .andExpect(model().attribute("orders", found));
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminOrderListEmptyReturnsEmptyList() throws Exception {
-        when(orderService.getAllOrders()).thenReturn(List.of());
-        when(orderService.countOrdersByStatus(any(OrderStatus.class))).thenReturn(0L);
+        when(orderService.getOrdersForAdmin(null, null, null)).thenReturn(List.of());
+        when(orderService.getOrderStatistics(null, null, null)).thenReturn(emptyStats());
+        when(orderService.getUsersForOrderFilter()).thenReturn(List.of());
 
         mockMvc.perform(get("/admin/orders").with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(model().attribute("orders", is(Matchers.empty())));
+                .andExpect(model().attribute("orders", List.of()));
     }
 
     // =========== Тесты для деталей заказа ===========
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminOrderDetailReturnsOrderWithItems() throws Exception {
         Long orderId = 1L;
         Order order = createOrder(orderId, "CREATED");
@@ -140,42 +210,41 @@ class OrderAdminControllerTest {
         mockMvc.perform(get("/admin/orders/{id}", orderId).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/orders/show"))
-                .andExpect(model().attributeExists("order"))
+                .andExpect(model().attributeExists("order", "orderItems"))
                 .andExpect(model().attribute("order", order));
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
-    void adminOrderDetailWithNonExistentOrderShowsError() throws Exception {
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void adminOrderDetailWithNonExistentOrderRedirectsToList() throws Exception {
         Long nonExistentId = 999L;
 
-        when(orderService.getOrder(nonExistentId))
+        when(orderService.getOrderWithProducts(nonExistentId))
                 .thenThrow(new OrderNotFoundException(nonExistentId));
 
-        mockMvc.perform(get("/admin/orders/{id}", nonExistentId))
+        mockMvc.perform(get("/admin/orders/{id}", nonExistentId).with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/orders"))
-                .andExpect(flash().attributeExists("errorMessage"));
+                .andExpect(redirectedUrl("/admin/orders/"));
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminOrderDetailWithServerErrorShowsError() throws Exception {
         Long orderId = 1L;
 
-        when(orderService.getOrder(orderId))
+        when(orderService.getOrderWithProducts(orderId))
                 .thenThrow(new RuntimeException("Database error"));
 
-        mockMvc.perform(get("/admin/orders/{id}", orderId))
+        mockMvc.perform(get("/admin/orders/{id}", orderId).with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/orders"))
+                .andExpect(redirectedUrl("/admin/orders/"))
                 .andExpect(flash().attributeExists("errorMessage"));
     }
 
     // =========== Тесты для изменения статуса ===========
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminUpdateStatusChangesOrderStatus() throws Exception {
         Long orderId = 1L;
         String newStatus = "PAID";
@@ -184,6 +253,7 @@ class OrderAdminControllerTest {
         when(orderService.updateStatus(orderId, OrderStatus.PAID)).thenReturn(updated);
 
         mockMvc.perform(post("/admin/orders/{id}/status", orderId)
+                        .with(csrf())
                         .param("status", newStatus))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -192,12 +262,13 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminUpdateStatusWithInvalidStatusShowsError() throws Exception {
         Long orderId = 1L;
         String invalidStatus = "INVALID_STATUS";
 
         mockMvc.perform(post("/admin/orders/{id}/status", orderId)
+                        .with(csrf())
                         .param("status", invalidStatus))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -205,11 +276,12 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminUpdateStatusWithEmptyStatusShowsError() throws Exception {
         Long orderId = 1L;
 
         mockMvc.perform(post("/admin/orders/{id}/status", orderId)
+                        .with(csrf())
                         .param("status", ""))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -217,7 +289,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminUpdateStatusWithOrderNotFoundShowsError() throws Exception {
         Long orderId = 999L;
         String status = "PAID";
@@ -226,6 +298,7 @@ class OrderAdminControllerTest {
                 .thenThrow(new OrderNotFoundException(orderId));
 
         mockMvc.perform(post("/admin/orders/{id}/status", orderId)
+                        .with(csrf())
                         .param("status", status))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -234,7 +307,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminUpdateStatusWithInvalidTransitionShowsError() throws Exception {
         Long orderId = 1L;
         String status = "COMPLETED";
@@ -243,6 +316,7 @@ class OrderAdminControllerTest {
                 .thenThrow(new InvalidStatusTransitionException("CREATED", "COMPLETED"));
 
         mockMvc.perform(post("/admin/orders/{id}/status", orderId)
+                        .with(csrf())
                         .param("status", status))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -251,7 +325,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminUpdateStatusOfFinalizedOrderShowsError() throws Exception {
         Long orderId = 1L;
         String status = "PAID";
@@ -260,6 +334,7 @@ class OrderAdminControllerTest {
                 .thenThrow(new OrderFinalizedException("COMPLETED"));
 
         mockMvc.perform(post("/admin/orders/{id}/status", orderId)
+                        .with(csrf())
                         .param("status", status))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -270,14 +345,14 @@ class OrderAdminControllerTest {
     // =========== Тесты для отмены заказа ===========
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminCancelOrderSuccessfully() throws Exception {
         Long orderId = 1L;
         Order cancelled = createOrder(orderId, "CANCELLED");
 
         when(orderService.updateStatus(orderId, OrderStatus.CANCELLED)).thenReturn(cancelled);
 
-        mockMvc.perform(post("/admin/orders/{id}/cancel", orderId))
+        mockMvc.perform(post("/admin/orders/{id}/cancel", orderId).with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
                 .andExpect(flash().attribute("successMessage",
@@ -285,14 +360,14 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminCancelNonExistentOrderShowsError() throws Exception {
         Long orderId = 999L;
 
         when(orderService.updateStatus(orderId, OrderStatus.CANCELLED))
                 .thenThrow(new OrderNotFoundException(orderId));
 
-        mockMvc.perform(post("/admin/orders/{id}/cancel", orderId))
+        mockMvc.perform(post("/admin/orders/{id}/cancel", orderId).with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
                 .andExpect(flash().attributeExists("errorMessage"));
@@ -301,7 +376,7 @@ class OrderAdminControllerTest {
     // =========== Тесты для добавления примечаний ===========
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminAddNoteToOrderSuccessfully() throws Exception {
         Long orderId = 1L;
         String note = "Позвонить клиенту завтра";
@@ -309,6 +384,7 @@ class OrderAdminControllerTest {
         doNothing().when(orderService).addNote(orderId, note);
 
         mockMvc.perform(post("/admin/orders/{id}/note", orderId)
+                        .with(csrf())
                         .param("note", note))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -316,15 +392,16 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminAddEmptyNoteShowsError() throws Exception {
         Long orderId = 1L;
         String emptyNote = "   ";
 
         doThrow(new OrderValidationException("note", "Примечание не может быть пустым"))
-                .when(orderService).addNote(orderId, emptyNote.trim());
+                .when(orderService).addNote(orderId, "");
 
         mockMvc.perform(post("/admin/orders/{id}/note", orderId)
+                        .with(csrf())
                         .param("note", emptyNote))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -333,15 +410,16 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminAddTooLongNoteShowsError() throws Exception {
         Long orderId = 1L;
         String longNote = "a".repeat(1001);
 
         doThrow(new OrderValidationException("note", "Примечание слишком длинное (максимум 1000 символов)"))
-                .when(orderService).addNote(orderId, longNote.trim());
+                .when(orderService).addNote(orderId, longNote);
 
         mockMvc.perform(post("/admin/orders/{id}/note", orderId)
+                        .with(csrf())
                         .param("note", longNote))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
@@ -350,7 +428,7 @@ class OrderAdminControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser", roles = "ADMIN")
+    @WithMockUser(username = "admin", roles = "ADMIN")
     void adminAddNoteToNonExistentOrderShowsError() throws Exception {
         Long orderId = 999L;
         String note = "Тестовое примечание";
@@ -359,48 +437,10 @@ class OrderAdminControllerTest {
                 .when(orderService).addNote(orderId, note);
 
         mockMvc.perform(post("/admin/orders/{id}/note", orderId)
+                        .with(csrf())
                         .param("note", note))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/orders/" + orderId))
                 .andExpect(flash().attributeExists("errorMessage"));
     }
-
-    // =========== Вспомогательные методы ===========
-
-    private Order createOrder(Long id, String status) {
-        Order order = new Order();
-        order.setId(id);
-        order.setOrderNumber(10000L + id);
-        order.setStatus(OrderStatus.valueOf(status));
-        order.setTotalPrice(BigDecimal.valueOf(1000));
-        order.setCreatedAt(Instant.now());
-        order.setUpdatedAt(Instant.now());
-
-        // Создаем пользователя
-        User user = new User();
-        user.setId(1L);
-        user.setEmail("user@example.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        order.setUser(user);
-
-        // Создаем OrderItems с заполненными полями
-        OrderItem orderItem = new OrderItem();
-        orderItem.setId(1L);
-        orderItem.setQuantity(2);
-        orderItem.setUnitPrice(BigDecimal.valueOf(500));
-        orderItem.setProductName("Тестовый товар");
-
-        // Если нужно связать с Product
-        Product product = new Product();
-        product.setId(1L);
-        product.setName("Тестовый товар");
-        product.setPrice(BigDecimal.valueOf(500));
-        orderItem.setProduct(product);
-
-        order.setOrderItems(Set.of(orderItem));
-
-        return order;
-    }
-
 }

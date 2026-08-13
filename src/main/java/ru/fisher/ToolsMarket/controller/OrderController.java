@@ -3,7 +3,6 @@ package ru.fisher.ToolsMarket.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -34,8 +33,8 @@ public class OrderController {
     @GetMapping("/{orderId}")
     public String viewOrder(@PathVariable Long orderId,
                             Model model,
-                            Authentication authentication) {
-        Long userId = getCurrentUserId(authentication);
+                            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getCurrentUserId(userDetails);
         if (userId == null) {
             return "redirect:/auth/login";
         }
@@ -146,8 +145,8 @@ public class OrderController {
     @PostMapping("/create")
     public String createOrder(RedirectAttributes redirectAttributes,
                               @RequestParam(value = "note", required = false) String note,
-                              Authentication authentication) {
-        Long userId = getCurrentUserId(authentication);
+                              @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getCurrentUserId(userDetails);
         if (userId == null) {
             return "redirect:/auth/login";
         }
@@ -185,9 +184,9 @@ public class OrderController {
     @PostMapping("/{orderId}/cancel")
     public String cancelOrder(@PathVariable Long orderId,
                               RedirectAttributes redirectAttributes,
-                              Authentication authentication) {
+                              @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Long userId = getCurrentUserId(authentication);
+            Long userId = getCurrentUserId(userDetails);
 
             if (userId != null) {
                 // Проверяем, что заказ принадлежит пользователю
@@ -221,8 +220,8 @@ public class OrderController {
      * Страница истории заказов для авторизованных пользователей
      */
     @GetMapping("/history")
-    public String orderHistory(Model model, Authentication authentication) {
-        Long userId = getCurrentUserId(authentication);
+    public String orderHistory(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getCurrentUserId(userDetails);
         if (userId == null) {
             return "redirect:/auth/login";
         }
@@ -242,15 +241,11 @@ public class OrderController {
 
     // =========== Вспомогательные методы ===========
 
-    private Long getCurrentUserId(Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated()) {
-            Object principal = authentication.getPrincipal();
-            if (principal instanceof UserDetails) {
-                String username = ((UserDetails) principal).getUsername();
-                return userService.findByUsername(username)
-                        .map(User::getId)
-                        .orElse(null);
-            }
+    private Long getCurrentUserId(UserDetails userDetails) {
+        if (userDetails != null) {
+            return userService.findByUsername(userDetails.getUsername())
+                    .map(User::getId)
+                    .orElse(null);
         }
         return null;
     }

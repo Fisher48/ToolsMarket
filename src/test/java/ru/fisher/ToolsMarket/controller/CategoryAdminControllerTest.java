@@ -4,11 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.fisher.ToolsMarket.PostgresTestConfig;
+import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryAdminDto;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.UserService;
@@ -40,17 +43,24 @@ class CategoryAdminControllerTest {
 
     @Test
     @WithMockUser(username = "testuser", roles = "ADMIN")
-    void index_ShouldReturnCategoriesList() throws Exception {
+    void index_ShouldReturnCategoriesPage() throws Exception {
         // Given
-        Category category = createTestCategory();
-        when(categoryService.findAllEntities()).thenReturn(List.of(category));
+        CategoryAdminDto dto = CategoryAdminDto.builder()
+                .id(1L)
+                .name("Test Category")
+                .title("test-category")
+                .build();
+        Page<CategoryAdminDto> page = new PageImpl<>(List.of(dto));
+
+        when(categoryService.search(any(), any(), any(), any())).thenReturn(page);
+        when(categoryService.findAllEntitiesSorted()).thenReturn(List.of(createTestCategory()));
 
         // When & Then
         mockMvc.perform(get("/admin/categories").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/categories/index"))
-                .andExpect(model().attributeExists("categories"))
-                .andExpect(model().attribute("categories", List.of(category)));
+                .andExpect(model().attributeExists("categoryPage", "allCategories", "currentSort"))
+                .andExpect(model().attribute("categoryPage", page));
     }
 
     @Test
@@ -200,11 +210,13 @@ class CategoryAdminControllerTest {
 
     @Test
     @WithMockUser(username = "testuser", roles = "ADMIN")
-    void create_WithInvalidData_ShouldReturnFormWithErrors() throws Exception {
+    void create_WithInvalidData_ShouldReturnBadRequest() throws Exception {
         // Given
         when(categoryService.findAllEntities()).thenReturn(List.of(createTestCategory()));
 
-        // When & Then - передаем невалидные данные
+        // When & Then - невалидные данные (пустые name/title)
+        // Текущее поведение: BindingResult стоит не сразу за @Valid Category, поэтому Spring
+        // возвращает 400 Bad Request (MethodArgumentNotValidException), а не перерисовку формы.
         mockMvc.perform(post("/admin/categories")
                         .param("name", "")       // ← пустое имя
                         .param("title", "")      // ← пустой title
