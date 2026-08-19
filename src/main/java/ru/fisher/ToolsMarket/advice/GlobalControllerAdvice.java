@@ -41,6 +41,8 @@ public class GlobalControllerAdvice {
                 || currentUrl.startsWith("/error")
                 || currentUrl.startsWith("/actuator/")
                 || currentUrl.startsWith("/images/")
+                || currentUrl.startsWith("/img/")
+                || currentUrl.startsWith("/static/")
                 || currentUrl.startsWith("/css/")
                 || currentUrl.startsWith("/js/")
                 || currentUrl.startsWith("/webjars/")) {

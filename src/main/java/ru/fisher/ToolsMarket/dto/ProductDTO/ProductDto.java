@@ -101,7 +101,7 @@ public class ProductDto {
     }
 
     public String getMainImageUrl() {
-        return images != null && !images.isEmpty() ? images.getFirst().getUrl() : "/images/placeholder.jpg";
+        return images != null && !images.isEmpty() ? images.getFirst().getUrl() : "/img/placeholder.jpg";
     }
 
     // Метод для получения значения конкретной характеристики

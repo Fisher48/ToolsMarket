@@ -45,11 +45,12 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain staticResourcesFilterChain(HttpSecurity http) throws Exception {
         http.securityMatcher(
-                        "/css/**", "/js/**", "/images/**", "/webjars/**",
-                        "/logo.png","/whiteTextLogo.png", "/blackTextLogo.png",
-                        "/smallLogo.png", "/favicon.ico", "/favicon-*.png",
-                        "/apple-touch-icon.png", "/site.webmanifest",
-                        "/robots.txt", "/sitemap.xml", "/icons/**"
+                        "/css/**", "/js/**", "/img/**", "/static/**",
+                        "/images/**", "/webjars/**",
+                        "/favicon.ico", "/favicon-*.png",
+                        "/apple-touch-icon.png", "/android-chrome-*.png",
+                        "/smallLogo.png", "/site.webmanifest",
+                        "/robots.txt", "/sitemap.xml"
                 )
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .sessionManagement(session ->

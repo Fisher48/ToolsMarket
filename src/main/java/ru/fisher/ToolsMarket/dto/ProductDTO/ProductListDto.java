@@ -128,6 +128,6 @@ public class ProductListDto {
         if (images != null && !images.isEmpty()) {
             return images.getFirst().getUrl();
         }
-        return "/static/placeholder.jpg";
+        return "/img/placeholder.jpg";
     }
 }
