@@ -5,21 +5,21 @@
       <!-- Колонка 1: О магазине -->
       <div class="col-lg-3 col-md-6">
         <a class="d-flex align-items-center text-decoration-none mb-3" style="gap: 10px;">
-          <img th:src="@{/blackTextLogo.png}" alt="18Вольт" height="100"
+          <img th:src="@{/img/logos/blackTextLogo.png}" alt="18Вольт" height="100"
                style="display: block; height: 100px; width: auto;">
         </a>
         <p class="text-muted mb-4" style="line-height: 1.8;">
           Магазин профессиональных инструментов и оборудования.
         </p>
         <div class="social-links d-flex gap-3">
-          <a href="https://t.me/toolsmarket48" class="social-link" title="Telegram">
-            <i class="bi bi-telegram tg-icon"></i>
+          <a href="https://t.me/toolsmarket48" class="social-link" title="Telegram" target="_blank" rel="noopener">
+            <img th:src="@{/img/social/telegram.svg}" alt="Telegram" class="tg-icon">
           </a>
           <a href="https://max.ru" class="social-link" title="MAX" target="_blank" rel="noopener">
-            <img th:src="@{/Max_logo_black-32x32.png}" alt="MAX" class="max-icon">
+            <img th:src="@{/img/social/Max_logo_black-32x32.png}" alt="MAX" class="max-icon">
           </a>
           <a href="https://vk.ru" class="social-link" title="VK" target="_blank" rel="noopener">
-            <img th:src="@{/VK_logo_Black_40x40.svg}" alt="VK" class="vk-icon">
+            <img th:src="@{/img/social/VK_logo_Black_40x40.svg}" alt="VK" class="vk-icon">
           </a>
         </div>
       </div>
@@ -69,43 +69,7 @@
         </a>
       </div>
 
-<!--      &lt;!&ndash; Колонка 4: Информация &ndash;&gt;-->
-<!--      <div class="col-lg-3 col-md-6">-->
-<!--        <h5 class="fw-bold mb-3">Информация</h5>-->
-<!--        <ul class="list-unstyled">-->
-<!--          <li class="mb-2">-->
-<!--            <a href="#" class="text-muted text-decoration-none hover-link">-->
-<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
-<!--              О нас-->
-<!--            </a>-->
-<!--          </li>-->
-<!--          <li class="mb-2">-->
-<!--            <a href="#" class="text-muted text-decoration-none hover-link">-->
-<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
-<!--              Доставка-->
-<!--            </a>-->
-<!--          </li>-->
-<!--          <li class="mb-2">-->
-<!--            <a href="#" class="text-muted text-decoration-none hover-link">-->
-<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
-<!--              Оплата-->
-<!--            </a>-->
-<!--          </li>-->
-<!--          <li class="mb-2">-->
-<!--            <a href="#" class="text-muted text-decoration-none hover-link">-->
-<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
-<!--              Возврат-->
-<!--            </a>-->
-<!--          </li>-->
-<!--          <li class="mb-2">-->
-<!--            <a href="#" class="text-muted text-decoration-none hover-link">-->
-<!--              <i class="bi bi-chevron-right me-2" style="font-size: 0.8rem;"></i>-->
-<!--              Контакты-->
-<!--            </a>-->
-<!--          </li>-->
-<!--        </ul>-->
-<!--      </div>-->
-<!--    </div>-->
+    </div>
 
     <!-- Карта OSM -->
     <div class="map-section mt-5">
@@ -174,246 +138,4 @@
       L.control.zoom({ position: 'bottomright' }).addTo(map);
     });
   </script>
-
-  <style>
-    :root {
-      --accent: #FFD600;
-      --accent-dark: #E6C200;
-      --primary: #0d1b2a;
-      --border: #E0E4E8;
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-    }
-
-    .premium-footer {
-      background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-      color: #1a1a1a;
-      margin-top: 60px;
-      position: relative;
-      border-top: 4px solid var(--accent);
-    }
-
-    .premium-footer h5 {
-      color: #1a1a1a;
-      font-weight: 700;
-      position: relative;
-      display: inline-block;
-      padding-bottom: 10px;
-    }
-
-    .premium-footer h5::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 50px;
-      height: 3px;
-      background: var(--accent);
-      border-radius: 2px;
-    }
-
-    .premium-footer img {
-      height: 120px;
-      padding: 8px 16px;
-      border-radius: 2px;
-    }
-
-    .social-link .max-icon {
-      /*background: url('https://maxicons.ru/icons/Max_logo_black.svg') center/contain no-repeat;*/
-      width: fit-content;
-      height: fit-content;
-      object-fit: contain;
-      display: block;
-    }
-
-    .social-link .vk-icon {
-      width: fit-content;
-      height: fit-content;
-      object-fit: contain;
-      display: block;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Telegram иконка */
-    .social-link i {
-      font-size: 25px;
-      line-height: 1;
-    }
-
-    .social-link {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #1a1a1a;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      border: 1px solid #dee2e6;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    }
-
-    .social-link:hover {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #1a1a1a;
-      transform: translateY(-3px);
-      box-shadow: 0 4px 12px rgba(255, 214, 0, 0.3);
-    }
-
-    .hover-link {
-      transition: all 0.3s ease;
-      display: inline-block;
-    }
-
-    .hover-link:hover {
-      color: var(--primary) !important;
-      transform: translateX(4px);
-    }
-
-    .btn-map-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 50px;
-      padding: 8px 18px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--primary);
-      text-decoration: none;
-      transition: all 0.3s ease;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .btn-map-link:hover {
-      background: var(--accent);
-      border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 214, 0, 0.25);
-      color: var(--primary);
-    }
-
-    /* Карта */
-    .map-section {
-      width: 100%;
-    }
-
-    .map-wrapper {
-      position: relative;
-      width: 100%;
-      height: 280px;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-md);
-      background: #e5e7eb;
-    }
-
-    .map-wrapper iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      filter: grayscale(0.15) contrast(1.05);
-      transition: filter 0.4s ease;
-    }
-
-    .map-wrapper:hover iframe {
-      filter: grayscale(0) contrast(1);
-    }
-
-    .legal-info {
-      background: white;
-      border: 1px solid #e9ecef;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-    }
-
-    /* Карта OSM */
-    #footer-map {
-      width: 100%;
-      height: 280px;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-md);
-      background: #e5e7eb;
-    }
-
-    .leaflet-tile-pane {
-      filter: grayscale(0.2) contrast(1.05);
-      transition: filter 0.4s ease;
-    }
-
-    #footer-map:hover .leaflet-tile-pane {
-      filter: grayscale(0) contrast(1);
-    }
-
-    .leaflet-popup-content-wrapper {
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    .leaflet-popup-content {
-      margin: 10px 14px;
-      font-size: 0.9rem;
-      line-height: 1.5;
-    }
-
-    .leaflet-popup-tip {
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    }
-
-    .legal-info {
-      background: white;
-      border: 1px solid #e9ecef;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-    }
-
-    /* Адаптивность */
-    @media (max-width: 768px) {
-      .premium-footer { text-align: center; }
-      .premium-footer h5::after { left: 50%; transform: translateX(-50%); }
-      .social-links { justify-content: center; }
-      .premium-footer img { margin: 0 auto; }
-      #footer-map { height: 220px; border-radius: 16px; }
-      .btn-map-link { justify-content: center; width: 100%; }
-    }
-
-    /* Адаптивность */
-    @media (max-width: 768px) {
-      .premium-footer {
-        text-align: center;
-      }
-
-      .premium-footer h5::after {
-        left: 50%;
-        transform: translateX(-50%);
-      }
-
-      .social-links {
-        justify-content: center;
-      }
-
-      .premium-footer img {
-        margin: 0 auto;
-      }
-
-      .map-wrapper {
-        height: 220px;
-        border-radius: 16px;
-      }
-
-      .btn-map-link {
-        justify-content: center;
-        width: 100%;
-      }
-    }
-  </style>
 </footer>

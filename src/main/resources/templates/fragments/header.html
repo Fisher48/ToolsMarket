@@ -1,391 +1,123 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:fragment="header">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
-
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
-
-    <style>
-        :root {
-            --primary: #0d1b2a;
-            --primary-dark: #1b263b;
-            --primary-light: #2a3a4d;
-            --accent: #FFD600;
-            --accent-dark: #E6C200;
-            --text: #1a1a1a;
-            --text-light: #5a5a5a;
-            --bg-glass: rgba(255, 255, 255, 0.95);
-            --shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-
-        /* Header */
-        .premium-header {
-            padding: 0 !important;
-            background: var(--bg-glass);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow);
-        }
-
-        .premium-header.scrolled {
-            background: rgba(255, 255, 255, 0.98);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-
-        /* Логотип с подложкой */
-        .premium-logo {
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .premium-logo:hover {
-            transform: scale(1.02);
-        }
-
-        .premium-logo img {
-            height: 70px;
-            width: auto;
-            display: block;
-            background: white;
-            padding: 6px 14px;
-            border-radius: 6px;
-            /*box-shadow: 0 2px 10px rgba(0,0,0,0.08);*/
-            /*border: 1px solid rgba(0,0,0,0.06);*/
-            transition: all 0.3s ease;
-        }
-
-        .premium-logo:hover img {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-        }
-
-        /* Поиск */
-        .premium-search {
-            position: relative;
-            flex: 1;
-            max-width: 500px;
-            margin: 0 20px;
-        }
-
-        .premium-search .form-control {
-            border-radius: 50px;
-            border: 1px solid #e2e8f0;
-            padding: 12px 24px;
-            background: rgba(255,255,255,0.9);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            transition: all 0.3s ease;
-        }
-
-        .premium-search .form-control:focus {
-            border-color: var(--accent-dark);
-            box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.2);
-            background: white;
-        }
-
-        .premium-search .btn {
-            border-radius: 50px;
-            padding: 12px 24px;
-            background: var(--accent);
-            border: none;
-            color: var(--text);
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .premium-search .btn:hover {
-            background: var(--accent-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(255, 214, 0, 0.35);
-        }
-
-        /* Навигационные иконки */
-        .nav-icons {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .nav-icon-link {
-            color: var(--text);
-            text-decoration: none;
-            font-size: 1.2rem;
-            position: relative;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 12px;
-            border-radius: 50px;
-            background: rgba(0,0,0,0.02);
-        }
-
-        .nav-icon-link:hover {
-            color: var(--text);
-            background: rgba(255, 214, 0, 0.12);
-            transform: translateY(-2px);
-        }
-
-        .nav-icon-link .badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: var(--accent);
-            color: var(--text);
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 3px 6px;
-            border-radius: 20px;
-            min-width: 18px;
-            text-align: center;
-            border: 2px solid white;
-        }
-
-        /* Профиль */
-        .profile-dropdown {
-            align-items: center;
-            background: transparent;
-            border: none;
-            color: var(--text);
-            padding: 8px 16px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .profile-dropdown:hover {
-            background: rgba(255, 214, 0, 0.12);
-            color: var(--text);
-        }
-
-        .profile-dropdown::after {
-            display: none;
-        }
-
-        .profile-dropdown i {
-            font-size: 1.2rem;
-        }
-
-        .dropdown-menu {
-            border: none;
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            padding: 8px;
-            margin-top: 10px;
-        }
-
-        .dropdown-item {
-            border-radius: 8px;
-            padding: 10px 16px;
-            transition: all 0.2s ease;
-            color: var(--text);
-        }
-
-        .dropdown-item:hover {
-            background: rgba(255, 214, 0, 0.1);
-            color: var(--text);
-            transform: translateX(4px);
-        }
-
-        .dropdown-item.text-danger:hover {
-            background: rgba(220,53,69,0.05);
-            color: #dc3545 !important;
-        }
-
-        /* Адаптивность */
-        @media (max-width: 992px) {
-            .premium-search {
-                max-width: 300px !important;
-            }
-            .nav-icon-link span {
-                display: none !important;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .premium-header .container {
-                flex-wrap: wrap !important;
-            }
-            .premium-search {
-                order: 3 !important;
-                max-width: 100% !important;
-                margin: 12px 0 0 !important;
-            }
-            .premium-logo img {
-                height: 44px;
-                padding: 4px 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-
 <!-- Премиальный header -->
-<nav th:fragment="header" class="premium-header" x-data="{ scrolled: false }"
-     @scroll.window="scrolled = window.scrollY > 50"
-     :class="{ 'scrolled': scrolled }">
+<th:block th:fragment="header">
+    <nav class="premium-header" x-data="{ scrolled: false }"
+         @scroll.window="scrolled = window.scrollY > 50"
+         :class="{ 'scrolled': scrolled }">
 
-    <div class="container d-flex align-items-center justify-content-between" style="min-height: 70px; gap: 20px;">
+        <div class="container d-flex align-items-center justify-content-between" style="min-height: 70px; gap: 20px;">
 
-        <!-- Логотип - слева -->
-        <a class="premium-logo d-flex align-items-center" th:href="@{/}">
-            <img th:src="@{/smallLogo.png}" alt="18Вольт">
-        </a>
-
-        <!-- Поиск - по центру -->
-        <form class="premium-search flex-grow-1" th:action="@{/search}" method="get" style="max-width: 600px;">
-            <div class="input-group">
-                <input class="form-control" type="search" name="q"
-                       placeholder="Введите название..."
-                       aria-label="Search"
-                       autocomplete="off">
-                <button class="btn" type="submit">
-                    <i class="bi bi-search"></i>
-                </button>
-            </div>
-        </form>
-
-        <!-- Правая часть с иконками -->
-        <div class="nav-icons" style="justify-content: flex-end;">
-
-            <!-- Избранное -->
-            <a class="nav-icon-link" href="#" title="Избранное">
-                <i class="bi bi-heart"></i>
-                <span class="d-none d-lg-inline">Избранное</span>
+            <!-- Логотип - слева -->
+            <a class="premium-logo d-flex align-items-center" th:href="@{/}">
+                <img th:src="@{/smallLogo.png}" alt="18Вольт">
             </a>
 
-            <!-- Корзина - для авторизованных пользователей -->
-            <th:block th:if="${currentUser != null}">
-                <div x-data="{
-                    quantity: 0,
-                    init() {
-                        this.loadCart();
-                        window.addEventListener('cart-updated', (e) => {
-                            this.quantity = e.detail.totalQuantity;
-                        });
-                    },
-                    loadCart() {
-                        fetch('/api/cart/state')
-                            .then(res => res.json())
-                            .then(data => {
-                                this.quantity = data.totalQuantity || 0;
-                            })
-                            .catch(err => console.error('Error loading cart:', err));
-                    }
-                }">
-                    <a th:href="@{/cart}" class="nav-icon-link position-relative">
+            <!-- Поиск - по центру -->
+            <form class="premium-search flex-grow-1" th:action="@{/search}" method="get" style="max-width: 600px;">
+                <div class="input-group">
+                    <input class="form-control" type="search" name="q"
+                           placeholder="Введите название..."
+                           aria-label="Search"
+                           autocomplete="off">
+                    <button class="btn" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Правая часть с иконками -->
+            <div class="nav-icons" style="justify-content: flex-end;">
+
+                <!-- Избранное -->
+                <a class="nav-icon-link" href="#" title="Избранное">
+                    <i class="bi bi-heart"></i>
+                    <span class="d-none d-lg-inline">Избранное</span>
+                </a>
+
+                <!-- Корзина - для авторизованных пользователей -->
+                <th:block th:if="${currentUser != null}">
+                    <div x-data="{
+                        quantity: 0,
+                        init() {
+                            this.loadCart();
+                            window.addEventListener('cart-updated', (e) => {
+                                this.quantity = e.detail.totalQuantity;
+                            });
+                        },
+                        loadCart() {
+                            fetch('/api/cart/state')
+                                .then(res => res.json())
+                                .then(data => {
+                                    this.quantity = data.totalQuantity || 0;
+                                })
+                                .catch(err => console.error('Error loading cart:', err));
+                        }
+                    }">
+                        <a th:href="@{/cart}" class="nav-icon-link position-relative">
+                            <i class="bi bi-cart3"></i>
+                            <span class="d-none d-lg-inline">Корзина</span>
+                            <span class="badge" x-show="quantity > 0"
+                                  x-text="quantity" x-cloak></span>
+                        </a>
+                    </div>
+                </th:block>
+
+                <!-- Корзина для неавторизованных - ведет на логин -->
+                <th:block th:unless="${currentUser != null}">
+                    <a th:href="@{/auth/login}" class="nav-icon-link position-relative">
                         <i class="bi bi-cart3"></i>
                         <span class="d-none d-lg-inline">Корзина</span>
-                        <span class="badge" x-show="quantity > 0"
-                              x-text="quantity" x-cloak></span>
                     </a>
-                </div>
-            </th:block>
+                </th:block>
 
-            <!-- Корзина для неавторизованных - ведет на логин -->
-            <th:block th:unless="${currentUser != null}">
-                <a th:href="@{/auth/login}" class="nav-icon-link position-relative">
-                    <i class="bi bi-cart3"></i>
-                    <span class="d-none d-lg-inline">Корзина</span>
-                </a>
-            </th:block>
+                <!-- Профиль пользователя - для авторизованных -->
+                <th:block th:if="${currentUser != null}">
+                    <div class="dropdown">
+                        <button class="profile-dropdown dropdown-toggle d-flex align-items-center"
+                                type="button" id="userDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-2"></i>
+                            <span class="d-none d-lg-inline">
+                                <span th:text="${currentUser.username}">Пользователь</span>
+                            </span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/profile}">
+                                    <i class="bi bi-person me-2"></i> Профиль
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/profile/orders}">
+                                    <i class="bi bi-box-seam me-2"></i> Мои заказы
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <form th:action="@{/logout}" method="post" class="mb-0">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i> Выйти
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </th:block>
 
-            <!-- Профиль пользователя - для авторизованных -->
-            <th:block th:if="${currentUser != null}">
-                <div class="dropdown">
-                    <button class="profile-dropdown dropdown-toggle d-flex align-items-center"
-                            type="button" id="userDropdown"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle me-2"></i>
-                        <span class="d-none d-lg-inline">
-                            <span th:text="${currentUser.username}">Пользователь</span>
-                        </span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li>
-                            <a class="dropdown-item" th:href="@{/profile}">
-                                <i class="bi bi-person me-2"></i> Профиль
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" th:href="@{/profile/orders}">
-                                <i class="bi bi-box-seam me-2"></i> Мои заказы
-                            </a>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li>
-                            <form th:action="@{/logout}" method="post" class="mb-0">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <button type="submit" class="dropdown-item text-danger">
-                                    <i class="bi bi-box-arrow-right me-2"></i> Выйти
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            </th:block>
-
-            <!-- Кнопка входа для неавторизованных -->
-            <th:block th:unless="${currentUser != null}">
-                <a class="nav-icon-link"
-                   th:href="@{/auth/login(redirect=${currentUrl})}">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span class="d-none d-lg-inline">Войти</span>
-                </a>
-            </th:block>
+                <!-- Кнопка входа для неавторизованных -->
+                <th:block th:unless="${currentUser != null}">
+                    <a class="nav-icon-link"
+                       th:href="@{/auth/login(redirect=${currentUrl})}">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span class="d-none d-lg-inline">Войти</span>
+                    </a>
+                </th:block>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<!-- Bootstrap JS (для дропдаунов) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Скрипт для header -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        window.addEventListener('scroll', function() {
-            const header = document.querySelector('.premium-header');
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-        });
-
-        const searchInput = document.querySelector('.premium-search .form-control');
-        if (searchInput) {
-            searchInput.addEventListener('focus', function() {
-                this.parentElement.classList.add('focused');
-            });
-            searchInput.addEventListener('blur', function() {
-                this.parentElement.classList.remove('focused');
-            });
-        }
-    });
-</script>
-
-<style>
-    [x-cloak] { display: none !important; }
-</style>
-
-</body>
-</html>
+    <!-- Alpine.js для шапки (x-data, x-cloak, scroll-эффект) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</th:block>
