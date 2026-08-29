@@ -280,8 +280,50 @@ class OrderServiceTest {
 
         // Проверяем, что нельзя отменить завершенный заказ
         assertThatThrownBy(() -> orderService.cancelOrder(order.getId(), testUser.getId()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Невозможно отменить заказ в текущем статусе");
+                .isInstanceOf(OrderFinalizedException.class)
+                .hasMessageContaining("Невозможно изменить статус заказа: заказ уже завершен");
+    }
+
+    @Test
+    void cancelCancelledOrderThrowsException() {
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+        Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
+        cartService.addProduct(cart.getId(), p1.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
+
+        orderService.updateStatus(order.getId(), OrderStatus.CANCELLED);
+
+        assertThatThrownBy(() -> orderService.cancelOrder(order.getId(), testUser.getId()))
+                .isInstanceOf(OrderFinalizedException.class)
+                .hasMessageContaining("Невозможно изменить статус заказа: заказ уже отменен");
+    }
+
+    @Test
+    void paidOrderCanBeCancelled() {
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+        Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
+        cartService.addProduct(cart.getId(), p1.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
+
+        orderService.updateStatus(order.getId(), OrderStatus.PAID);
+        orderService.cancelOrder(order.getId(), testUser.getId());
+
+        Order cancelled = orderService.getOrder(order.getId());
+        assertThat(cancelled.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
+
+    @Test
+    void processingOrderCanBeCancelled() {
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+        Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
+        cartService.addProduct(cart.getId(), p1.getId());
+        Order order = orderService.createOrder(cart.getId(),"");
+
+        orderService.updateStatus(order.getId(), OrderStatus.PROCESSING);
+        orderService.cancelOrder(order.getId(), testUser.getId());
+
+        Order cancelled = orderService.getOrder(order.getId());
+        assertThat(cancelled.getStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 
     @Test

@@ -6,14 +6,9 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Recover;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import ru.fisher.ToolsMarket.dto.*;
 import ru.fisher.ToolsMarket.dto.OrderDTO.OrderCreatedEvent;
@@ -22,15 +17,16 @@ import ru.fisher.ToolsMarket.dto.UserDTO.UserRegistrationEvent;
 import ru.fisher.ToolsMarket.models.FailedEmail;
 import ru.fisher.ToolsMarket.models.OrderStatus;
 import ru.fisher.ToolsMarket.repository.FailedEmailRepository;
+import ru.fisher.ToolsMarket.service.email.*;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
+
+    private static final int MAX_RETRIES = 2;
 
     public final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
@@ -43,34 +39,60 @@ public class EmailService {
     @Value("${app.mail.admin}")
     private String adminEmail;
 
-    @Retryable(
-            retryFor = {
-                    MailException.class,
-                    MessagingException.class
-            },
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 3000, multiplier = 2)
-    )
-    public void sendOrderCreatedEmail(OrderCreatedEvent event) throws MessagingException {
+    public void sendOrderCreatedEmail(OrderCreatedEvent event) {
         log.info("Sending order email for order {}", event.orderNumber());
 
+        PendingEmail pending = EmailNotificationFactory.createOrderEmail(
+                event, from, adminEmail, templateEngine);
+
+        EmailNotificationState result = sendWithEmailState(pending);
+
+        if (result instanceof FailedEmailState failed) {
+            OrderEmailPayload payload = toSimpleEmailPayload(event);
+            Exception ex = new RuntimeException(failed.errorMessage());
+            failedEmailRepository.save(FailedEmail.from(payload, OrderStatus.CREATED, ex, objectMapper));
+        }
+    }
+
+    public void sendUserRegistrationEmail(UserRegistrationEvent event) {
+        log.info("Отправка сообщения о регистрации нового пользователя для админа: {}", event.email());
+
+        PendingEmail pending = EmailNotificationFactory.createRegistrationEmail(
+                event, from, adminEmail, templateEngine);
+
+        EmailNotificationState result = sendWithEmailState(pending);
+
+        if (result instanceof FailedEmailState failed) {
+            log.error("Email sending FAILED after retries for registration: {}", event.email());
+        }
+    }
+
+    private EmailNotificationState sendWithEmailState(PendingEmail pending) {
+        EmailNotificationState result = pending.send(this::doSend);
+
+        if (result instanceof FailedEmailState failed) {
+            log.warn("First attempt failed, retrying ({})...", failed.errorMessage());
+            for (int i = 0; i < MAX_RETRIES; i++) {
+                result = failed.retry(this::doSend);
+                if (result instanceof SentEmail) {
+                    log.info("Retry {} succeeded", i + 1);
+                    return result;
+                }
+                failed = (FailedEmailState) result;
+                log.warn("Retry {} failed: {}", i + 1, failed.errorMessage());
+            }
+        }
+
+        return result;
+    }
+
+    private void doSend(String recipient, String subject, String htmlContent) throws Exception {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         helper.setFrom(from);
-        helper.setTo(adminEmail);
-        helper.setSubject("Новый заказ инструментов #" + event.orderNumber());
-
-        // Контекст для Thymeleaf
-        Context context = new Context();
-        context.setVariable("order", event);
-        context.setVariable("items", event.orderItems());
-        context.setVariable("total", event.total());
-        context.setVariable("note", event.note());
-        context.setVariable("formattedDate", LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-
-        String htmlContent = templateEngine.process("email/order-created", context);
+        helper.setTo(recipient);
+        helper.setSubject(subject);
         helper.setText(htmlContent, true);
 
         mailSender.send(message);
@@ -89,51 +111,10 @@ public class EmailService {
         return new OrderEmailPayload(
                 event.orderId(),
                 event.orderNumber(),
-                simpleItems, // Используем упрощенный DTO
+                simpleItems,
                 event.total(),
                 event.customerEmail(),
                 event.note()
         );
     }
-
-    @Retryable(
-            retryFor = {
-                    MailException.class,
-                    MessagingException.class
-            },
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 3000, multiplier = 2)
-    )
-    public void sendUserRegistrationEmail(UserRegistrationEvent event) throws MessagingException {
-        log.info("Отправка сообщения о регистрации нового пользователя для админа: {}", event.email());
-
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setFrom(from);
-        helper.setTo(adminEmail);
-        helper.setSubject("Новый пользователь зарегистрировался на ToolsMarket48");
-
-        // Контекст для Thymeleaf
-        Context context = new Context();
-        context.setVariable("user", event);
-        context.setVariable("formattedDate", LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
-
-        String htmlContent = templateEngine.process("email/user-registration", context);
-        helper.setText(htmlContent, true);
-
-        mailSender.send(message);
-    }
-
-    /**
-     * Fallback после всех retry
-     */
-    @Recover
-    public void recover(Exception ex, OrderCreatedEvent event) {
-        log.error("Email sending FAILED after retries for order {}", event.orderNumber(), ex);
-        OrderEmailPayload payload = toSimpleEmailPayload(event);
-        failedEmailRepository.save(FailedEmail.from(payload, OrderStatus.CREATED, ex, objectMapper));
-    }
-
 }

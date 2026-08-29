@@ -15,6 +15,7 @@ import ru.fisher.ToolsMarket.dto.OrderDTO.OrderItemDto;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.models.*;
+import ru.fisher.ToolsMarket.service.order.OrderStateFactory;
 import ru.fisher.ToolsMarket.service.*;
 
 import java.math.BigDecimal;
@@ -99,8 +100,7 @@ public class OrderController {
      * Проверка возможности отмены заказа
      */
     private boolean canCancelOrder(Order order) {
-        return order.getStatus() == OrderStatus.CREATED ||
-                order.getStatus() == OrderStatus.PAID;
+        return OrderStateFactory.of(order).cancellable();
     }
 
     @GetMapping("/checkout")

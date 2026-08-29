@@ -16,6 +16,7 @@ import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
 import ru.fisher.ToolsMarket.models.*;
+import ru.fisher.ToolsMarket.service.order.*;
 import ru.fisher.ToolsMarket.repository.*;
 
 import java.math.BigDecimal;
@@ -181,14 +182,16 @@ public class OrderService {
 
     public void cancelOrder(Long orderId, Long userId) {
         Order order = getUserOrder(orderId, userId);
+        OrderState state = OrderStateFactory.of(order);
 
-        // Проверяем, можно ли отменить заказ
-        if (order.getStatus() != OrderStatus.CREATED && order.getStatus() != OrderStatus.PROCESSING) {
-            throw new IllegalArgumentException("Невозможно отменить заказ в текущем статусе");
-        }
+        switch (state) {
+            case CreatedOrder s -> s.cancel();
+            case ProcessingOrder s -> s.cancel();
+            case PaidOrder s -> s.cancel();
+            case CompletedOrder s -> throw new OrderFinalizedException("COMPLETED");
+            case CancelledOrder s -> throw new OrderFinalizedException("CANCELLED");
+        };
 
-        order.setStatus(OrderStatus.CANCELLED);
-        order.setUpdatedAt(Instant.now());
         orderRepository.save(order);
     }
 
@@ -197,16 +200,42 @@ public class OrderService {
         validateStatusUpdate(orderId, newStatus);
 
         Order order = getOrder(orderId);
-        validateStatusTransition(order.getStatus(), newStatus);
+        OrderState state = OrderStateFactory.of(order);
 
-        order.setStatus(newStatus);
-        order.setUpdatedAt(Instant.now());
+        OrderState updated = switch (state) {
+            case CreatedOrder s -> switch (newStatus) {
+                case PROCESSING -> s.process();
+                case PAID -> s.process().pay();
+                case COMPLETED -> s.process().pay().complete();
+                case CANCELLED -> s.cancel();
+                default -> throw new InvalidStatusTransitionException(order.getStatus().name(), newStatus.name());
+            };
+            case ProcessingOrder s -> switch (newStatus) {
+                case PAID -> s.pay();
+                case COMPLETED -> s.pay().complete();
+                case CANCELLED -> s.cancel();
+                default -> throw new InvalidStatusTransitionException(order.getStatus().name(), newStatus.name());
+            };
+            case PaidOrder s -> switch (newStatus) {
+                case COMPLETED -> s.complete();
+                case CANCELLED -> s.cancel();
+                default -> throw new InvalidStatusTransitionException(order.getStatus().name(), newStatus.name());
+            };
+            case CompletedOrder s -> throw new OrderFinalizedException("COMPLETED");
+            case CancelledOrder s -> throw new OrderFinalizedException("CANCELLED");
+        };
 
         Order saved = orderRepository.save(order);
-        log.debug("Статус заказа обновлен: id={}, номер={}, старый статус={}, новый статус={}",
-                orderId, saved.getOrderNumber(), order.getStatus(), newStatus);
+        log.debug("Статус заказа обновлен: id={}, номер={}, новый статус={}",
+                orderId, saved.getOrderNumber(), newStatus);
 
         return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public OrderState getOrderState(Long orderId) {
+        Order order = getOrder(orderId);
+        return OrderStateFactory.of(order);
     }
 
     @Transactional(readOnly = true)
@@ -257,45 +286,12 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    private boolean isValidTransition(OrderStatus from, OrderStatus to) {
-        return switch (from) {
-            case CREATED ->
-                    to == OrderStatus.PROCESSING
-                            || to == OrderStatus.PAID
-                            || to == OrderStatus.COMPLETED
-                            || to == OrderStatus.CANCELLED;
-
-            case PROCESSING ->
-                    to == OrderStatus.PAID
-                            || to == OrderStatus.COMPLETED
-                            || to == OrderStatus.CANCELLED;
-
-            case PAID ->
-                    to == OrderStatus.COMPLETED
-                            || to == OrderStatus.CANCELLED;
-
-            default -> false; // COMPLETED, CANCELLED
-        };
-    }
-
     private void validateStatusUpdate(Long orderId, OrderStatus newStatus) {
         if (orderId == null) {
             throw new OrderValidationException("orderId", "ID заказа не может быть null");
         }
         if (newStatus == null) {
             throw new OrderValidationException("status", "Статус не может быть null");
-        }
-    }
-
-    private void validateStatusTransition(OrderStatus current, OrderStatus newStatus) {
-        // Нельзя менять завершенные или отмененные заказы
-        if (current == OrderStatus.COMPLETED || current == OrderStatus.CANCELLED) {
-            throw new OrderFinalizedException(current.name());
-        }
-
-        // Проверяем корректный переход статуса
-        if (!isValidTransition(current, newStatus)) {
-            throw new InvalidStatusTransitionException(current.name(), newStatus.name());
         }
     }
 

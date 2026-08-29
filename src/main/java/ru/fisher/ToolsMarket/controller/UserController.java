@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.fisher.ToolsMarket.dto.OrderDTO.OrderItemDto;
 import ru.fisher.ToolsMarket.dto.UserDTO.UserProfileUpdateDto;
+import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderStatus;
 import ru.fisher.ToolsMarket.models.User;
+import ru.fisher.ToolsMarket.service.order.OrderStateFactory;
 import ru.fisher.ToolsMarket.service.*;
 
 import java.math.BigDecimal;
@@ -154,9 +156,9 @@ public class UserController {
     }
 
     private boolean canCancelOrder(Order order, Long userId) {
-        // Проверяем, может ли пользователь отменить заказ
-        if (order.getStatus() != OrderStatus.CREATED &&
-                order.getStatus() != OrderStatus.PAID) {
+        boolean cancellable = OrderStateFactory.of(order).cancellable();
+
+        if (!cancellable) {
             return false;
         }
 
@@ -181,7 +183,7 @@ public class UserController {
         try {
             orderService.cancelOrder(id, userId);
             redirectAttributes.addFlashAttribute("successMessage", "Заказ успешно отменен");
-        } catch (IllegalArgumentException e) {
+        } catch (OrderFinalizedException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при отмене заказа");
