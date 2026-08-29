@@ -18,23 +18,12 @@ public record CancelledOrder(Order order) implements OrderState {
     }
 
     @Override
-    public OrderStatus status() {
-        return OrderStatus.CANCELLED;
-    }
-
-    public CancelledOrder process() {
+    public OrderState moveTo(OrderStatus target) {
         throw new OrderFinalizedException("CANCELLED");
     }
 
-    public CancelledOrder pay() {
-        throw new OrderFinalizedException("CANCELLED");
-    }
-
-    public CancelledOrder complete() {
-        throw new OrderFinalizedException("CANCELLED");
-    }
-
-    public CancelledOrder cancel() {
+    @Override
+    public OrderState cancel() {
         throw new OrderFinalizedException("CANCELLED");
     }
 }

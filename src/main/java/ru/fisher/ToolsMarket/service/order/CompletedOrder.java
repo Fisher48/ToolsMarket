@@ -18,23 +18,12 @@ public record CompletedOrder(Order order) implements OrderState {
     }
 
     @Override
-    public OrderStatus status() {
-        return OrderStatus.COMPLETED;
-    }
-
-    public CompletedOrder process() {
+    public OrderState moveTo(OrderStatus target) {
         throw new OrderFinalizedException("COMPLETED");
     }
 
-    public CompletedOrder pay() {
-        throw new OrderFinalizedException("COMPLETED");
-    }
-
-    public CompletedOrder complete() {
-        throw new OrderFinalizedException("COMPLETED");
-    }
-
-    public CompletedOrder cancel() {
+    @Override
+    public OrderState cancel() {
         throw new OrderFinalizedException("COMPLETED");
     }
 }

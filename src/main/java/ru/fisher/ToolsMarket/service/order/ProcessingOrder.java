@@ -1,5 +1,6 @@
 package ru.fisher.ToolsMarket.service.order;
 
+import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderStatus;
 
@@ -17,15 +18,18 @@ public record ProcessingOrder(Order order) implements OrderState {
     }
 
     @Override
-    public OrderStatus status() {
-        return OrderStatus.PROCESSING;
+    public OrderState moveTo(OrderStatus target) {
+        return switch (target) {
+            case PAID       -> new PaidOrder(saveTransition(OrderStatus.PAID));
+            case COMPLETED  -> new CompletedOrder(saveTransition(OrderStatus.COMPLETED));
+            case CANCELLED  -> cancel();
+            default -> throw new InvalidStatusTransitionException(
+                    OrderStatus.PROCESSING.name(), target.name());
+        };
     }
 
-    public PaidOrder pay() {
-        return new PaidOrder(saveTransition(OrderStatus.PAID));
-    }
-
-    public CancelledOrder cancel() {
+    @Override
+    public OrderState cancel() {
         return new CancelledOrder(saveTransition(OrderStatus.CANCELLED));
     }
 }

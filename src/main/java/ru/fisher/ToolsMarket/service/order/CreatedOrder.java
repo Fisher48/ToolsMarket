@@ -18,15 +18,19 @@ public record CreatedOrder(Order order) implements OrderState {
     }
 
     @Override
-    public OrderStatus status() {
-        return OrderStatus.CREATED;
+    public OrderState moveTo(OrderStatus target) {
+        return switch (target) {
+            case PROCESSING -> new ProcessingOrder(saveTransition(OrderStatus.PROCESSING));
+            case PAID       -> new PaidOrder(saveTransition(OrderStatus.PAID));
+            case COMPLETED  -> new CompletedOrder(saveTransition(OrderStatus.COMPLETED));
+            case CANCELLED  -> cancel();
+            default -> throw new InvalidStatusTransitionException(
+                    OrderStatus.CREATED.name(), target.name());
+        };
     }
 
-    public ProcessingOrder process() {
-        return new ProcessingOrder(saveTransition(OrderStatus.PROCESSING));
-    }
-
-    public CancelledOrder cancel() {
+    @Override
+    public OrderState cancel() {
         return new CancelledOrder(saveTransition(OrderStatus.CANCELLED));
     }
 }

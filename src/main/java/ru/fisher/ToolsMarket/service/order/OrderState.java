@@ -10,7 +10,9 @@ public sealed interface OrderState
 
     boolean cancellable();
 
-    OrderStatus status();
+    OrderState moveTo(OrderStatus target);
+
+    OrderState cancel();
 
     default Order saveTransition(OrderStatus newStatus) {
         order().setStatus(newStatus);

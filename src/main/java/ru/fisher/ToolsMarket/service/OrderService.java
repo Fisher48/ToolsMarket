@@ -11,8 +11,6 @@ import ru.fisher.ToolsMarket.dto.OrderDTO.OrderCreatedEvent;
 import ru.fisher.ToolsMarket.dto.OrderDTO.OrderItemDto;
 import ru.fisher.ToolsMarket.dto.OrderDTO.OrderStatisticsDto;
 import ru.fisher.ToolsMarket.dto.UserDTO.UserFilterDto;
-import ru.fisher.ToolsMarket.exceptions.InvalidStatusTransitionException;
-import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.exceptions.OrderValidationException;
 import ru.fisher.ToolsMarket.models.*;
@@ -180,18 +178,10 @@ public class OrderService {
         return saved;
     }
 
+    @Transactional
     public void cancelOrder(Long orderId, Long userId) {
         Order order = getUserOrder(orderId, userId);
-        OrderState state = OrderStateFactory.of(order);
-
-        switch (state) {
-            case CreatedOrder s -> s.cancel();
-            case ProcessingOrder s -> s.cancel();
-            case PaidOrder s -> s.cancel();
-            case CompletedOrder s -> throw new OrderFinalizedException("COMPLETED");
-            case CancelledOrder s -> throw new OrderFinalizedException("CANCELLED");
-        };
-
+        OrderStateFactory.of(order).cancel();
         orderRepository.save(order);
     }
 
@@ -200,30 +190,7 @@ public class OrderService {
         validateStatusUpdate(orderId, newStatus);
 
         Order order = getOrder(orderId);
-        OrderState state = OrderStateFactory.of(order);
-
-        OrderState updated = switch (state) {
-            case CreatedOrder s -> switch (newStatus) {
-                case PROCESSING -> s.process();
-                case PAID -> s.process().pay();
-                case COMPLETED -> s.process().pay().complete();
-                case CANCELLED -> s.cancel();
-                default -> throw new InvalidStatusTransitionException(order.getStatus().name(), newStatus.name());
-            };
-            case ProcessingOrder s -> switch (newStatus) {
-                case PAID -> s.pay();
-                case COMPLETED -> s.pay().complete();
-                case CANCELLED -> s.cancel();
-                default -> throw new InvalidStatusTransitionException(order.getStatus().name(), newStatus.name());
-            };
-            case PaidOrder s -> switch (newStatus) {
-                case COMPLETED -> s.complete();
-                case CANCELLED -> s.cancel();
-                default -> throw new InvalidStatusTransitionException(order.getStatus().name(), newStatus.name());
-            };
-            case CompletedOrder s -> throw new OrderFinalizedException("COMPLETED");
-            case CancelledOrder s -> throw new OrderFinalizedException("CANCELLED");
-        };
+        OrderStateFactory.of(order).moveTo(newStatus);
 
         Order saved = orderRepository.save(order);
         log.debug("Статус заказа обновлен: id={}, номер={}, новый статус={}",
@@ -233,47 +200,9 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public OrderState getOrderState(Long orderId) {
-        Order order = getOrder(orderId);
-        return OrderStateFactory.of(order);
-    }
-
-    @Transactional(readOnly = true)
     public Order getOrder(Long id) {
         return orderRepository.findByIdWithItems(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
-    }
-
-    @Transactional(readOnly = true)
-    public List<Order> getAllOrders() {
-        return orderRepository.findAllByOrderByCreatedAtDesc();
-    }
-
-    @Transactional(readOnly = true)
-    public List<Order> getOrdersByStatus(OrderStatus status) {
-        return orderRepository.findByStatusOrderByCreatedAtDesc(status);
-    }
-
-    @Transactional(readOnly = true)
-    public long countOrdersByStatus(OrderStatus status) {
-        return orderRepository.countByStatus(status);
-    }
-
-    @Transactional(readOnly = true)
-    public Order findByOrderNumber(Long orderNumber) {
-        return orderRepository.findByOrderNumber(orderNumber)
-                .orElseThrow(() -> new OrderNotFoundException(null) {
-                    @Override
-                    public String getMessage() {
-                        return String.format("Заказ с номером %d не найден", orderNumber);
-                    }
-                });
-    }
-
-    @Transactional(readOnly = true)
-    public List<Order> searchOrders(String query) {
-        // Поиск по SKU товаров в заказе
-        return orderRepository.searchByProductSku("%" + query + "%");
     }
 
     public void addNote(Long orderId, String note) {
