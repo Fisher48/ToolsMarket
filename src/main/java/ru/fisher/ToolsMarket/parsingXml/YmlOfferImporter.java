@@ -280,6 +280,9 @@ public class YmlOfferImporter {
             product.setSku(sku);
             product.setTitle(generateSlug(name) + "-" + sku);
             product.setCreatedAt(Instant.now());
+            // Кто создал и кто изменил — тот, кто запустил импорт.
+            product.setCreatedByUserId(ctx.getCurrentUserId());
+            product.setUpdatedByUserId(ctx.getCurrentUserId());
             // Только для НОВЫХ товаров выставляем значения по умолчанию.
             // Существующие товары не трогаем — иначе импорт каждый раз сбрасывал бы
             // active / productType / категории
@@ -358,8 +361,11 @@ public class YmlOfferImporter {
             ctx.getNewSkus().add(sku);
         }
 
-        // Добавляем в список на сохранение
+        // Добавляем в список на сохранение. "Кто изменил" проставляем только
+        // когда есть реальные изменения (или товар новый), чтобы idempotent-импорт
+        // не затирал автора последних правок при полном совпадении данных фида.
         if (changed || isNew) {
+            product.setUpdatedByUserId(ctx.getCurrentUserId());
             ctx.getProductsToSave().add(product);
 
             ctx.getChanges().add(ProductChangeSummary.builder()
@@ -440,7 +446,7 @@ public class YmlOfferImporter {
                             .type(AttributeType.STRING)
                             .build();
                 } else {
-attribute = attributeRepository.findFirstByCategoryIdAndNameOrderByIdAsc(category.getId(), paramName)
+                    attribute = attributeRepository.findFirstByCategoryIdAndNameOrderByIdAsc(category.getId(), paramName)
                         .orElse(null);
 
                     if (attribute == null) {

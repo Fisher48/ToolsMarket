@@ -34,16 +34,16 @@ public class StemYmlImportService {
     private static final int BATCH_SIZE = 200;
 
     @Transactional
-    public ImportResult importFromUrl(String url) throws Exception {
-        return runImport(url, false);
+    public ImportResult importFromUrl(String url, Long currentUserId) throws Exception {
+        return runImport(url, false, currentUserId);
     }
 
     @Transactional(readOnly = true)
-    public ImportResult previewFromUrl(String url) throws Exception {
-        return runImport(url, true);
+    public ImportResult previewFromUrl(String url, Long currentUserId) throws Exception {
+        return runImport(url, true, currentUserId);
     }
 
-    private ImportResult runImport(String url, boolean dryRun) throws Exception {
+    private ImportResult runImport(String url, boolean dryRun, Long currentUserId) throws Exception {
         log.info("{} из {}", dryRun ? "Предпросмотр (dry-run)" : "Импорт", url);
 
         long startTime = System.currentTimeMillis();
@@ -136,7 +136,8 @@ public class StemYmlImportService {
                 categoryByXmlId,
                 productsBySku,
                 attributeCache,
-                valueCache
+                valueCache,
+                currentUserId
         );
         ctx.setCollidingVendorCodes(collidingVendorCodes);
 

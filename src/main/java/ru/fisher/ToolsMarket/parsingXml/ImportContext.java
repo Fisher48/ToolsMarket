@@ -45,15 +45,24 @@ public class ImportContext {
     @Setter
     private Set<String> collidingVendorCodes = Set.of();
 
+    /**
+     * id пользователя, запустившего импорт. Проставляется в created_by_user_id
+     * (новые товары) и updated_by_user_id (новые + изменённые товары), чтобы
+     * в админке было видно, кто делал изменения при создании товара.
+     */
+    private final Long currentUserId;
+
     public ImportContext(
             Map<String, Category> categoryByXmlId,
             Map<String, Product> productsBySku,
             Map<String, Attribute> attributeCache,
-            Map<String, ProductAttributeValue> valueCache
+            Map<String, ProductAttributeValue> valueCache,
+            Long currentUserId
     ) {
         this.categoryByXmlId = categoryByXmlId;
         this.productsBySku = productsBySku;
         this.attributeCache = attributeCache;
         this.valueCache = valueCache;
+        this.currentUserId = currentUserId;
     }
 }

@@ -38,6 +38,11 @@ public class PostgresTestConfig implements ApplicationContextInitializer<Configu
                 "spring.datasource.password=" + postgres.getPassword(),
                 "spring.datasource.driver-class-name=org.postgresql.Driver",
 
+                // Каждый @SpringBootTest-контекст держит свой пул Hikari (по умолчанию
+                // до 10 соединений). При большом числе одновременно живых контекстов
+                // общий Postgres (max_connections=100) переполняется — "too many clients".
+                "spring.datasource.hikari.maximum-pool-size=2",
+
                 // Flyway
                 "spring.flyway.enabled=true",
                 "spring.flyway.locations=classpath:db/migration",

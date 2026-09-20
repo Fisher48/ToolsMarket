@@ -89,7 +89,7 @@ class StemYmlImportServiceTest {
         StemYmlImportService service = newService();
 
         String url = writeTempXmlFile();
-        StemYmlImportService.ImportResult result = service.importFromUrl(url);
+        StemYmlImportService.ImportResult result = service.importFromUrl(url, 1L);
 
         // Предзагрузка вызвана РОВНО один раз с обоими SKU, а не по одному на оффер
         ArgumentCaptor<Set<String>> skuCaptor = ArgumentCaptor.forClass(Set.class);
@@ -107,6 +107,19 @@ class StemYmlImportServiceTest {
         assertThat(result.getNewProducts()).isEqualTo(1);      // NEW-1
         assertThat(result.getUpdatedProducts()).isEqualTo(1);  // EXIST-1 (цена изменилась)
         assertThat(result.isDryRun()).isFalse();
+
+        // Кто делал изменения: у нового товара — обе роли, у изменённого — updatedBy
+        ArgumentCaptor<List<Product>> saveCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productRepository, atLeastOnce()).saveAll(saveCaptor.capture());
+        List<Product> saved = saveCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        Product newProduct = saved.stream().filter(p -> "NEW-1".equals(p.getSku())).findFirst().orElseThrow();
+        assertThat(newProduct.getCreatedByUserId()).isEqualTo(1L);
+        assertThat(newProduct.getUpdatedByUserId()).isEqualTo(1L);
+
+        Product updatedProduct = saved.stream().filter(p -> "EXIST-1".equals(p.getSku())).findFirst().orElseThrow();
+        assertThat(updatedProduct.getUpdatedByUserId()).isEqualTo(1L);
     }
 
     @Test
@@ -117,7 +130,7 @@ class StemYmlImportServiceTest {
         StemYmlImportService service = newService();
 
         String url = writeTempXmlFile();
-        service.importFromUrl(url);
+        service.importFromUrl(url, 1L);
 
         // Оба товара новые -> должны быть сохранены через saveAll (батч)
         verify(productRepository, atLeastOnce()).saveAll(anyList());
@@ -140,7 +153,7 @@ class StemYmlImportServiceTest {
         StemYmlImportService service = newService();
 
         String url = writeTempXmlFile();
-        StemYmlImportService.ImportResult result = service.previewFromUrl(url);
+        StemYmlImportService.ImportResult result = service.previewFromUrl(url, 1L);
 
         // Никаких записей в БД в режиме предпросмотра
         verify(productRepository, never()).saveAll(anyList());
@@ -185,7 +198,7 @@ class StemYmlImportServiceTest {
         StemYmlImportService service = newService();
 
         String url = writeTempXmlFile();
-        StemYmlImportService.ImportResult result = service.importFromUrl(url);
+        StemYmlImportService.ImportResult result = service.importFromUrl(url, 1L);
 
         // Цена совпала -> изменений для существующего товара нет,
         // в список на сохранение попадает только новый NEW-1.
@@ -218,6 +231,7 @@ class StemYmlImportServiceTest {
         existing.setName("Дрель существующая");
         existing.setPrice(new BigDecimal("47500.00"));
         existing.setActive(true);
+        existing.setUpdatedByUserId(999L); // автор последних правок, задан вручную
 
         when(productRepository.findAllBySkusWithDetails(anySet()))
                 .thenReturn(List.of(existing));
@@ -225,7 +239,7 @@ class StemYmlImportServiceTest {
         StemYmlImportService service = newService();
 
         String url = writeTempXmlFilePrice("47500");
-        StemYmlImportService.ImportResult result = service.importFromUrl(url);
+        StemYmlImportService.ImportResult result = service.importFromUrl(url, 1L);
 
         assertThat(result.getNewProducts()).isZero();
         assertThat(result.getUpdatedProducts()).isZero();
@@ -235,6 +249,9 @@ class StemYmlImportServiceTest {
 
         // И значение цены в БД не мутируется (масштаб сохраняется)
         assertThat(existing.getPrice()).isEqualByComparingTo("47500.00");
+
+        // Автора правок не затираем: idempotent-импорт не проставляет updatedBy
+        assertThat(existing.getUpdatedByUserId()).isEqualTo(999L);
     }
 
     @Test
@@ -271,7 +288,7 @@ class StemYmlImportServiceTest {
         String url = writeTempXml(xml);
 
         StemYmlImportService service = newService();
-        StemYmlImportService.ImportResult result = service.importFromUrl(url);
+        StemYmlImportService.ImportResult result = service.importFromUrl(url, 1L);
 
         // Предзагрузка идёт по дизамбигированным SKU
         ArgumentCaptor<Set<String>> skuCaptor = ArgumentCaptor.forClass(Set.class);
@@ -332,7 +349,7 @@ class StemYmlImportServiceTest {
         String url = writeTempXml(xml);
 
         StemYmlImportService service = newService();
-        StemYmlImportService.ImportResult result = service.importFromUrl(url);
+        StemYmlImportService.ImportResult result = service.importFromUrl(url, 1L);
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getNewProducts()).isEqualTo(1);
@@ -354,7 +371,7 @@ class StemYmlImportServiceTest {
         StemYmlImportService service = newService();
         String url = writeTempXmlFile();
 
-        StemYmlImportService.ImportResult result = service.previewFromUrl(url);
+        StemYmlImportService.ImportResult result = service.previewFromUrl(url, 1L);
 
         assertThat(result.isSuccess()).isTrue();
         verify(attributeRepository, never()).save(any(Attribute.class));
@@ -368,7 +385,7 @@ class StemYmlImportServiceTest {
         StemYmlImportService service = newService();
         String url = writeTempXmlFile(); // vendorCode NEW-1 и EXIST-1 — без коллизий
 
-        service.importFromUrl(url);
+        service.importFromUrl(url, 1L);
 
         ArgumentCaptor<Set<String>> skuCaptor = ArgumentCaptor.forClass(Set.class);
         verify(productRepository, times(1)).findAllBySkusWithDetails(skuCaptor.capture());

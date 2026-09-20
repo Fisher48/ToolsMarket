@@ -41,7 +41,7 @@ public class ExcelProductImportService {
      * Импорт товаров из Excel файла
      */
     @Transactional
-    public ExcelImportResult importFromExcel(MultipartFile file) {
+    public ExcelImportResult importFromExcel(MultipartFile file, Long currentUserId) {
         ExcelImportResult result = new ExcelImportResult();
 
         if (file.isEmpty()) {
@@ -95,7 +95,7 @@ public class ExcelProductImportService {
                 if (row == null) continue;
 
                 try {
-                    Product product = processRowToProduct(row, columnIndexes, defaultCategory, existingSkus, result);
+                    Product product = processRowToProduct(row, columnIndexes, defaultCategory, existingSkus, currentUserId, result);
 
                     if (product != null) {
                         productsToSave.add(product);
@@ -173,6 +173,7 @@ public class ExcelProductImportService {
      */
     private Product processRowToProduct(Row row, Map<String, Integer> columnIndexes,
                                         Category defaultCategory, Set<String> existingSkus,
+                                        Long currentUserId,
                                         ExcelImportResult result) {
 
         Integer skuIndex = columnIndexes.get("Артикул");
@@ -220,7 +221,7 @@ public class ExcelProductImportService {
                 getCellValueAsString(row.getCell(descIndex)) : null;
 
         // Создаем товар
-        Product product = createProduct(sku, name, description, defaultCategory);
+        Product product = createProduct(sku, name, description, defaultCategory, currentUserId);
 
         result.incrementCreated();
         result.addCreatedProduct(sku);
@@ -231,7 +232,8 @@ public class ExcelProductImportService {
     /**
      * Создание товара
      */
-    private Product createProduct(String sku, String name, String description, Category category) {
+    private Product createProduct(String sku, String name, String description, Category category,
+                                  Long currentUserId) {
 
         // Генерируем title из имени + sku для уникальности
         String title = generateTitle(name) + "-" + sku.toLowerCase();
@@ -249,6 +251,9 @@ public class ExcelProductImportService {
         product.setProductType(ProductType.OTHER);
         product.setCreatedAt(Instant.now());
         product.setUpdatedAt(Instant.now());
+        // Кто создал и кто изменил — тот, кто запустил импорт.
+        product.setCreatedByUserId(currentUserId);
+        product.setUpdatedByUserId(currentUserId);
 
         // Инициализируем коллекции
         if (product.getCategories() == null) {
