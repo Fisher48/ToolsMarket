@@ -36,6 +36,13 @@ public class AttributeService {
     public Attribute createAttribute(Attribute attribute) {
         Long categoryId = attribute.getCategory().getId();
 
+        String name = attribute.getName() == null ? "" : attribute.getName().trim();
+        if (attributeRepository.existsByNameAndCategoryId(name, categoryId)) {
+            throw new ValidationException(
+                    "Атрибут с именем '" + name + "' уже существует в этой категории");
+        }
+        attribute.setName(name);
+
         int maxSort = attributeRepository.findMaxSortOrderByCategoryId(categoryId);
         attribute.setSortOrder(maxSort + 1);
 

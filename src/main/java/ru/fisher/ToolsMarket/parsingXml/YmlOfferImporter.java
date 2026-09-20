@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.fisher.ToolsMarket.models.*;
+import ru.fisher.ToolsMarket.repository.AttributeRepository;
 import ru.fisher.ToolsMarket.repository.ProductAttributeValueRepository;
+import ru.fisher.ToolsMarket.repository.ProductRepository;
 
 import javax.xml.stream.XMLStreamReader;
 import java.math.BigDecimal;
@@ -17,33 +19,135 @@ import java.util.*;
 public class YmlOfferImporter {
 
     private final ProductAttributeValueRepository productAttributeValueRepository;
+    private final ProductRepository productRepository;
+    private final AttributeRepository attributeRepository;
     private static final int MAX_ATTRIBUTE_VALUE_LENGTH = 1024;
 
+    // Параметры из фида, которые по своей сути — маркетинговый/описательный текст,
+    // а не характеристика товара. Переносятся в product.description вместо того,
+    // чтобы храниться (и обрезаться) как обычный атрибут.
+    // Сравнение регистронезависимое, с обрезкой пробелов.
+    private static final Set<String> DESCRIPTION_PARAM_NAMES = Set.of(
+            "комплектация и преимущества"
+    );
+
+    // ============================================================
+    // Предварительный (лёгкий) проход — только собираем SKU офферов.
+    // Нужен, чтобы одним запросом предзагрузить существующие товары
+    // (см. StemYmlImportService) и не бить по БД по одному товару на оффер.
+    // ============================================================
+    /**
+     * Считает, сколько офферов используют каждый vendorCode.
+     * Нужен, чтобы найти коллизии (vendorCode, встречающийся у более чем одного
+     * оффера) ДО резолва SKU — см. {@link #resolveSku}.
+     */
+    public Map<String, Integer> collectVendorCodeCounts(XMLStreamReader reader) throws Exception {
+        Map<String, Integer> counts = new HashMap<>();
+
+        while (reader.hasNext()) {
+            reader.next();
+
+            if (reader.isStartElement() && reader.getLocalName().equals("offer")) {
+                while (reader.hasNext()) {
+                    reader.next();
+
+                    if (reader.isStartElement() && reader.getLocalName().equals("vendorCode")) {
+                        String vendorCode = reader.getElementText();
+                        if (vendorCode != null && !vendorCode.isBlank()) {
+                            counts.merge(vendorCode, 1, Integer::sum);
+                        }
+                    }
+                    if (reader.isEndElement() && reader.getLocalName().equals("offer")) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return counts;
+    }
+
+    public Set<String> collectSkus(XMLStreamReader reader,
+                                   Set<String> collidingVendorCodes) throws Exception {
+        Set<String> skus = new HashSet<>();
+
+        while (reader.hasNext()) {
+            reader.next();
+
+            if (reader.isStartElement() && reader.getLocalName().equals("offer")) {
+                String externalId = reader.getAttributeValue(null, "id");
+                String vendorCode = null;
+
+                while (reader.hasNext()) {
+                    reader.next();
+
+                    if (reader.isStartElement() && reader.getLocalName().equals("vendorCode")) {
+                        vendorCode = reader.getElementText();
+                    }
+                    if (reader.isEndElement() && reader.getLocalName().equals("offer")) {
+                        break;
+                    }
+                }
+
+                String sku = resolveSku(externalId, vendorCode, collidingVendorCodes);
+                if (sku != null && !sku.isBlank()) {
+                    skus.add(sku);
+                }
+            }
+        }
+
+        return skus;
+    }
+
+    /**
+     * Резолвит SKU оффера.
+     *
+     * Обычно SKU = vendorCode (либо offer id, если vendorCode отсутствует).
+     * Но если vendorCode коллизирует (используется более чем одним оффером —
+     * как КАТ020/ШЛА014 в фиде stem), к нему добавляется offer id
+     * (формат: vendorCode + '-' + offerId), чтобы два РАЗНЫХ товара не слились
+     * в один и импорт не падал на unique_product_attribute.
+     */
+    private String resolveSku(String externalId, String vendorCode,
+                              Set<String> collidingVendorCodes) {
+        boolean hasVendorCode = vendorCode != null && !vendorCode.isBlank();
+        if (hasVendorCode && collidingVendorCodes.contains(vendorCode)) {
+            return vendorCode + "-" + externalId;
+        }
+        return hasVendorCode ? vendorCode : externalId;
+    }
+
     public void importOffers(XMLStreamReader reader,
-                             ImportContext ctx) throws Exception {
+                             ImportContext ctx,
+                             boolean dryRun) throws Exception {
 
         while (reader.hasNext()) {
             reader.next();
 
             if (reader.isStartElement()
                     && reader.getLocalName().equals("offer")) {
-                parseOffer(reader, ctx);
+                parseOffer(reader, ctx, dryRun);
             }
         }
     }
 
-    private void parseOffer(XMLStreamReader reader,
-                            ImportContext ctx) throws Exception {
+    public void parseOffer(XMLStreamReader reader,
+                           ImportContext ctx,
+                           boolean dryRun) throws Exception {
 
         String externalId = reader.getAttributeValue(null, "id");
         List<String> pictures = new ArrayList<>();
 
         String name = null;
+        String description = null;
         BigDecimal price = BigDecimal.ZERO;
         String categoryXmlId = null;
         String vendorCode = null;
 
         Map<String, String> params = new LinkedHashMap<>();
+        // unit каждого param (по тому же ключу, что и params) — нужен,
+        // чтобы сохранить единицу измерения в Attribute.unit при создании атрибута
+        Map<String, String> paramUnits = new HashMap<>();
 
         while (reader.hasNext()) {
             reader.next();
@@ -51,6 +155,7 @@ public class YmlOfferImporter {
             if (reader.isStartElement()) {
                 switch (reader.getLocalName()) {
                     case "name" -> name = reader.getElementText();
+                    case "description" -> description = reader.getElementText();
                     case "price" -> {
                         try {
                             price = new BigDecimal(reader.getElementText());
@@ -69,8 +174,33 @@ public class YmlOfferImporter {
                     case "param" -> {
                         String paramName =
                                 reader.getAttributeValue(null, "name");
+                        String unit = reader.getAttributeValue(null, "unit");
                         String value = reader.getElementText();
-                        params.put(paramName, value);
+
+                        // Пропускаем параметры без имени — иначе получим
+                        // "мусорный" атрибут с ключом "<categoryId>_null"
+                        if (paramName == null || paramName.isBlank()) {
+                            log.warn("Оффер {}: параметр без атрибута name пропущен (value={})",
+                                    externalId, value);
+                        } else if (!params.containsKey(paramName)) {
+                            params.put(paramName, value);
+                            if (unit != null && !unit.isBlank()) {
+                                paramUnits.put(paramName, unit);
+                            }
+                        } else {
+                            // В реальном фиде встречается повтор одного и того же name
+                            // с разным unit (например, "Мощность" в лс и отдельно в Вт).
+                            // Различаем по unit, чтобы сохранить оба.
+                            String disambiguatedKey = (unit != null && !unit.isBlank())
+                                    ? paramName + " (" + unit + ")"
+                                    : paramName + " (доп.)";
+                            params.put(disambiguatedKey, value);
+                            if (unit != null && !unit.isBlank()) {
+                                paramUnits.put(disambiguatedKey, unit);
+                            }
+                            log.debug("Оффер {}: повторный параметр '{}' сохранён как '{}'",
+                                    externalId, paramName, disambiguatedKey);
+                        }
                     }
                 }
             }
@@ -81,31 +211,68 @@ public class YmlOfferImporter {
             }
         }
 
-        String sku = (vendorCode != null && !vendorCode.isBlank())
-                ? vendorCode
-                : externalId;
+        String sku = resolveSku(externalId, vendorCode, ctx.getCollidingVendorCodes());
 
         Category category = ctx.getCategoryByXmlId().get(categoryXmlId);
 
         if (category == null) {
-            log.warn("Категория {} не найдена", categoryXmlId);
+            log.warn("Категория {} не найдена, оффер {} (sku={}) пропущен", categoryXmlId, externalId, sku);
             return;
         }
 
-        createOrUpdateProduct(sku, name, price, category, params, pictures, ctx);
+        // Переносим "текстовые" параметры (маркетинговый текст, часто в тысячи
+        // символов, иногда с HTML-таблицами) в описание вместо атрибута —
+        // как обычный атрибут они не фильтруются и режутся до 1024 символов.
+        StringBuilder extraDescription = new StringBuilder();
+        Iterator<Map.Entry<String, String>> paramIterator = params.entrySet().iterator();
+        while (paramIterator.hasNext()) {
+            Map.Entry<String, String> entry = paramIterator.next();
+            String normalizedName = entry.getKey() == null ? "" : entry.getKey().trim().toLowerCase();
+            boolean isDescriptionLikeParam = DESCRIPTION_PARAM_NAMES.contains(normalizedName)
+                    || (entry.getValue() != null && entry.getValue().length() > MAX_ATTRIBUTE_VALUE_LENGTH);
+
+            if (isDescriptionLikeParam) {
+                if (extraDescription.length() > 0) {
+                    extraDescription.append("\n\n");
+                }
+                extraDescription.append(entry.getKey()).append(":\n").append(entry.getValue());
+                paramIterator.remove();
+                paramUnits.remove(entry.getKey());
+            }
+        }
+
+        String fullDescription = combineDescription(description, extraDescription.toString());
+
+        createOrUpdateProduct(sku, name, fullDescription, price, category, params, paramUnits, pictures, ctx, dryRun);
     }
 
-    private void createOrUpdateProduct(
-            String sku,
-            String name,
-            BigDecimal price,
-            Category category,
-            Map<String, String> params,
-            List<String> pictures,
-            ImportContext ctx
-    ) {
+    private String combineDescription(String baseDescription, String extra) {
+        String base = baseDescription == null ? "" : baseDescription.trim();
+        String extraTrimmed = extra == null ? "" : extra.trim();
+
+        if (extraTrimmed.isEmpty()) {
+            return base.isEmpty() ? null : base;
+        }
+        if (base.isEmpty()) {
+            return extraTrimmed;
+        }
+        return base + "\n\n" + extraTrimmed;
+    }
+
+    private void createOrUpdateProduct(String sku, String name, String description, BigDecimal price,
+                                       Category category, Map<String, String> params,
+                                       Map<String, String> paramUnits,
+                                       List<String> pictures, ImportContext ctx,
+                                       boolean dryRun) {
 
         Product product = ctx.getProductsBySku().get(sku);
+
+        if (product == null) {
+            // Подстраховка: если по какой-то причине SKU не попал в предзагруженный
+            // кэш (см. StemYmlImportService.collectSkus), fallback на точечный запрос.
+            product = productRepository.findBySku(sku).orElse(null);
+        }
+
         boolean isNew = false;
 
         if (product == null) {
@@ -113,94 +280,262 @@ public class YmlOfferImporter {
             product.setSku(sku);
             product.setTitle(generateSlug(name) + "-" + sku);
             product.setCreatedAt(Instant.now());
-            ctx.getProductsBySku().put(sku, product);
+            // Только для НОВЫХ товаров выставляем значения по умолчанию.
+            // Существующие товары не трогаем — иначе импорт каждый раз сбрасывал бы
+            // active / productType / категории
+            product.setActive(true);
+            product.setProductType(ProductType.OTHER);
+            product.setCurrency("RUB");
             isNew = true;
-            // Очищаем старые изображения
-            product.getImages().clear();
-            log.debug("Обновляем товар: SKU={}, ID={}", sku, product.getId());
+            log.info("НОВЫЙ: SKU={}, name={}", sku, name);
         }
 
-        product.setName(name);
-        product.setPrice(price);
-        product.setProductType(ProductType.OTHER);
-        product.setUpdatedAt(Instant.now());
-        product.setActive(true);
+        // Захватываем значения ДО мутации — нужны для отчёта "было → стало"
+        String oldName = isNew ? null : product.getName();
+        BigDecimal oldPrice = isNew ? null : product.getPrice();
+        int oldImageCount = (!isNew && product.getImages() != null) ? product.getImages().size() : 0;
 
-        product.getCategories().clear();
-        product.getCategories().add(category);
+        // Проверяем, изменилось ли что-то
+        boolean changed = false;
+        boolean nameChanged = false;
+        boolean priceChanged = false;
+        boolean descriptionChanged = false;
+
+        if (!Objects.equals(product.getName(), name)) {
+            log.info("  ИМЯ: {} → {}", product.getName(), name);
+            product.setName(name);
+            changed = true;
+            nameChanged = true;
+        }
+        if (product.getPrice().compareTo(price) != 0) {
+            log.info("  ЦЕНА: {} → {}", product.getPrice(), price);
+            product.setPrice(price);
+            changed = true;
+            priceChanged = true;
+        }
+        if (!Objects.equals(product.getDescription(), description)) {
+            product.setDescription(description);
+            changed = true;
+            descriptionChanged = true;
+        }
+
+        // Проверяем картинки
+        int newImageCount = pictures.size();
+
+        Set<String> oldUrls = new HashSet<>();
+        if (product.getImages() != null) {
+            for (ProductImage img : product.getImages()) {
+                oldUrls.add(img.getUrl());
+            }
+        }
+        Set<String> newUrls = new HashSet<>(pictures);
+
+        boolean imagesChanged = oldImageCount != newImageCount || !oldUrls.equals(newUrls);
+        if (imagesChanged) {
+            log.info("  КАРТИНКИ: SKU={} | было={} → стало={}", sku, oldImageCount, newImageCount);
+            changed = true;
+        }
+
+        handleImages(product, pictures, ctx);
+        boolean attributesChanged = handleAttributes(product, category, params, paramUnits, ctx, dryRun);
+        if (attributesChanged) {
+            changed = true;
+        }
+
+        product.setUpdatedAt(Instant.now());
+
+        // Категорию из фида привязываем: для новых — всегда, для существующих —
+        // только если товар ещё нет в этой категории (чтобы не затирать вручную
+        // назначенные категории при каждом импорте).
+        if (isNew || product.getCategories().isEmpty()) {
+            product.getCategories().clear();
+            product.getCategories().add(category);
+        }
+
+        ctx.getProductsBySku().put(sku, product);
 
         if (isNew) {
-            ctx.getProductsToSave().add(product);
+            ctx.getNewSkus().add(sku);
         }
 
-        log.debug("Создаем новый товар: SKU={}", sku);
-        handleImages(product, pictures, ctx);
-        handleAttributes(product, category, params, ctx);
+        // Добавляем в список на сохранение
+        if (changed || isNew) {
+            ctx.getProductsToSave().add(product);
+
+            ctx.getChanges().add(ProductChangeSummary.builder()
+                    .sku(sku)
+                    .changeType(isNew ? ProductChangeSummary.ChangeType.NEW : ProductChangeSummary.ChangeType.UPDATED)
+                    .oldName(oldName)
+                    .newName(product.getName())
+                    .nameChanged(nameChanged)
+                    .oldPrice(oldPrice)
+                    .newPrice(product.getPrice())
+                    .priceChanged(priceChanged)
+                    .oldImageCount(oldImageCount)
+                    .newImageCount(newImageCount)
+                    .imagesChanged(imagesChanged)
+                    .descriptionChanged(descriptionChanged)
+                    .attributesChanged(attributesChanged)
+                    .build());
+        }
     }
 
     private void handleImages(Product product, List<String> pictures, ImportContext ctx) {
+        Map<String, ProductImage> existingByUrl = new HashMap<>();
+        for (ProductImage img : product.getImages()) {
+            existingByUrl.put(img.getUrl(), img);
+        }
+
         product.getImages().clear();
+
         int sort = 0;
         for (String url : pictures) {
-            ProductImage image = ProductImage.builder()
-                    .product(product)
-                    .url(url)
-                    .sortOrder(sort++)
-                    .build();
-            ctx.getProductImagesToSave().add(image);
-            product.getImages().add(image);
+            ProductImage image = existingByUrl.get(url);
+            if (image != null) {
+                image.setSortOrder(sort++);
+                product.getImages().add(image);
+            } else {
+                image = ProductImage.builder()
+                        .product(product)
+                        .url(url)
+                        .sortOrder(sort++)
+                        .build();
+                product.getImages().add(image);
+            }
         }
+        // Старые изображения, которых нет в новом списке, удалятся каскадом
+        // благодаря orphanRemoval = true на Product.images
     }
 
-    private void handleAttributes(Product product, Category category,
-                                  Map<String, String> params, ImportContext ctx) {
+    /**
+     * Синхронизирует значения атрибутов товара с параметрами из фида.
+     * Возвращает true, если что-то реально изменилось (для флага changed).
+     *
+     * Важно: изменения ОБЯЗАТЕЛЬНО зеркалятся в product.getAttributeValues(),
+     * иначе orphanRemoval не увидит удалённые значения, а Hibernate не будет
+     * гарантированно отслеживать точечные правки значений без явного save().
+     */
+    private boolean handleAttributes(Product product, Category category,
+                                     Map<String, String> params, Map<String, String> paramUnits,
+                                     ImportContext ctx, boolean dryRun) {
+
+        boolean changed = false;
+        Set<Long> keepAttributeIds = new HashSet<>();
 
         for (Map.Entry<String, String> entry : params.entrySet()) {
+            String paramName = entry.getKey().trim();
 
-            String key = category.getId() + "_" + entry.getKey();
-
+            String key = category.getId() + "_" + paramName;
             Attribute attribute = ctx.getAttributeCache().get(key);
+
             if (attribute == null) {
-                attribute = Attribute.builder()
-                        .name(entry.getKey())
-                        .category(category)
-                        .type(AttributeType.STRING)
-                        .build();
+                if (dryRun) {
+                    // В предпросмотре не ходим в БД за точечным атрибутом и не сохраняем:
+                    // кэш уже наполнен attributeRepository.findAll() в сервисе. Если атрибута
+                    // нет в кэше, считаем его новым и создаём в памяти (без save).
+                    attribute = Attribute.builder()
+                            .name(paramName)
+                            .unit(paramUnits.get(paramName))
+                            .category(category)
+                            .type(AttributeType.STRING)
+                            .build();
+                } else {
+attribute = attributeRepository.findFirstByCategoryIdAndNameOrderByIdAsc(category.getId(), paramName)
+                        .orElse(null);
+
+                    if (attribute == null) {
+                        attribute = attributeRepository.save(
+                                Attribute.builder()
+                                        .name(paramName)
+                                        .unit(paramUnits.get(paramName))
+                                        .category(category)
+                                        .type(AttributeType.STRING)
+                                        .build()
+                        );
+                    }
+                }
 
                 ctx.getAttributeCache().put(key, attribute);
-                ctx.getAttributesToSave().add(attribute);
             }
 
-            // Используем комбинацию SKU + attributeName для кеша до сохранения продукта
-            String valueKey = product.getSku() + "_" + attribute.getName();
+            keepAttributeIds.add(attribute.getId());
 
+            String valueKey = product.getSku() + "_" + attribute.getName();
             ProductAttributeValue pav = ctx.getValueCache().get(valueKey);
 
-            if (pav == null) {
-                // Если продукт уже существует в БД, проверяем, нет ли там значения
-                if (product.getId() != null) {
-                    pav = findAttributeValueInDb(product.getId(), attribute.getId());
-                }
+            if (pav == null && product.getId() != null && !dryRun) {
+                pav = findAttributeValueInDb(product.getId(), attribute.getId());
             }
+
+            // Подстраховка от дублей (product, attribute): если для этой пары уже есть
+            // значение, созданное в текущем проходе (в т.ч. транзиентное), — переиспользуем
+            // его, а не создаём второй PAV. Иначе возможен INSERT с нарушением
+            // unique_product_attribute (например, при коллизии vendorCode в фиде).
+            if (pav == null) {
+                pav = findInProductAttributeValues(product, attribute);
+            }
+
+            String newValue = trimTo(entry.getValue(), MAX_ATTRIBUTE_VALUE_LENGTH);
 
             if (pav == null) {
                 pav = ProductAttributeValue.builder()
                         .product(product)
                         .attribute(attribute)
-                        .value(trimTo(entry.getValue(), MAX_ATTRIBUTE_VALUE_LENGTH)) // чтобы не превышать limit
+                        .value(newValue)
                         .build();
+                // Держим бидирекциональную связь синхронной — нужно для
+                // orphanRemoval и для корректной работы Product.getAttributeValue(...)
+                product.getAttributeValues().add(pav);
                 ctx.getValuesToSave().add(pav);
                 ctx.getValueCache().put(valueKey, pav);
-            } else {
-                pav.setValue(trimTo(entry.getValue(), MAX_ATTRIBUTE_VALUE_LENGTH));
+                changed = true;
+            } else if (!Objects.equals(pav.getValue(), newValue)) {
+                pav.setValue(newValue);
+                // Явно добавляем в список на сохранение — не полагаемся
+                // на неявный dirty checking, который зависит от границ транзакции.
+                ctx.getValuesToSave().add(pav);
+                ctx.getValueCache().put(valueKey, pav);
+                changed = true;
             }
         }
+
+        // Удаляем значения атрибутов ЭТОЙ категории, которых больше нет в фиде.
+        // В dry-run категория нового товара имеет синтетический id — не выполняем
+        // удаление, чтобы не задеть связанные с реальным атрибутом значения.
+        boolean removed = false;
+        if (!(dryRun && category.getId() != null && category.getId() < 0)) {
+            removed = product.getAttributeValues().removeIf(av ->
+                    av.getAttribute() != null
+                            && av.getAttribute().getCategory() != null
+                            && av.getAttribute().getCategory().getId().equals(category.getId())
+                            && !keepAttributeIds.contains(av.getAttribute().getId()));
+        }
+
+        return changed || removed;
     }
 
     private ProductAttributeValue findAttributeValueInDb(Long productId, Long attributeId) {
         return productAttributeValueRepository
                 .findByProductIdAndAttributeId(productId, attributeId)
                 .orElse(null);
+    }
+
+    /**
+     * Ищет в коллекции товара значение атрибута по id атрибута.
+     * Покрывает и уже сохранённые, и транзиентные (ещё не в БД) значения,
+     * созданные в текущем проходе — защита от создания второго PAV для пары
+     * (product, attribute).
+     */
+    private ProductAttributeValue findInProductAttributeValues(Product product, Attribute attribute) {
+        if (product.getAttributeValues() == null || attribute == null) return null;
+        Long attributeId = attribute.getId();
+        if (attributeId == null) return null;
+        for (ProductAttributeValue pav : product.getAttributeValues()) {
+            if (pav.getAttribute() != null && attributeId.equals(pav.getAttribute().getId())) {
+                return pav;
+            }
+        }
+        return null;
     }
 
     private String trimTo(String value, int maxLength) {
@@ -214,9 +549,6 @@ public class YmlOfferImporter {
         return value;
     }
 
-    /**
-    * Генерация slug из названия
-    */
     private String generateSlug(String name) {
         if (name == null || name.isEmpty()) {
             return "product-" + System.currentTimeMillis();
@@ -275,4 +607,3 @@ public class YmlOfferImporter {
         return result.toString();
     }
 }
-

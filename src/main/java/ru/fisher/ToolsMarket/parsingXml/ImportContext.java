@@ -1,12 +1,15 @@
 package ru.fisher.ToolsMarket.parsingXml;
 
 import lombok.Getter;
+import lombok.Setter;
 import ru.fisher.ToolsMarket.models.*;
-import ru.fisher.ToolsMarket.repository.AttributeRepository;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 public class ImportContext {
@@ -16,13 +19,31 @@ public class ImportContext {
     private final Map<String, Attribute> attributeCache;
     private final Map<String, ProductAttributeValue> valueCache;
 
-    private final List<Product> productsToSave = new ArrayList<>();
+    // Дедуплицируем списки сохранения через LinkedHashSet, чтобы один и тот же
+    // товар/значение атрибута не попадал в saveAll дважды — иначе при повторной
+    // обработке одного товара возможен INSERT с нарушением unique_product_attribute.
+    private final Set<Product> productsToSave = new LinkedHashSet<>();
     private final List<Attribute> attributesToSave = new ArrayList<>();
-    private final List<ProductAttributeValue> valuesToSave = new ArrayList<>();
-    private final List<ProductImage> productImagesToSave = new ArrayList<>();
+    private final Set<ProductAttributeValue> valuesToSave = new LinkedHashSet<>();
 
-    // Добавляем репозиторий для проверки существующих атрибутов
-    private AttributeRepository attributeRepository;
+    // Сводки "было → стало" по каждому изменённому/новому товару —
+    // только для отображения на странице результата импорта.
+    private final List<ProductChangeSummary> changes = new ArrayList<>();
+
+    /**
+     * SKU товаров, которые были СОЗДАНЫ (а не обновлены) в рамках текущего импорта.
+     * Используется для точной статистики новых/обновлённых товаров,
+     * т.к. сравнение createdAt == updatedAt ненадёжно (разные вызовы Instant.now()).
+     */
+    private final Set<String> newSkus = new HashSet<>();
+
+    /**
+     * vendorCode, которые в текущем фиде встречаются у БОЛЕЕ ЧЕМ ОДНОГО оффера.
+     * Для таких SKU нужно дизамбигировать резолвом vendorCode + '-' + offerId,
+     * иначе два разных товара сошлись бы в один (см. stem: КАТ020, ШЛА014).
+     */
+    @Setter
+    private Set<String> collidingVendorCodes = Set.of();
 
     public ImportContext(
             Map<String, Category> categoryByXmlId,
@@ -36,4 +57,3 @@ public class ImportContext {
         this.valueCache = valueCache;
     }
 }
-

@@ -28,6 +28,19 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Query("SELECT p FROM Product p WHERE p.sku IN :skus")
     List<Product> findAllBySkus(@Param("skus") Set<String> skus);
 
+    /**
+     * Найти продукты по списку SKU с предварительной загрузкой всех связей,
+     * которые нужны импортёрам (картинки, значения атрибутов + сами атрибуты
+     * и их категории). Это устраняет N+1 запросы в YmlOfferImporter.
+     */
+    @Query("SELECT DISTINCT p FROM Product p " +
+            "LEFT JOIN FETCH p.images " +
+            "LEFT JOIN FETCH p.attributeValues av " +
+            "LEFT JOIN FETCH av.attribute a " +
+            "LEFT JOIN FETCH a.category " +
+            "WHERE p.sku IN :skus")
+    List<Product> findAllBySkusWithDetails(@Param("skus") Set<String> skus);
+
     @Query("SELECT new Product(p.sku, p.title, p.price) FROM Product p WHERE p.sku IN :skus")
     List<Product> findAllBySkusOptimized(@Param("skus") Set<String> skus);
 

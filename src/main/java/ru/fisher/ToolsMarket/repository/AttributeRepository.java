@@ -8,11 +8,17 @@ import org.springframework.stereotype.Repository;
 import ru.fisher.ToolsMarket.models.Attribute;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AttributeRepository extends JpaRepository<Attribute, Long> {
 
     List<Attribute> findByCategoryIdOrderBySortOrder(Long categoryId);
+
+    // findFirst...OrderByIdAsc: детерминированно возвращаем самый старый атрибут,
+    // если в БД завалялись дубли (category_id, name) — find... без лимита упал бы
+    // с IncorrectResultSizeDataAccessException.
+    Optional<Attribute> findFirstByCategoryIdAndNameOrderByIdAsc(Long categoryId, String name);
 
     @Query("""
        SELECT COALESCE(MAX(a.sortOrder), 0)

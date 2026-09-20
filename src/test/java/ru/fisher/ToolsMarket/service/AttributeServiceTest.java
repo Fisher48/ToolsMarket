@@ -188,6 +188,71 @@ class AttributeServiceTest {
     }
 
     @Test
+    void createAttribute_WithDuplicateNameInCategory_ShouldThrowException() {
+        // Arrange
+        Attribute duplicate = Attribute.builder()
+                .name("Мощность")
+                .type(AttributeType.STRING)
+                .category(category)
+                .build();
+
+        when(attributeRepository.existsByNameAndCategoryId("Мощность", 1L))
+                .thenReturn(true);
+
+        // Act & Assert
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> attributeService.createAttribute(duplicate));
+
+        assertEquals("Атрибут с именем 'Мощность' уже существует в этой категории",
+                exception.getMessage());
+        verify(attributeRepository, never()).save(any());
+    }
+
+    @Test
+    void createAttribute_TrimmedNameDuplicatesExisting_ShouldThrowException() {
+        // "Мощность " (с хвостовым пробелом) — это тот же атрибут, что "Мощность"
+        Attribute duplicate = Attribute.builder()
+                .name("Мощность ")
+                .type(AttributeType.STRING)
+                .category(category)
+                .build();
+
+        when(attributeRepository.existsByNameAndCategoryId("Мощность", 1L))
+                .thenReturn(true);
+
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> attributeService.createAttribute(duplicate));
+
+        assertEquals("Атрибут с именем 'Мощность' уже существует в этой категории",
+                exception.getMessage());
+    }
+
+    @Test
+    void createAttribute_WithUniqueName_ShouldTrimNameAndSave() {
+        // Arrange
+        Attribute attribute = Attribute.builder()
+                .name("  Напряжение  ")
+                .type(AttributeType.STRING)
+                .category(category)
+                .required(true)
+                .build();
+
+        when(attributeRepository.existsByNameAndCategoryId("Напряжение", 1L))
+                .thenReturn(false);
+        when(attributeRepository.findMaxSortOrderByCategoryId(1L)).thenReturn(3);
+        when(attributeRepository.save(attribute)).thenReturn(attribute);
+
+        // Act
+        Attribute result = attributeService.createAttribute(attribute);
+
+        // Assert
+        assertNull(result.getId()); // сохраняется тот же инстанс (id ещё не присвоен)
+        assertEquals("Напряжение", result.getName());
+        assertEquals(4, result.getSortOrder());
+        verify(attributeRepository).save(attribute);
+    }
+
+    @Test
     void getFilterOptionsForCategories_ShouldReturnDistinctValues() {
         // Arrange
         List<Long> categoryIds = List.of(1L, 2L);

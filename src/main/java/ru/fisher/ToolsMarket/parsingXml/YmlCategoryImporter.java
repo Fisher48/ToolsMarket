@@ -11,6 +11,7 @@ import javax.xml.stream.XMLStreamReader;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -21,6 +22,16 @@ public class YmlCategoryImporter {
 
     @Transactional
     public Map<String, Category> importCategories(XMLStreamReader reader) throws Exception {
+        return importCategories(reader, false);
+    }
+
+    /**
+     * @param dryRun если true — ничего не сохраняется в БД; новым категориям
+     *               выдаются синтетические (отрицательные) id, чтобы кэши
+     *               атрибутов и статистика в предпросмотре работали корректно.
+     */
+    @Transactional
+    public Map<String, Category> importCategories(XMLStreamReader reader, boolean dryRun) throws Exception {
 
         Map<String, Category> categoryByXmlId = new HashMap<>();
         Map<String, String> parentRelations = new HashMap<>();
@@ -28,6 +39,9 @@ public class YmlCategoryImporter {
 
         // Временно храним созданные/найденные категории без родителей
         Map<String, Category> tempCategories = new HashMap<>();
+
+        // Счётчик для синтетических id новых категорий в режиме dry-run
+        long dryRunIdCounter = -1;
 
         // ПЕРВЫЙ ПРОХОД: собираем все названия категорий
         while (reader.hasNext()) {
@@ -46,7 +60,10 @@ public class YmlCategoryImporter {
                 }
 
                 // Сразу создаем/находим категорию (без parent)
-                Category category = findOrCreateCategory(name);
+                Category category = findOrCreateCategory(name, dryRun);
+                if (dryRun && category.getId() == null) {
+                    category.setId(dryRunIdCounter--);
+                }
                 tempCategories.put(xmlId, category);
                 log.debug("Категория: {} (title: {})", name, category.getTitle());
             }
@@ -64,7 +81,9 @@ public class YmlCategoryImporter {
                 // Проверяем, нужно ли обновлять родителя
                 if (child.getParent() == null || !child.getParent().getId().equals(parent.getId())) {
                     child.setParent(parent);
-                    categoryRepository.save(child);
+                    if (!dryRun) {
+                        categoryRepository.save(child);
+                    }
                     log.debug("Установлена связь: {} -> {}",
                             child.getName(), parent.getName());
                 }
@@ -79,15 +98,37 @@ public class YmlCategoryImporter {
             categoryByXmlId.put(entry.getKey(), entry.getValue());
         }
 
-        log.info("Импортировано категорий: {}", categoryByXmlId.size());
+        log.info("Категорий {}: {}", dryRun ? "в предпросмотре" : "импортировано",
+                categoryByXmlId.size());
         return categoryByXmlId;
     }
 
     /**
-     * Поиск или создание категории
+     * Поиск или создание категории.
+     *
+     * @param dryRun если true — новая категория НЕ сохраняется в БД,
+     *               возвращается объект без id (синтетический id выставит вызывающий).
      */
-    private Category findOrCreateCategory(String name) {
-        return findOrCreateCategory(name, null);
+    private Category findOrCreateCategory(String name, boolean dryRun) {
+        String title = generateTitle(name);
+
+        // 1. Ищем по title (самый точный поиск)
+        Optional<Category> existingByTitle = categoryRepository.findByTitle(title);
+        if (existingByTitle.isPresent()) {
+            log.debug("Категория найдена по title: {} -> {}", title, existingByTitle.get().getId());
+            return existingByTitle.get();
+        }
+
+        // 2. Создаём новую, только если ничего не нашли
+        Category newCategory = Category.builder()
+                .name(name)
+                .title(title)
+                .createdAt(Instant.now())
+                .sortOrder(0)
+                .build();
+
+        log.debug("Создана новая категория: {} (title: {})", name, title);
+        return dryRun ? newCategory : categoryRepository.save(newCategory);
     }
 
     /**
