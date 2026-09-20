@@ -17,6 +17,8 @@ public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSp
 
     Optional<Category> findByTitle(String title);
 
+    List<Category> findAllByOrderByNameAsc();
+
     @Query("SELECT c.title as title, c.createdAt as createdAt FROM Category c")
     List<Object[]> findAllForSitemap();
 

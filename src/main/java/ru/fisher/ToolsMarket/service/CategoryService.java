@@ -99,7 +99,7 @@ public class CategoryService {
     }
 
     public List<Category> findAllCategories() {
-        return categoryRepository.findAll();
+        return categoryRepository.findAllByOrderByNameAsc();
     }
 
     public Page<CategoryAdminDto> search(
