@@ -279,7 +279,7 @@ main {
     border-radius: 2px;
 }
 
-.premium-footer img {
+.premium-footer .footer-logo img {
     height: 120px;
     padding: 8px 16px;
     border-radius: 2px;
@@ -314,11 +314,18 @@ main {
     line-height: 1;
 }
 
-.social-link .max-icon,
-.social-link .vk-icon,
+.social-link .max-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    object-fit: contain;
+    display: block;
+}
+
 .social-link .tg-icon {
-    width: fit-content;
-    height: fit-content;
+    width: 28px;
+    height: 28px;
+    padding: 0;
     object-fit: contain;
     display: block;
 }
