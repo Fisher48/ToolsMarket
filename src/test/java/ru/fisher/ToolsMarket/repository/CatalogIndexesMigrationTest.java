@@ -11,9 +11,9 @@ import ru.fisher.ToolsMarket.PostgresTestConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Миграции с индексами применяются один раз на проде, и опечатка в имени или
- * в имени колонки всплыла бы уже на сервере — поэтому проверяем, что Flyway
- * действительно создал то, что нужно.
+ * Миграции с индексами применяются один раз и повторно не проверяются, поэтому
+ * опечатка в имени или в имени колонки всплыла бы при первом же применении, а
+ * не в тестах — потому и проверяем, что Flyway действительно создал то, что нужно.
  */
 @SpringBootTest
 @ContextConfiguration(initializers = PostgresTestConfig.class)

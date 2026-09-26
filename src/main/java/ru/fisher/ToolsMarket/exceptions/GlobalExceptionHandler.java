@@ -312,13 +312,12 @@ public class GlobalExceptionHandler {
     /**
      * JSON отдаём API-клиентам и XHR, HTML — браузеру.
      *
-     * Порядок проверок важен: браузер шлёт Accept вида "text/html,application/xml;q=0.9,
-     * wildcard;q=0.8", поэтому явный text/html проверяется раньше catch-all на
-     * wildcard. Пустой Accept и "только wildcard" (так ходят все fetch() проекта)
-     * считаем JSON — иначе бейдж корзины и другие ajax-запросы получили бы HTML
-     * вместо разобранного ответа. Если клиент не принимает ни HTML, ни JSON
-     * (Accept: application/xml) — не отдаём тело вовсе: рендер страницы всё равно
-     * упал бы с HttpMediaTypeNotAcceptableException.
+     * Порядок проверок важен: браузер шлёт Accept с text/html и wildcard
+     * одновременно, поэтому явный text/html проверяется раньше catch-all на
+     * wildcard, иначе wildcard-ответ ушёл бы и браузеру тоже.
+     *
+     * Клиенту, который не принимает ни HTML, ни JSON, тело не отдаём: рендер
+     * страницы всё равно упал бы с HttpMediaTypeNotAcceptableException.
      */
     private ResponseKind responseKind(HttpServletRequest request) {
         if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
