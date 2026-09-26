@@ -45,6 +45,19 @@ class CatalogIndexesMigrationTest {
     }
 
     @Test
+    void redundantIndexesAreDropped() {
+        // UNIQUE(user_type, product_type) и (product_id, sort_order) покрывают их
+        assertThat(indexes()).doesNotContain(
+                "idx_user_discounts_user_type",
+                "idx_productimage_product");
+
+        // а нужные индексы на их месте остались
+        assertThat(indexes()).contains(
+                "idx_user_discounts_product_type",
+                "idx_product_image_product_sort");
+    }
+
+    @Test
     void fullTextSearchUsesGinIndex() {
         assertThat(indexDef("idx_product_search_vector"))
                 .contains("USING gin")
