@@ -4,9 +4,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import ru.fisher.ToolsMarket.config.CacheConfig;
 import ru.fisher.ToolsMarket.models.Category;
 
 import java.util.List;
@@ -14,6 +16,20 @@ import java.util.Optional;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long>, JpaSpecificationExecutor<Category> {
+
+    /**
+     * Сброс кэша дерева категорий сделан здесь, а не в CategoryService: категории
+     * меняются ещё и импортёрами (YmlCategoryImporter, ExcelProductImportService),
+     * которые пишут в репозиторий мимо сервиса. Любая запись в таблицу категорий
+     * должна инвалидировать кэш меню каталога.
+     */
+    @Override
+    @CacheEvict(cacheNames = CacheConfig.CATEGORY_TREE, allEntries = true)
+    Category save(Category category);
+
+    @Override
+    @CacheEvict(cacheNames = CacheConfig.CATEGORY_TREE, allEntries = true)
+    void deleteById(Long id);
 
     Optional<Category> findByTitle(String title);
 
