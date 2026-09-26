@@ -63,12 +63,25 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 //            "     ELSE 3 END, p.name")
 //    Page<Product> searchProduct(@Param("q") String q, Pageable pageable);
 
-    @Query("SELECT p FROM Product p " +
-            "WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')) " +
-            "OR LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', :q, '%')) " +
-            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :q, '%')) " +
-            "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :q, '%')))")
-    Page<Product> searchProduct(@Param("q") String q, Pageable pageable);
+    /**
+     * Полнотекстовый поиск по каталогу.
+     *
+     * Запрос приходит бинд-параметром в виде tsquery (см. ProductService#buildTsQuery),
+     * поэтому GIN-индекс по product.search_vector используется планировщиком всегда —
+     * в отличие от LOWER(...) LIKE '%q%', который на generic plan сканирует таблицу.
+     *
+     * Сортировку и пагинацию добавляет Spring Data по Pageable.
+     */
+    @Query(value = """
+            SELECT p.* FROM product p
+            WHERE p.search_vector @@ to_tsquery('simple'::regconfig, :tsquery)
+            """,
+            countQuery = """
+            SELECT count(*) FROM product p
+            WHERE p.search_vector @@ to_tsquery('simple'::regconfig, :tsquery)
+            """,
+            nativeQuery = true)
+    Page<Product> searchProduct(@Param("tsquery") String tsquery, Pageable pageable);
 
     boolean existsByTitle(String title);
 
