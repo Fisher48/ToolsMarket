@@ -9,19 +9,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryAdminDto;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryDto;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryPageData;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategorySpecification;
 import ru.fisher.ToolsMarket.dto.ProductDTO.ProductCardDto;
 import ru.fisher.ToolsMarket.mapper.CategoryMapperService;
-import ru.fisher.ToolsMarket.models.Cart;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.repository.CategoryJdbcRepository;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +31,6 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
-    private final CartService cartService;
     private final CategoryJdbcRepository categoryJdbcRepository;
     private final CategoryMapperService categoryMapperService;
 
@@ -145,43 +141,29 @@ public class CategoryService {
         CategoryDto category = findByTitle(title)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // 2. Товары через JDBC
+        // 2. Товары через JDBC (вместе со скидкой и признаком «в корзине»)
         Page<ProductCardDto> products = categoryJdbcRepository.findProductsByCategory(
                 category.getId(), userId, sort, page, size
         );
 
-        // 3. Количество товаров в корзине (для авторизованных)
-        Map<Long, Integer> cartProductQuantities = getCartQuantities(userId);
+        // 3. Количество товаров в корзине берём из тех же строк товаров: in_cart и
+        // cart_quantity уже посчитаны в SQL страницы категории. Отдельный запрос за
+        // корзиной не нужен — он ещё и создавал пустую корзину на обычном GET
+        Map<Long, Integer> cartProductQuantities = products.getContent().stream()
+                .filter(card -> card.isInCart() && card.getCartQuantity() > 0)
+                .collect(Collectors.toMap(
+                        ProductCardDto::getId,
+                        ProductCardDto::getCartQuantity,
+                        (existing, replacement) -> existing
+                ));
 
-        // 4. Общее количество товаров в категории
-        long total = categoryJdbcRepository.countProductsByCategory(category.getId());
-
+        // 4. Общее количество товаров уже посчитано внутри findProductsByCategory
         return CategoryPageData.builder()
                 .category(category)
                 .products(products)
                 .cartProductQuantities(cartProductQuantities)
-                .totalElements(total)
+                .totalElements(products.getTotalElements())
                 .build();
-    }
-
-    private Map<Long, Integer> getCartQuantities(Long userId) {
-        if (userId == null) return new HashMap<>();
-
-        try {
-            Cart cart = cartService.getOrCreateCart(userId);
-            List<CartItemDto> cartItems = cartService.getCartItems(cart.getId());
-
-            return cartItems.stream()
-                    .filter(item -> item.getProductId() != null)
-                    .collect(Collectors.toMap(
-                            CartItemDto::getProductId,
-                            CartItemDto::getQuantity,
-                            (existing, replacement) -> existing
-                    ));
-        } catch (Exception e) {
-            log.warn("Ошибка при получении корзины для userId={}: {}", userId, e.getMessage());
-            return new HashMap<>();
-        }
     }
 
     public List<Object[]> findAllForSitemap() {
