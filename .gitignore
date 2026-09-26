@@ -4,7 +4,40 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Локальные настройки (с секретами)
+application-local.properties
+application-local.yml
+application-local.yaml
+
+# Настройки (с секретами)
+application.properties
+application.properties.yml
+application.properties.yam
+
+# Секреты
+*.env
 .env
+.env.*
+!.env.example
+
+# Дампы и бэкапы БД
+*.sql.gz
+database.sql*
+tools_market_*.sql
+backup_*/
+*.tar.gz
+
+# Загруженные пользователями файлы (в контейнер попадают через volume)
+uploads/
+test-uploads/
+
+# Логи
+logs/
+*.log
+
+# Приватные ключи и сертификаты
+nginx/ssl/
+nginx/simple-certs/
 
 ### STS ###
 .apt_generated
