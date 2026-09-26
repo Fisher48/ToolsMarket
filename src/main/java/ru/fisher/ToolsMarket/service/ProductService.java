@@ -13,6 +13,7 @@ import ru.fisher.ToolsMarket.exceptions.DuplicateSkuException;
 import ru.fisher.ToolsMarket.mapper.ProductMapperService;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.models.Product;
+import ru.fisher.ToolsMarket.models.ProductType;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
@@ -31,6 +32,7 @@ public class ProductService {
     private final ProductMapperService productMapperService;
     private final AttributeService attributeService;
     private final UserService userService;
+    private final DiscountService discountService;
 
     @Transactional(readOnly = true)
     public List<Product> findAllEntities() {
@@ -264,10 +266,10 @@ public class ProductService {
     public Page<ProductListDto> searchWithDiscounts(String query, User user, Pageable pageable) {
         Page<Product> products = productRepository.searchProduct(query.trim(), pageable);
 
-        return products.map(product -> {
-            ProductListDto dto = productMapperService.toListDto(product, user);
-            return dto;
-        });
+        // Скидки пользователя — один запрос на страницу вместо запроса на товар
+        Map<ProductType, BigDecimal> discounts = discountService.getDiscountsForUser(user);
+
+        return products.map(product -> productMapperService.toListDto(product, user, discounts));
     }
 
     /**

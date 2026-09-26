@@ -64,6 +64,11 @@ public class AdminDiscountController {
                 redirectAttributes.addFlashAttribute("error", "Процент скидки обязателен");
                 return "redirect:/admin/discounts";
             }
+            if (discountPercentage.compareTo(BigDecimal.ZERO) < 0
+                    || discountPercentage.compareTo(BigDecimal.valueOf(100)) > 0) {
+                redirectAttributes.addFlashAttribute("error", "Процент скидки должен быть от 0 до 100");
+                return "redirect:/admin/discounts";
+            }
 
             UserDiscount discount;
 
