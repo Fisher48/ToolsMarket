@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.ui.Model;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -144,21 +145,39 @@ public class GlobalExceptionHandler {
         return "redirect:" + (referer != null ? referer : defaultUrl);
     }
 
+    // Боты долбят GET-only страницы (POST /, POST на статику) и на каждый запрос
+    // попадали в handleAllExceptions с ERROR-логом без URL. Отвечаем тихим WARN
+    // с адресом и реальным статусом 405 вместо 500.
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ModelAndView handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex,
+                                               HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        log.warn("405: метод {} на путь {} (UA={}, Referer={})",
+                request.getMethod(), request.getRequestURI(), userAgent, request.getHeader("Referer"));
+
+        ModelAndView mav = new ModelAndView("error/405");
+        mav.setStatus(HttpStatus.METHOD_NOT_ALLOWED);
+        return mav;
+    }
+
     @ExceptionHandler(Exception.class)
-    public String handleAllExceptions(Exception ex, Model model, HttpServletRequest request) {
-        log.error("Необработанное исключение: ", ex);
+    public ModelAndView handleAllExceptions(Exception ex, Model model, HttpServletRequest request) {
+        log.error("Необработанное исключение на {}: ", request.getRequestURI(), ex);
 
-        model.addAttribute("error", ex.getMessage());
-        model.addAttribute("status", 500);
-        model.addAttribute("path", request.getRequestURI());
+        // error/error.html ждёт errorCode/errorMessage, а не error/status
+        model.addAttribute("errorCode", 500);
+        model.addAttribute("errorMessage", ex.getMessage());
 
-        return "error/error"; // Указываем правильный путь к шаблону
+        ModelAndView mav = new ModelAndView("error/error");
+        mav.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        return mav;
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleResourceNotFound(ResourceNotFoundException ex, Model model) {
-        model.addAttribute("error", ex.getMessage());
-        model.addAttribute("status", 404);
+        model.addAttribute("errorCode", 404);
+        model.addAttribute("errorMessage", ex.getMessage());
         return "error/error";
     }
 
@@ -223,11 +242,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleNoResource(Model model, HttpServletRequest request) {
         log.warn("404 error for path: {}", request.getRequestURI());
 
-        model.addAttribute("error", "Страница не найдена");
-        model.addAttribute("path", request.getRequestURI());
         model.addAttribute("timestamp", LocalDateTime.now());
 
         return "error/404";
