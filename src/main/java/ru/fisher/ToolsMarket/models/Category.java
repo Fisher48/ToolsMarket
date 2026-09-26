@@ -1,6 +1,7 @@
 package ru.fisher.ToolsMarket.models;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -54,6 +55,7 @@ public class Category {
     private Instant createdAt = Instant.now();
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 50)
     @OrderBy("sortOrder ASC")
     @Builder.Default
     private Set<Attribute> attributes = new HashSet<>();
