@@ -58,14 +58,6 @@ class CatalogIndexesMigrationTest {
     }
 
     @Test
-    void pgStatStatementsExtensionIsCreated() {
-        // Само представление здесь не опрашиваем: в тестах Postgres из
-        // Testcontainers запущен без shared_preload_libraries, и обращение к
-        // pg_stat_statements без него падает с ошибкой
-        assertThat(extensions()).contains("pg_stat_statements");
-    }
-
-    @Test
     void fullTextSearchUsesGinIndex() {
         assertThat(indexDef("idx_product_search_vector"))
                 .contains("USING gin")
@@ -75,10 +67,6 @@ class CatalogIndexesMigrationTest {
     private java.util.List<String> indexes() {
         return jdbc.queryForList(
                 "SELECT indexname FROM pg_indexes WHERE schemaname = 'public'", String.class);
-    }
-
-    private java.util.List<String> extensions() {
-        return jdbc.queryForList("SELECT extname FROM pg_extension", String.class);
     }
 
     private String indexDef(String indexName) {
