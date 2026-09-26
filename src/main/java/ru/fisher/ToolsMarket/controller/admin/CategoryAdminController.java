@@ -68,7 +68,11 @@ public class CategoryAdminController {
         String queryString = request.getQueryString();
         String currentUrl = "/admin/categories" +
                 (queryString != null && !queryString.isEmpty() ? "?" + queryString : "");
-        session.setAttribute("categoryAdminListUrl", currentUrl);
+        // Пишем только при изменении URL: иначе каждый просмотр списка категорий
+        // порождает delta-запись в SPRING_SESSION_ATTRIBUTES
+        if (!currentUrl.equals(session.getAttribute("categoryAdminListUrl"))) {
+            session.setAttribute("categoryAdminListUrl", currentUrl);
+        }
 
         return "admin/categories/index";
     }
