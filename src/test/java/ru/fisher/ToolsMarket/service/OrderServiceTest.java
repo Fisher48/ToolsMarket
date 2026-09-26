@@ -187,7 +187,7 @@ class OrderServiceTest {
 
     @Test
     void orderNumberSequenceIsCreatedByMigration() {
-        // Опечатка в имени последовательности всплыла бы на проде, а не в тестах
+        // Опечатка в имени последовательности всплыла бы при первом же оформлении заказа
         Long sequences = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM pg_sequences WHERE sequencename = 'order_number_seq'",
                 Long.class);

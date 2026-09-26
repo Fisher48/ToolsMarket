@@ -64,12 +64,10 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 //    Page<Product> searchProduct(@Param("q") String q, Pageable pageable);
 
     /**
-     * Полнотекстовый поиск по каталогу.
-     *
-     * Запрос приходит бинд-параметром в виде tsquery (см. ProductService#buildTsQuery),
-     * поэтому GIN-индекс по product.search_vector используется планировщиком всегда —
-     * в отличие от LOWER(...) LIKE '%q%', который на generic plan сканирует таблицу.
-     *
+     * Полнотекстовый поиск по каталогу. Запрос приходит бинд-параметром в виде
+     * tsquery (см. SearchQueryBuilder.toTsQuery), поэтому GIN-индекс по
+     * product.search_vector используется планировщиком всегда — в отличие от
+     * LOWER(...) LIKE '%q%', который на generic plan сканирует таблицу.
      * Сортировку и пагинацию добавляет Spring Data по Pageable.
      */
     @Query(value = """
