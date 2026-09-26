@@ -8,7 +8,9 @@ import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.repository.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -166,16 +168,21 @@ public class CartService {
      * Конвертация CartItem в DTO со скидками
      */
     private List<CartItemDto> convertCartItemsToDto(Set<CartItem> cartItems, User user) {
+        // Скидки пользователя загружаем один раз на всю корзину, а не на каждый товар
+        Map<ProductType, BigDecimal> discounts = discountService.getDiscountsForUser(user);
+
         return cartItems.stream()
                 .map(item -> {
                     Product product = item.getProduct();
-                    BigDecimal discountPercentage = discountService.calculateDiscount(user, product);
+                    BigDecimal discountPercentage = discountService.getDiscountPercentage(discounts, product);
                     BigDecimal unitPrice = item.getUnitPrice();
                     BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
 
-                    BigDecimal discountAmount = discountPercentage
-                            .multiply(totalPrice)
-                            .divide(BigDecimal.valueOf(100));
+                    // totalPrice * процент / 100 — деление с масштабом, иначе проценты
+                    // вида 33.33 роняют страницу корзины ArithmeticException
+                    BigDecimal discountAmount = totalPrice
+                            .multiply(discountPercentage)
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
                     CartItemDto dto = new CartItemDto();
                     dto.setProductId(product.getId());

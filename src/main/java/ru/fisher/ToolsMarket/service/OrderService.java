@@ -112,6 +112,9 @@ public class OrderService {
         BigDecimal total = BigDecimal.ZERO;
         BigDecimal totalDiscount = BigDecimal.ZERO;
 
+        // Скидки пользователя — один запрос на заказ вместо запроса на позицию
+        Map<ProductType, BigDecimal> discounts = discountService.getDiscountsForUser(user);
+
         for (CartItem ci : cartItems) {
             Product product = ci.getProduct();
             Integer quantity = ci.getQuantity();
@@ -120,7 +123,7 @@ public class OrderService {
             BigDecimal originalPrice = product.getPrice();
 
             // Рассчитываем скидку для пользователя
-            BigDecimal discountPercentage = discountService.calculateDiscount(user, product);
+            BigDecimal discountPercentage = discountService.getDiscountPercentage(discounts, product);
 
             // Создаем OrderItem с учетом скидки
             OrderItem oi = OrderItem.createOrderItem(

@@ -12,9 +12,13 @@ import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
 import ru.fisher.ToolsMarket.models.Cart;
 import ru.fisher.ToolsMarket.models.CartItem;
 import ru.fisher.ToolsMarket.models.Product;
+import ru.fisher.ToolsMarket.models.ProductType;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.repository.CartItemRepository;
 import ru.fisher.ToolsMarket.repository.CartRepository;
+import ru.fisher.ToolsMarket.repository.UserDiscountRepository;
+import ru.fisher.ToolsMarket.models.UserDiscount;
+import ru.fisher.ToolsMarket.models.UserType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -38,6 +42,8 @@ class CartServiceTest {
     private CartItemRepository cartItemRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserDiscountRepository userDiscountRepository;
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -70,6 +76,7 @@ class CartServiceTest {
                .title("Title-" + productName)
                .shortDescription("short-desc")
                .description("description")
+               .productType(ProductType.TOOL)
                .build();
         productService.saveEntity(product);
         return product;
@@ -81,6 +88,7 @@ class CartServiceTest {
         jdbc.execute("TRUNCATE TABLE cart RESTART IDENTITY CASCADE");
         jdbc.execute("TRUNCATE TABLE product RESTART IDENTITY CASCADE");
         jdbc.execute("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
+        jdbc.execute("TRUNCATE TABLE user_discounts RESTART IDENTITY CASCADE");
     }
 
     @Test
@@ -371,5 +379,52 @@ class CartServiceTest {
         assertThatThrownBy(() -> cartService.addProductWithQuantity(cart.getId(), product.getId(), -1))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Quantity must be positive");
+    }
+
+    @Test
+    void fractionalDiscountIsRoundedToTwoDecimals() {
+        // given: скидка 33.33% на тип товара пользователя
+        userDiscountRepository.save(UserDiscount.builder()
+                .userType(UserType.REGULAR)
+                .productType(ProductType.TOOL)
+                .discountPercentage(new BigDecimal("33.33"))
+                .active(true)
+                .createdAt(Instant.now())
+                .build());
+
+        Product product = createAndSaveProduct("Discount-Product", new BigDecimal("1000.00"));
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+        cartService.addProductToUserCart(testUser.getId(), product.getId(), 1);
+
+        // when
+        List<CartItemDto> items = cartService.getCartItems(cart.getId());
+
+        // then: суммы денег округлены до копеек, без хвоста из 4 знаков
+        assertThat(items).hasSize(1);
+        CartItemDto item = items.get(0);
+        assertThat(item.getDiscountPercentage()).isEqualByComparingTo("33.33");
+        assertThat(item.getDiscountAmount()).isEqualTo(new BigDecimal("333.30"));
+        assertThat(item.getTotalPriceWithDiscount()).isEqualTo(new BigDecimal("666.70"));
+    }
+
+    @Test
+    void nullDiscountPercentageDoesNotBreakCart() {
+        userDiscountRepository.save(UserDiscount.builder()
+                .userType(UserType.REGULAR)
+                .productType(ProductType.TOOL)
+                .discountPercentage(null)
+                .active(true)
+                .createdAt(Instant.now())
+                .build());
+
+        Product product = createAndSaveProduct("No-Discount-Product", new BigDecimal("1000.00"));
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+        cartService.addProductToUserCart(testUser.getId(), product.getId(), 2);
+
+        List<CartItemDto> items = cartService.getCartItems(cart.getId());
+
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0).getDiscountAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(items.get(0).getTotalPriceWithDiscount()).isEqualTo(new BigDecimal("2000.00"));
     }
 }

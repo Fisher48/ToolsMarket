@@ -9,12 +9,14 @@ import ru.fisher.ToolsMarket.dto.CategoryDTO.CategorySimpleDto;
 import ru.fisher.ToolsMarket.dto.ProductDTO.*;
 import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.ProductImage;
+import ru.fisher.ToolsMarket.models.ProductType;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.service.DiscountService;
 import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -95,7 +97,7 @@ public class ProductMapperService {
             BigDecimal discountPercentage = discountService.calculateDiscount(user, product);
             if (discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
                 dto.setDiscountPercentage(discountPercentage);
-                dto.setDiscountedPrice(discountService.getPriceWithDiscount(user, product));
+                dto.setDiscountedPrice(discountService.getPriceWithDiscount(product, discountPercentage));
                 dto.setHasDiscount(true);
             }
         }
@@ -111,6 +113,14 @@ public class ProductMapperService {
     }
 
     public ProductListDto toListDto(Product product, User user) {
+        return toListDto(product, user, null);
+    }
+
+    /**
+     * Список товаров с уже загруженными скидками пользователя: карта нужна, чтобы
+     * не делать запрос за скидкой на каждый товар страницы.
+     */
+    public ProductListDto toListDto(Product product, User user, Map<ProductType, BigDecimal> discounts) {
         ProductListDto dto = ProductListDto.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -139,10 +149,13 @@ public class ProductMapperService {
 
         // Рассчитываем скидку если есть пользователь и productType
         if (user != null && product.getProductType() != null) {
-            BigDecimal discountPercentage = discountService.calculateDiscount(user, product);
+            BigDecimal discountPercentage = discounts != null
+                    ? discountService.getDiscountPercentage(discounts, product)
+                    : discountService.calculateDiscount(user, product);
             if (discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
                 dto.setDiscountPercentage(discountPercentage);
-                dto.setDiscountedPrice(discountService.getPriceWithDiscount(user, product));
+                // цену считаем по уже полученному проценту, без повторного запроса
+                dto.setDiscountedPrice(discountService.getPriceWithDiscount(product, discountPercentage));
                 dto.setHasDiscount(true);
             }
         }
