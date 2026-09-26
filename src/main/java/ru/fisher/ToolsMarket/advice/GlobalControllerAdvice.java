@@ -49,7 +49,11 @@ public class GlobalControllerAdvice {
             return;
         }
 
-        session.setAttribute("loginRedirectUrl", currentUrl);
+        // Пишем только при изменении URL: повторная запись того же значения
+        // создаёт лишний delta для SPRING_SESSION_ATTRIBUTES на каждом просмотре страницы
+        if (!currentUrl.equals(session.getAttribute("loginRedirectUrl"))) {
+            session.setAttribute("loginRedirectUrl", currentUrl);
+        }
     }
 
     private boolean isBot(String ua) {

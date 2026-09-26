@@ -83,7 +83,11 @@ public class ProductAdminController {
         String queryString = request.getQueryString();
         String currentUrl = "/admin/products" +
                 (queryString != null && !queryString.isEmpty() ? "?" + queryString : "");
-        session.setAttribute("productAdminListUrl", currentUrl);
+        // Пишем только при изменении URL: иначе каждый просмотр списка товаров
+        // порождает delta-запись в SPRING_SESSION_ATTRIBUTES
+        if (!currentUrl.equals(session.getAttribute("productAdminListUrl"))) {
+            session.setAttribute("productAdminListUrl", currentUrl);
+        }
 
         return "admin/products/index";
     }
