@@ -7,12 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.ui.Model;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.multipart.MultipartException;
@@ -28,6 +28,10 @@ import java.util.Map;
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    private enum ResponseKind {
+        JSON, HTML, NO_BODY
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public String handleIllegalArgument(IllegalArgumentException e,
@@ -182,50 +186,197 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ResponseBody
-    public Map<String, Object> handleValidationExceptions(
-            MethodArgumentNotValidException ex) {
+    public Object handleValidationExceptions(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
 
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error -> {
-            errors.put(error.getField(), error.getDefaultMessage());
-        });
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        String message = "Проверьте правильность заполнения полей";
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("errors", errors);
-        response.put("message", "Ошибка валидации");
+        ResponseKind kind = responseKind(request);
 
-        return response;
+        if (kind == ResponseKind.JSON) {
+            Map<String, String> errors = new HashMap<>();
+            ex.getBindingResult().getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("timestamp", LocalDateTime.now());
+            response.put("status", status.value());
+            response.put("errors", errors);
+            response.put("message", message);
+            response.put("path", request.getRequestURI());
+
+            return new ResponseEntity<>(response, status);
+        }
+
+        if (kind == ResponseKind.NO_BODY) {
+            return ResponseEntity.status(status).build();
+        }
+
+        log.warn("Ошибка валидации на {} {}: {}", request.getMethod(), request.getRequestURI(),
+                ex.getBindingResult().getAllErrors());
+
+        return errorView(status, message, request.getRequestURI());
     }
 
+    /**
+     * ResponseStatusException бросается из обычных страниц (несуществующая категория,
+     * товар и т.п.), поэтому браузеру здесь нужен HTML, а не JSON: попытка отдать JSON
+     * в ответ на запрос с Accept: text/html роняла сам обработчик с
+     * HttpMediaTypeNotAcceptableException и превращала 404 в 500.
+     */
     @ExceptionHandler(ResponseStatusException.class)
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> handleResponseStatusException(
+    public Object handleResponseStatusException(
             ResponseStatusException ex,
             HttpServletRequest request) {
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", ex.getStatusCode().value());
-        body.put("error", ex.getReason());
-        body.put("path", request.getRequestURI());
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        String reason = ex.getReason() != null ? ex.getReason() : defaultMessage(status);
 
-        return new ResponseEntity<>(body, ex.getStatusCode());
+        log.warn("{} {}: {}", status.value(), request.getRequestURI(), reason);
+
+        ResponseKind kind = responseKind(request);
+
+        if (kind == ResponseKind.JSON) {
+            Map<String, Object> body = new HashMap<>();
+            body.put("timestamp", LocalDateTime.now());
+            body.put("status", status.value());
+            body.put("error", reason);
+            body.put("path", request.getRequestURI());
+
+            return new ResponseEntity<>(body, status);
+        }
+
+        if (kind == ResponseKind.NO_BODY) {
+            return ResponseEntity.status(status).build();
+        }
+
+        return errorView(status, reason, request.getRequestURI());
     }
 
     @ExceptionHandler(MissingRequestCookieException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ResponseBody
-    public Map<String, Object> handleMissingCookie(MissingRequestCookieException ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "Bad Request");
-        response.put("message", String.format("Required cookie '%s' is not present",
-                ex.getCookieName()));
-        response.put("timestamp", LocalDateTime.now());
-        return response;
+    public Object handleMissingCookie(MissingRequestCookieException ex,
+                                      HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        String message = "Требуется cookie '%s'".formatted(ex.getCookieName());
+
+        ResponseKind kind = responseKind(request);
+
+        if (kind == ResponseKind.JSON) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("timestamp", LocalDateTime.now());
+            response.put("status", status.value());
+            response.put("error", "Bad Request");
+            response.put("message", message);
+            response.put("path", request.getRequestURI());
+
+            return new ResponseEntity<>(response, status);
+        }
+
+        if (kind == ResponseKind.NO_BODY) {
+            return ResponseEntity.status(status).build();
+        }
+
+        log.warn("Отсутствует cookie '{}' на {} {}", ex.getCookieName(), request.getMethod(),
+                request.getRequestURI());
+
+        return errorView(status, message, request.getRequestURI());
+    }
+
+    /**
+     * Запрос, для которого невозможно подобрать представление (например,
+     * Accept: application/xml). Без отдельного обработчика он уходил в общий
+     * Exception и отдавался как 500 со стектрейсом.
+     */
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResponseEntity<Map<String, Object>> handleMediaTypeNotAcceptable(
+            HttpMediaTypeNotAcceptableException ex,
+            HttpServletRequest request) {
+
+        log.warn("406 на {} {}: неприемлемый Accept: {}",
+                request.getMethod(), request.getRequestURI(), request.getHeader("Accept"));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.NOT_ACCEPTABLE.value());
+        body.put("error", "Неприемлемый тип ответа");
+        body.put("path", request.getRequestURI());
+
+        return new ResponseEntity<>(body, HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    /**
+     * JSON отдаём API-клиентам и XHR, HTML — браузеру.
+     *
+     * Порядок проверок важен: браузер шлёт Accept вида "text/html,application/xml;q=0.9,
+     * wildcard;q=0.8", поэтому явный text/html проверяется раньше catch-all на
+     * wildcard. Пустой Accept и "только wildcard" (так ходят все fetch() проекта)
+     * считаем JSON — иначе бейдж корзины и другие ajax-запросы получили бы HTML
+     * вместо разобранного ответа. Если клиент не принимает ни HTML, ни JSON
+     * (Accept: application/xml) — не отдаём тело вовсе: рендер страницы всё равно
+     * упал бы с HttpMediaTypeNotAcceptableException.
+     */
+    private ResponseKind responseKind(HttpServletRequest request) {
+        if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+            return ResponseKind.JSON;
+        }
+
+        String uri = request.getRequestURI();
+        if (uri != null && uri.startsWith("/api/")) {
+            return ResponseKind.JSON;
+        }
+
+        String accept = request.getHeader("Accept");
+        if (accept == null || accept.isBlank()) {
+            return ResponseKind.JSON;
+        }
+        if (accept.contains("text/html")) {
+            return ResponseKind.HTML;
+        }
+        if (accept.contains("application/json")) {
+            return ResponseKind.JSON;
+        }
+        if (accept.contains("*/*")) {
+            return ResponseKind.JSON;
+        }
+        return ResponseKind.NO_BODY;
+    }
+
+    /**
+     * Страница ошибки по коду статуса — тот же набор, что и в CustomErrorController,
+     * чтобы пользователь видел одинаковую страницу при прямом попадании в обработчик
+     * и при переходе через /error.
+     */
+    private ModelAndView errorView(HttpStatus status, String message, String path) {
+        String view = switch (status.value()) {
+            case 403 -> "error/403";
+            case 404 -> "error/404";
+            case 500 -> "error/500";
+            default -> "error/error";
+        };
+
+        ModelAndView mav = new ModelAndView(view);
+        mav.setStatus(status);
+        mav.addObject("errorCode", status.value());
+        mav.addObject("errorMessage", message);
+        mav.addObject("path", path);
+        return mav;
+    }
+
+    private String defaultMessage(HttpStatus status) {
+        return switch (status.value()) {
+            case 400 -> "Неверный запрос";
+            case 401 -> "Требуется авторизация";
+            case 403 -> "Доступ запрещен";
+            case 404 -> "Страница не найдена";
+            case 405 -> "Метод не поддерживается";
+            case 500 -> "Внутренняя ошибка сервера";
+            default -> "Ошибка " + status.value();
+        };
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
