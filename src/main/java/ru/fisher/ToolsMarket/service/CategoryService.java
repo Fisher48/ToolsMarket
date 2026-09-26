@@ -1,6 +1,7 @@
 package ru.fisher.ToolsMarket.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import ru.fisher.ToolsMarket.config.CacheConfig;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryAdminDto;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryDto;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryPageData;
@@ -58,6 +60,12 @@ public class CategoryService {
         return categoryRepository.findAllById(ids);
     }
 
+    /**
+     * Корневые категории для меню каталога. Метод зовётся из @ModelAttribute
+     * на каждом запросе каталога, поэтому список кэшируется; сброс cache делает
+     * CategoryRepository при любой записи категории (см. @CacheEvict там).
+     */
+    @Cacheable(cacheNames = CacheConfig.CATEGORY_TREE, key = "'root'")
     public List<CategoryDto> getRootCategories() {
         return categoryRepository.findByParentIsNullOrderBySortOrderAsc().stream()
                 .map(categoryMapperService::toDto) // Используем простой DTO
@@ -65,6 +73,7 @@ public class CategoryService {
     }
 
     // Метод для получения только родительских категорий для главной страницы
+    @Cacheable(cacheNames = CacheConfig.CATEGORY_TREE, key = "'home'")
     public List<CategoryDto> getParentCategoriesForHome() {
         long start = System.nanoTime();
 
