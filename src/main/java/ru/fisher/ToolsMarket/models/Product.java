@@ -1,6 +1,7 @@
 package ru.fisher.ToolsMarket.models;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -59,6 +60,9 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
+    // Страницы списка (поиск, каталог) показывают много товаров сразу: без батча
+    // каждое обращение к getImages() — отдельный запрос (N+1)
+    @BatchSize(size = 50)
     private Set<ProductImage> images = new LinkedHashSet<>();
 
     @Column(name = "created_by_user_id")
@@ -75,6 +79,7 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
+    @BatchSize(size = 50)
     private Set<ProductAttributeValue> attributeValues = new LinkedHashSet<>();
 
     @Column(nullable = false)
