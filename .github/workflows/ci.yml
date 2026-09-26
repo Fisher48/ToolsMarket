@@ -1,0 +1,43 @@
+name: CI
+
+# Тесты на pull_request. До этого момента тесты не запускались в CI вообще:
+# deploy.yml собирает образ командой mvn clean package -DskipTests, поэтому
+# ошибка доезжала до прода без какой-либо проверки.
+#
+# Обязательные проверки (Require status checks) в ветке main пока НЕ включены:
+# включать их стоит только после первого зелёного прогона, иначе merge
+# заблокируется навсегда — блокировать нечем.
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Testcontainers поднимает postgres:16-alpine, первый прогон дольше обычного
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-mvn-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-mvn-
+
+      # mvn, а не ./mvnw: обёртка в репозитории не лежит (она в .gitignore
+      # не попадает и в CI не доступна), и deploy.yml тоже использует системный Maven
+      - name: Run tests
+        run: mvn -B clean test
