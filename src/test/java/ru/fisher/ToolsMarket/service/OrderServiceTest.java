@@ -148,6 +148,53 @@ class OrderServiceTest {
         assertThat(cartService.getCartItems(cart.getId()).isEmpty());
     }
 
+    @Test
+    void manyOrdersOfSameUserInSameMinuteGetUniqueNumbers() {
+        // Регрессия: номер заказа состоял из даты, userId и двух случайных цифр,
+        // поэтому два заказа одного пользователя в пределах одной минуты
+        // совпадали с вероятностью 1% и клиент получал 500 на оформлении.
+        Product product = createAndSaveProduct("bulk", BigDecimal.valueOf(500.0));
+
+        java.util.List<Long> numbers = new java.util.ArrayList<>();
+        for (int i = 0; i < 25; i++) {
+            Cart cart = cartService.getOrCreateCart(testUser.getId());
+            cartService.addProductWithQuantity(cart.getId(), product.getId(), 1);
+            Order order = orderService.createOrder(cart.getId(), "");
+            numbers.add(order.getOrderNumber());
+        }
+
+        org.assertj.core.api.Assertions.assertThat(numbers).doesNotHaveDuplicates();
+
+        Long distinct = jdbc.queryForObject(
+                "SELECT COUNT(DISTINCT order_number) FROM \"order\"", Long.class);
+        org.assertj.core.api.Assertions.assertThat(distinct).isEqualTo(25L);
+    }
+
+    @Test
+    void orderNumberKeepsDateAndUserPrefix() {
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+        Product product = createAndSaveProduct("prefix", BigDecimal.valueOf(100.0));
+        cartService.addProductWithQuantity(cart.getId(), product.getId(), 1);
+
+        Order order = orderService.createOrder(cart.getId(), "");
+
+        String number = String.valueOf(order.getOrderNumber());
+        // 18 цифр: yyMMddHHmm + userId%10000 + порядковый номер
+        org.assertj.core.api.Assertions.assertThat(number).hasSize(18);
+        org.assertj.core.api.Assertions.assertThat(number.substring(10, 14))
+                .isEqualTo(String.format("%04d", testUser.getId() % 10000));
+    }
+
+    @Test
+    void orderNumberSequenceIsCreatedByMigration() {
+        // Опечатка в имени последовательности всплыла бы на проде, а не в тестах
+        Long sequences = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM pg_sequences WHERE sequencename = 'order_number_seq'",
+                Long.class);
+
+        org.assertj.core.api.Assertions.assertThat(sequences).isEqualTo(1L);
+    }
+
     private OrderItem find(List<OrderItem> items, Long productId) {
         return items.stream()
                 .filter(i -> i.getProduct().getId().equals(productId))

@@ -20,10 +20,7 @@ import ru.fisher.ToolsMarket.repository.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 
 @Service
@@ -36,6 +33,7 @@ public class OrderService {
     private final OrderAdminJdbcRepository orderAdminJdbc;
     private final DiscountService discountService;
     private final ApplicationEventPublisher eventPublisher;
+    private final OrderNumberGenerator orderNumberGenerator;
 
     /**
      * Создание заказа из корзины пользователя
@@ -100,7 +98,7 @@ public class OrderService {
 
         User user = cart.getUser();
         Order order = Order.builder()
-                .orderNumber(generateOrderNumber(user.getId()))
+                .orderNumber(orderNumberGenerator.next(user.getId()))
                 .user(user)
                 .note(note)
                 .status(OrderStatus.CREATED)
@@ -235,24 +233,6 @@ public class OrderService {
             throw new OrderValidationException("note",
                     "Примечание слишком длинное (максимум 1000 символов)");
         }
-    }
-
-    private Long generateOrderNumber(Long userId) {
-        LocalDateTime now = LocalDateTime.now();
-
-        // 1. Дата и время (10 цифр): YYMMDDHHmm
-        String dateTimePart = DateTimeFormatter.ofPattern("yyMMddHHmm").format(now);
-
-        // 2. ID пользователя (до 4 цифр)
-        String userIdPart = String.format("%04d", userId % 10000);
-
-        // 3. Рандом (2 цифры) для уникальности
-        String randomPart = String.format("%02d", ThreadLocalRandom.current().nextInt(100));
-
-        // Объединяем
-        String numberStr = dateTimePart + userIdPart + randomPart;
-
-        return Long.parseLong(numberStr); // Пример: 2412151830123456
     }
 
     @Transactional(readOnly = true)
