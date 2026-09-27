@@ -78,7 +78,14 @@ public class CartController {
             return "redirect:/auth/login";
         }
 
-        cartService.addProductToUserCart(user.getId(), productId, quantity);
+        try {
+            cartService.addProductToUserCart(user.getId(), productId, quantity);
+        } catch (IllegalArgumentException e) {
+            // Своя проверка количества в сервисе: без неё запрос упирается в
+            // CHECK (quantity > 0) и пользователь получает 500
+            redirectAttributes.addFlashAttribute("errorMessage", "Неверное количество товара");
+            return "redirect:/cart";
+        }
 
         // Добавляем сообщение об успехе
         if ("product".equals(redirectTo) || (referer != null && referer.contains("/product/"))) {

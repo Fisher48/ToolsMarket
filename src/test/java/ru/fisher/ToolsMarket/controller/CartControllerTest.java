@@ -23,11 +23,13 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -162,6 +164,23 @@ class CartControllerTest {
                 .andExpect(redirectedUrl("/auth/login"));
 
         verify(cartService, org.mockito.Mockito.never()).addProductToUserCart(any(), any(), org.mockito.ArgumentMatchers.anyInt());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void addToCartWithNonPositiveQuantityShowsErrorNotServerError() throws Exception {
+        // given: сервис отклоняет количество
+        stubAuthenticatedUser();
+        doThrow(new IllegalArgumentException("Quantity must be positive"))
+                .when(cartService).addProductToUserCart(1L, 1L, 0);
+
+        // when & then: понятное сообщение, а не 500 и не редирект в админку
+        mockMvc.perform(post("/cart/add").with(csrf())
+                        .param("productId", "1")
+                        .param("quantity", "0"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/cart"))
+                .andExpect(flash().attribute("errorMessage", "Неверное количество товара"));
     }
 
     @Test
