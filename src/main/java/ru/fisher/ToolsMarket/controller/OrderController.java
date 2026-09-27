@@ -188,14 +188,18 @@ public class OrderController {
         try {
             Long userId = getCurrentUserId(userDetails);
 
-            if (userId != null) {
-                // Проверяем, что заказ принадлежит пользователю
-                Order order = orderService.getUserOrder(orderId, userId);
-                if (!canCancelOrder(order)) {
-                    redirectAttributes.addFlashAttribute("errorMessage",
-                            "Вы не можете отменить этот заказ");
-                    return "redirect:/order/" + orderId;
-                }
+            // Без userId проверить принадлежность заказа нечем, а раньше проверка
+            // целиком пропускалась и updateStatus вызывался для чужого заказа
+            if (userId == null) {
+                return "redirect:/auth/login";
+            }
+
+            // Проверяем, что заказ принадлежит пользователю
+            Order order = orderService.getUserOrder(orderId, userId);
+            if (!canCancelOrder(order)) {
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Вы не можете отменить этот заказ");
+                return "redirect:/order/" + orderId;
             }
 
             orderService.updateStatus(orderId, OrderStatus.CANCELLED);
