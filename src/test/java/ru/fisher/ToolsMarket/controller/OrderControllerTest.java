@@ -353,6 +353,18 @@ class OrderControllerTest {
     }
 
     @Test
+    void cancelOrderWithoutResolvedUserRedirectsToLoginAndKeepsOrder() throws Exception {
+        // given: пользователя нет (гость, либо запись в БД удалена при живой сессии),
+        // поэтому проверить принадлежность заказа нечем
+        // when & then: отменять нельзя, уходим на логин
+        mockMvc.perform(post("/order/{id}/cancel", 100L).with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login"));
+
+        verify(orderService, never()).updateStatus(any(), any());
+    }
+
+    @Test
     void orderHistoryAsGuestRedirectsToLogin() throws Exception {
         mockMvc.perform(get("/order/history"))
                 .andExpect(status().is3xxRedirection())
