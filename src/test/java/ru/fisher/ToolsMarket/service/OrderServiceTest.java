@@ -223,6 +223,33 @@ class OrderServiceTest {
     }
 
     @Test
+    void multiItemOrderLoadsWithProductsAndAcceptsNote() {
+        // Регрессия на join fetch без DISTINCT. findByIdWithItems и
+        // findByIdWithItemsAndProduct отдают по строке на позицию заказа, но
+        // Hibernate 6 в uniqueElement() сравнивает результаты по ссылке, а все
+        // дубликаты — один и тот же инстанс Order, поэтому NonUniqueResultException
+        // не бросается. Раньше (Hibernate 5) бросался, отсюда и миф про 500.
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+
+        Product p1 = createAndSaveProduct("multi-1", BigDecimal.valueOf(1000.0));
+        Product p2 = createAndSaveProduct("multi-2", BigDecimal.valueOf(2000.0));
+        Product p3 = createAndSaveProduct("multi-3", BigDecimal.valueOf(3000.0));
+
+        cartService.addProductWithQuantity(cart.getId(), p1.getId(), 2);
+        cartService.addProductWithQuantity(cart.getId(), p2.getId(), 1);
+        cartService.addProductWithQuantity(cart.getId(), p3.getId(), 4);
+
+        Order order = orderService.createOrder(cart.getId(), "");
+
+        // страница заказа в профиле и в админке
+        Order withProducts = orderService.getOrderWithProducts(order.getId());
+        assertEquals(3, withProducts.getOrderItems().size());
+
+        orderService.addNote(order.getId(), "Позвонить клиенту");
+        assertThat(orderService.getOrder(order.getId()).getNote()).isEqualTo("Позвонить клиенту");
+    }
+
+    @Test
     void getUserOrderReturnsOrderOnlyForCorrectUser() {
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p1 = createAndSaveProduct("p1", BigDecimal.valueOf(1000.0));
