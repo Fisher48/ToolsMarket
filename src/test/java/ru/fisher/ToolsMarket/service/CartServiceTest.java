@@ -147,7 +147,7 @@ class CartServiceTest {
     }
 
     @Test
-    void whenProductAddedToEmptyCart_cartContainsOneItemWithSnapshot() {
+    void whenProductAddedToEmptyCart_cartContainsOneItem() {
         // given
         Cart cart = cartService.getOrCreateCart(testUser.getId());
         Product p = createAndSaveProduct("Drill X", BigDecimal.valueOf(10000.00));
@@ -165,9 +165,29 @@ class CartServiceTest {
         assertThat(item.getProductId()).isEqualTo(p.getId());
         assertThat(item.getQuantity()).isEqualTo(1);
 
-        // snapshot (contract)
         assertThat(item.getTotalPrice()).isEqualByComparingTo(p.getPrice());
         assertThat(item.getProductName()).isEqualTo("Drill X");
+    }
+
+    @Test
+    void cartShowsCurrentPriceAfterProductPriceChanged() {
+        // given: товар добавлен по одной цене
+        Product p = createAndSaveProduct("Price-Change", new BigDecimal("100"));
+        cartService.addProductToUserCart(testUser.getId(), p.getId(), 1);
+
+        // when: цена в каталоге изменилась, а товар уже лежит в корзине
+        p.setPrice(new BigDecimal("150"));
+        productService.saveEntity(p);
+
+        // then: корзина и checkout показывают актуальную цену, иначе итог
+        // корзины расходится с суммой заказа, который считается по product.getPrice()
+        List<CartItemDto> items = cartService.getUserCartItems(testUser.getId());
+
+        assertThat(items).hasSize(1);
+        CartItemDto item = items.getFirst();
+        assertThat(item.getUnitPrice()).isEqualByComparingTo("150");
+        assertThat(item.getTotalPrice()).isEqualByComparingTo("150");
+        assertThat(cartService.calculateSummary(items)).isEqualByComparingTo("150");
     }
 
     @Test

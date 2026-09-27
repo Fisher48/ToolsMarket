@@ -179,7 +179,10 @@ public class CartService {
                 .map(item -> {
                     Product product = item.getProduct();
                     BigDecimal discountPercentage = discountService.getDiscountPercentage(discounts, product);
-                    BigDecimal unitPrice = item.getUnitPrice();
+                    // Цена берётся из каталога, а не из cart_item.unitPrice: заказ
+                    // считается по product.getPrice(), и снимок в корзине давал
+                    // расхождение итогов, если цена менялась после добавления
+                    BigDecimal unitPrice = product.getPrice();
                     BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
 
                     // totalPrice * процент / 100 — деление с масштабом, иначе проценты
