@@ -29,24 +29,29 @@ public class OrderItemDto {
 
     public static OrderItemDto fromEntity(OrderItem item) {
         OrderItemDto dto = new OrderItemDto();
-        dto.setProductId(item.getProduct().getId());
+        dto.setProductId(item.getProduct() != null ? item.getProduct().getId() : null);
         dto.setProductName(item.getProductName());
         dto.setProductSku(item.getProductSku());
         dto.setQuantity(item.getQuantity());
         dto.setUnitPrice(item.getUnitPrice());
         dto.setSubtotal(item.getSubtotal());
 
-        // Получаем данные из связанного Product
+        // Получаем данные из связанного Product. Товар мог быть удалён из
+        // каталога — тогда product_id в order_item NULL, и показываем snapshot
         Product product = item.getProduct();
-        dto.setProductTitle(product.getTitle() != null ?
-                product.getTitle() : product.getName());
+        if (product == null) {
+            dto.setProductTitle(item.getProductName());
+        } else {
+            dto.setProductTitle(product.getTitle() != null ?
+                    product.getTitle() : product.getName());
 
-        // Получаем изображение
-        if (!product.getImages().isEmpty()) {
-            ProductImage mainImage = product.getImages().stream().findFirst().orElse(null);
-            dto.setProductImageUrl(mainImage.getUrl());
-            dto.setProductImageAlt(mainImage.getAlt() != null ?
-                    mainImage.getAlt() : product.getName());
+            // Получаем изображение
+            if (!product.getImages().isEmpty()) {
+                ProductImage mainImage = product.getImages().stream().findFirst().orElse(null);
+                dto.setProductImageUrl(mainImage.getUrl());
+                dto.setProductImageAlt(mainImage.getAlt() != null ?
+                        mainImage.getAlt() : product.getName());
+            }
         }
 
         // Используем только сохраненные данные из БД
