@@ -425,6 +425,43 @@ class CartServiceTest {
 
         assertThat(items).hasSize(1);
         assertThat(items.get(0).getDiscountAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(items.get(0).getTotalPriceWithDiscount()).isEqualTo(new BigDecimal("2000.00"));
+        assertThat(items.get(0).getTotalPriceWithDiscount()).isEqualByComparingTo(new BigDecimal("2000.00"));
+    }
+
+    @Test
+    void addProductToUserCartRejectsNonPositiveQuantity() {
+        // given
+        Product product = createAndSaveProduct("Qty-Product", new BigDecimal("1000.00"));
+
+        // when & then: без проверки quantity БД отвечает 500 на CHECK (quantity > 0)
+        assertThatThrownBy(() -> cartService.addProductToUserCart(testUser.getId(), product.getId(), 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Quantity must be positive");
+
+        assertThatThrownBy(() -> cartService.addProductToUserCart(testUser.getId(), product.getId(), -3))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Quantity must be positive");
+
+        // корзина осталась пустой
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+        assertThat(cartItemRepository.findByCartId(cart.getId())).isEmpty();
+    }
+
+    @Test
+    void addProductToUserCartDoesNotDecreaseExistingItemQuantity() {
+        // given: в корзине уже 2 штуки
+        Product product = createAndSaveProduct("Qty-Product-2", new BigDecimal("1000.00"));
+        cartService.addProductToUserCart(testUser.getId(), product.getId(), 2);
+
+        // when: приходит отрицательное количество
+        assertThatThrownBy(() -> cartService.addProductToUserCart(testUser.getId(), product.getId(), -1))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Quantity must be positive");
+
+        // then: количество не уменьшилось (2 + (-1) = 1 прошло бы по CHECK, но это тихая порча)
+        Cart cart = cartService.getOrCreateCart(testUser.getId());
+        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        assertThat(items).hasSize(1);
+        assertThat(items.getFirst().getQuantity()).isEqualTo(2);
     }
 }
