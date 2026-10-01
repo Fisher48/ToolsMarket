@@ -14,7 +14,7 @@ public record CancelledOrder(Order order) implements OrderState {
 
     @Override
     public boolean cancellable() {
-        return false;
+        return order().getStatus().isCancellable();
     }
 
     @Override

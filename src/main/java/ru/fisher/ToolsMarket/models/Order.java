@@ -76,14 +76,12 @@ public class Order {
 
     /**
      * Может ли пользователь отменить заказ.
-     * Отменять разрешено владельцу, пока заказ не завершён (CREATED, PROCESSING, PAID).
-     * Семантика совпадает с прежним {@code OrderState.cancellable()}-подходом:
-     * state machine считает отменяемыми те же статусы.
+     * Отменять разрешено владельцу, пока статус помечен как отменяемый
+     * ({@link OrderStatus#isCancellable()}: CREATED, PROCESSING, PAID).
+     * Единый список статусов живёт в {@code OrderStatus} — туда же делегирует
+     * и state machine ({@code OrderState.cancellable()}).
      */
     public boolean canBeCancelledBy(Long userId) {
-        return switch (status) {
-            case CREATED, PROCESSING, PAID -> belongsToUser(userId);
-            default -> false;
-        };
+        return status.isCancellable() && belongsToUser(userId);
     }
 }
