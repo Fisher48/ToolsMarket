@@ -11,8 +11,8 @@ import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.ProductImage;
 import ru.fisher.ToolsMarket.models.ProductType;
 import ru.fisher.ToolsMarket.models.User;
+import ru.fisher.ToolsMarket.service.CurrentUserService;
 import ru.fisher.ToolsMarket.service.DiscountService;
-import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,7 +26,7 @@ public class ProductMapperService {
 
     private final ModelMapper modelMapper;
     private final DiscountService discountService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
 
     /**
      * Конвертация Product в ProductDto с учетом скидок текущего пользователя
@@ -165,11 +165,7 @@ public class ProductMapperService {
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            return userService.findByUsername(username).orElse(null);
-        }
-        return null;
+        return currentUserService.findCurrentUser(authentication).orElse(null);
     }
 
     public Product toEntity(ProductCreateDto dto) {

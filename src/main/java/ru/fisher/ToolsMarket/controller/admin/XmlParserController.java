@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.parsingXml.StemYmlImportService;
-import ru.fisher.ToolsMarket.service.UserService;
+import ru.fisher.ToolsMarket.service.CurrentUserService;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 public class XmlParserController {
 
     private final StemYmlImportService ymlImportService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
     private final TaskExecutor taskExecutor;
 
     @GetMapping
@@ -49,7 +49,7 @@ public class XmlParserController {
 
         // Резолвим юзера в потоке запроса, а не в воркер-потоке импорта:
         // taskExecutor — простой ThreadPoolTaskExecutor без проброса SecurityContext.
-        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+        Long currentUserId = currentUserService.findCurrentUser(userDetails)
                 .map(User::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 

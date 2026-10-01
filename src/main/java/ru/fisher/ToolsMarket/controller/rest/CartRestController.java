@@ -10,9 +10,8 @@ import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
 import ru.fisher.ToolsMarket.dto.CartDTO.CartRequest;
 import ru.fisher.ToolsMarket.dto.CartDTO.CartResponse;
 import ru.fisher.ToolsMarket.models.Cart;
-import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.service.CartService;
-import ru.fisher.ToolsMarket.service.UserService;
+import ru.fisher.ToolsMarket.service.CurrentUserService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
 public class CartRestController {
 
     private final CartService cartService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
 
     @PostMapping("/add")
     public ResponseEntity<?> add(@RequestBody CartRequest request,
@@ -163,7 +162,8 @@ public class CartRestController {
                 .mapToInt(CartItemDto::getQuantity)
                 .sum();
 
-        // Рассчитываем суммы с использованием BigDecimal для точности
+        // «Итоги корзины для REST-ответа» — суммы по каждой позиции
+        // со страховкой от NPE: цена → 0, цена со скидкой → полная цена, количество → 0
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal totalDiscount = BigDecimal.ZERO;
         BigDecimal totalWithDiscount = BigDecimal.ZERO;
@@ -212,9 +212,7 @@ public class CartRestController {
         if (userDetails == null) return null;
 
         try {
-            return userService.findByUsername(userDetails.getUsername())
-                    .map(User::getId)
-                    .orElse(null);
+            return currentUserService.currentUserId(userDetails);
         } catch (Exception e) {
             log.error("Error getting user ID: ", e);
             return null;

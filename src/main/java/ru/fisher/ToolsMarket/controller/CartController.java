@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,8 +13,8 @@ import ru.fisher.ToolsMarket.models.Cart;
 import ru.fisher.ToolsMarket.models.Product;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.service.CartService;
+import ru.fisher.ToolsMarket.service.CurrentUserService;
 import ru.fisher.ToolsMarket.service.ProductService;
-import ru.fisher.ToolsMarket.service.UserService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,7 +27,7 @@ public class CartController {
 
     private final CartService cartService;
     private final ProductService productService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping
     public String viewCart(Model model) {
@@ -148,15 +147,7 @@ public class CartController {
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() &&
-                !"anonymousUser".equals(authentication.getPrincipal())) {
-            Object principal = authentication.getPrincipal();
-            if (principal instanceof UserDetails) {
-                String username = ((UserDetails) principal).getUsername();
-                return userService.findByUsername(username).orElse(null);
-            }
-        }
-        return null;
+        return currentUserService.findCurrentUser(authentication).orElse(null);
     }
 
     // Вспомогательный метод для определения редиректа

@@ -24,8 +24,8 @@ import ru.fisher.ToolsMarket.models.Cart;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.service.CartService;
 import ru.fisher.ToolsMarket.service.CategoryService;
+import ru.fisher.ToolsMarket.service.CurrentUserService;
 import ru.fisher.ToolsMarket.service.ProductService;
-import ru.fisher.ToolsMarket.service.UserService;
 import ru.fisher.ToolsMarket.util.PathSegmentEncoder;
 
 import java.net.URLEncoder;
@@ -42,16 +42,16 @@ public class CatalogController {
 
     private final ProductService productService;
     private final CategoryService categoryService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
     private final CartService cartService;
     private final PathSegmentEncoder pathSegmentEncoder;
 
     public CatalogController(ProductService productService, CategoryService categoryService,
-                             UserService userService, CartService cartService,
+                             CurrentUserService currentUserService, CartService cartService,
                              PathSegmentEncoder pathSegmentEncoder) {
         this.productService = productService;
         this.categoryService = categoryService;
-        this.userService = userService;
+        this.currentUserService = currentUserService;
         this.cartService = cartService;
         this.pathSegmentEncoder = pathSegmentEncoder;
     }
@@ -69,7 +69,7 @@ public class CatalogController {
 
         // Добавляем информацию о пользователе и скидках
         if (userDetails != null) {
-            userService.findByUsername(userDetails.getUsername())
+            currentUserService.findCurrentUser(userDetails)
                     .ifPresent(user -> {
                         model.addAttribute("currentUser", user);
                         model.addAttribute("userType", user.getUserType());
@@ -88,7 +88,7 @@ public class CatalogController {
 
         User user = null;
         if (userDetails != null) {
-            user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            user = currentUserService.findCurrentUser(userDetails).orElse(null);
         }
 
         ProductDto product = productService.findByTitleWithDiscounts(title, user).orElse(null);
@@ -149,7 +149,7 @@ public class CatalogController {
 
         User user = null;
         if (userDetails != null) {
-            user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+            user = currentUserService.findCurrentUser(userDetails).orElse(null);
         }
 
         Page<ProductListDto> searchResults;
@@ -162,7 +162,8 @@ public class CatalogController {
             searchResults = productService.searchWithDiscounts(q.trim(), user, pageRequest);
         }
 
-        // Проверка товаров в корзине (только для авторизованных)
+        // «Карта количества товаров в корзине» — best-effort lookup для каталога:
+        // заполняется только у авторизованных, при ошибке остаётся пустой, каталог не падает
         Map<Long, Integer> cartProductQuantities = new HashMap<>();
 
         if (user != null) {
@@ -180,7 +181,8 @@ public class CatalogController {
             }
         }
 
-        // Добавляем информацию о товарах в корзине в каждый продукт
+        // «Обогащение карточек состоянием корзины» — пересборка содержимого страницы
+        // (inCart/cartQuantity) поверх исходной пагинации, чтобы сохранить страницы и total
         List<ProductListDto> productsWithCartInfo = searchResults.getContent().stream()
                 .map(product -> {
                     ProductListDto enhancedProduct = new ProductListDto();
@@ -239,9 +241,7 @@ public class CatalogController {
 
         Long userId = null;
         if (userDetails != null) {
-            userId = userService.findByUsername(userDetails.getUsername())
-                    .map(User::getId)
-                    .orElse(null);
+            userId = currentUserService.currentUserId(userDetails);
         }
 
         CategoryPageData pageData = categoryService.getCategoryPage(title, userId, sort, Math.max(page, 0), 12);
@@ -277,7 +277,7 @@ public class CatalogController {
 //        long start = System.currentTimeMillis();
 //        User user = null;
 //        if (userDetails != null) {
-//            user = userService.findByUsername(userDetails.getUsername()).orElse(null);
+//            user = currentUserService.findCurrentUser(userDetails).orElse(null);
 //        }
 //
 //        CategoryDto category = categoryService.findByTitle(title)

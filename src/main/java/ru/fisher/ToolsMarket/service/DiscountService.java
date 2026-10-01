@@ -7,9 +7,9 @@ import ru.fisher.ToolsMarket.models.ProductType;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.models.UserDiscount;
 import ru.fisher.ToolsMarket.repository.UserDiscountRepository;
+import ru.fisher.ToolsMarket.util.DiscountMath;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -17,8 +17,6 @@ import java.util.Optional;
 @Service
 @AllArgsConstructor
 public class DiscountService {
-
-    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     private final UserDiscountRepository userDiscountRepository;
 
@@ -76,12 +74,7 @@ public class DiscountService {
     public BigDecimal calculateDiscountAmount(User user, Product product, BigDecimal quantity) {
         BigDecimal discountPercentage = calculateDiscount(user, product);
         if (discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal price = product.getPrice();
-            BigDecimal discountAmount = price
-                    .multiply(discountPercentage)
-                    .divide(HUNDRED, 2, RoundingMode.HALF_UP)
-                    .multiply(quantity);
-            return discountAmount;
+            return DiscountMath.lineDiscount(product.getPrice(), discountPercentage, quantity.longValue());
         }
         return BigDecimal.ZERO;
     }
@@ -95,19 +88,15 @@ public class DiscountService {
 
     /**
      * Цена со скидкой по уже посчитанному проценту (без повторного запроса).
-     * Считаем как price * (100 - процент) / 100: так деление всегда конечное
-     * и проценты вида 33.33 не дают ArithmeticException.
+     * Канон ({@link DiscountMath#unitPriceWithDiscount}): скидка на единицу
+     * округляется один раз, далее только вычитание — так цена совпадает с
+     * `OrderItem.unitPrice` в заказе.
      */
     public BigDecimal getPriceWithDiscount(Product product, BigDecimal discountPercentage) {
         if (product == null || product.getPrice() == null) {
             return BigDecimal.ZERO;
         }
-        if (discountPercentage == null || discountPercentage.compareTo(BigDecimal.ZERO) <= 0) {
-            return product.getPrice();
-        }
-        return product.getPrice()
-                .multiply(HUNDRED.subtract(discountPercentage))
-                .divide(HUNDRED, 2, RoundingMode.HALF_UP);
+        return DiscountMath.unitPriceWithDiscount(product.getPrice(), discountPercentage);
     }
 
     /**

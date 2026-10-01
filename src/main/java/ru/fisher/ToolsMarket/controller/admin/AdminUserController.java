@@ -15,6 +15,7 @@ import ru.fisher.ToolsMarket.models.UserDiscount;
 import ru.fisher.ToolsMarket.models.UserType;
 import ru.fisher.ToolsMarket.repository.UserDiscountRepository;
 import ru.fisher.ToolsMarket.service.UserService;
+import ru.fisher.ToolsMarket.util.SortParser;
 
 import java.util.List;
 import java.util.Map;
@@ -37,14 +38,9 @@ public class AdminUserController {
                             @RequestParam(required = false) UserType userType,
                             @RequestParam(required = false) Boolean enabled) {
 
-        // Парсим параметры сортировки
-        String[] sortParams = sort.split(",");
-        String sortField = sortParams.length > 0 ? sortParams[0] : "id";
-        Sort.Direction direction = sortParams.length > 1
-                ? Sort.Direction.fromString(sortParams[1])
-                : Sort.Direction.ASC;
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+        // Парсим параметры сортировки единым способом (с защитой от кривых данных)
+        Pageable pageable = PageRequest.of(page, size,
+                SortParser.parse(sort, Sort.by("id").ascending()));
 
         Page<User> usersPage = userService.searchUsers(search, userType, enabled, pageable);
 

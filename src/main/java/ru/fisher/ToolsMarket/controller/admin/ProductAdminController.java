@@ -27,6 +27,7 @@ import ru.fisher.ToolsMarket.exceptions.ValidationException;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.service.*;
 import ru.fisher.ToolsMarket.util.CustomMultipartFile;
+import ru.fisher.ToolsMarket.util.SortParser;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -47,7 +48,7 @@ public class ProductAdminController {
     private final CategoryService categoryService;
     private final ImageStorageService imageStorageService;
     private final AttributeService attributeService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
     private final ProductParserService parserService;
 
     // Список
@@ -65,9 +66,7 @@ public class ProductAdminController {
             HttpServletRequest request, HttpSession session,
             Model model) {
 
-        String[] sortParams = sort.split(",");
-        Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
-        Sort sorting = Sort.by(direction, sortParams[0]);
+        Sort sorting = SortParser.parse(sort, Sort.by("id").ascending());
 
         Pageable pageable = PageRequest.of(page, size, sorting);
 
@@ -131,7 +130,7 @@ public class ProductAdminController {
                 images != null ? images.size() : 0,
                 parsedImageUrls != null ? parsedImageUrls.size() : 0);
 
-        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+        Long currentUserId = currentUserService.findCurrentUser(userDetails)
                 .map(User::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
@@ -285,12 +284,12 @@ public class ProductAdminController {
         Product product = productService.findByIdWithAllRelations(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
 
-        // Получаем ID категорий товара
+        // «Подготовка формы редактирования товара» — две lookup-структуры:
+        // preselect категорий (множество id) и текущие значения характеристик (id характеристики → значение)
         Set<Long> productCategoryIds = product.getCategories().stream()
                 .map(Category::getId)
                 .collect(Collectors.toSet());
 
-        // Получаем текущие значения характеристик
         Map<Long, String> currentValues = product.getAttributeValues().stream()
                 .collect(Collectors.toMap(
                         av -> av.getAttribute().getId(),
@@ -334,7 +333,7 @@ public class ProductAdminController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
 
-        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+        Long currentUserId = currentUserService.findCurrentUser(userDetails)
                 .map(User::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
@@ -392,7 +391,7 @@ public class ProductAdminController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
 
-        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+        Long currentUserId = currentUserService.findCurrentUser(userDetails)
                 .map(User::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
@@ -620,7 +619,7 @@ public class ProductAdminController {
                                      @RequestParam Map<String, String> allParams,
                                      @AuthenticationPrincipal UserDetails userDetails,
                                      RedirectAttributes redirectAttributes) {
-        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+        Long currentUserId = currentUserService.findCurrentUser(userDetails)
                 .map(User::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 

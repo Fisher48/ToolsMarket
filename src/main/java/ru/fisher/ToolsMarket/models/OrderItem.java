@@ -3,8 +3,9 @@ package ru.fisher.ToolsMarket.models;
 import jakarta.persistence.*;
 import lombok.*;
 
+import ru.fisher.ToolsMarket.util.DiscountMath;
+
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 
 @Builder
@@ -77,17 +78,13 @@ public class OrderItem {
 
         // Рассчитываем скидку если есть
         BigDecimal finalOriginalPrice = item.originalUnitPrice;
-        if (discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
+        if (DiscountMath.hasDiscount(discountPercentage)) {
             item.hasDiscount = true;
             item.discountPercentage = discountPercentage;
 
-            // Рассчитываем сумму скидки за единицу
-            BigDecimal discountPerUnit = finalOriginalPrice
-                    .multiply(discountPercentage)
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-            item.discountAmount = discountPerUnit.multiply(BigDecimal.valueOf(quantity));
-            item.unitPrice = finalOriginalPrice.subtract(discountPerUnit);
+            // Канонический расчёт: скидка на единицу округляется один раз
+            item.discountAmount = DiscountMath.lineDiscount(finalOriginalPrice, discountPercentage, quantity);
+            item.unitPrice = DiscountMath.unitPriceWithDiscount(finalOriginalPrice, discountPercentage);
         } else {
             item.hasDiscount = false;
             item.discountPercentage = BigDecimal.ZERO;
