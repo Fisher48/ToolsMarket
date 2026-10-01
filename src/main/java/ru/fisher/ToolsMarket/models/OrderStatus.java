@@ -16,4 +16,13 @@ public enum OrderStatus {
     public boolean isActive() {
         return !isFinal();
     }
+
+    /**
+     * Может ли заказ быть отменён в этом статусе.
+     * Единый источник правды — сюда делегируют и {@code Order.canBeCancelledBy()},
+     * и state machine ({@code OrderState.cancellable()}).
+     */
+    public boolean isCancellable() {
+        return this == CREATED || this == PROCESSING || this == PAID;
+    }
 }
