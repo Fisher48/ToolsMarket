@@ -14,8 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import ru.fisher.ToolsMarket.dto.ExcelImportResult;
 import ru.fisher.ToolsMarket.models.User;
+import ru.fisher.ToolsMarket.service.CurrentUserService;
 import ru.fisher.ToolsMarket.service.ExcelProductImportService;
-import ru.fisher.ToolsMarket.service.UserService;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 public class ExcelImportController {
 
     private final ExcelProductImportService excelImportService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
     private final TaskExecutor taskExecutor;
 
     @GetMapping
@@ -48,7 +48,7 @@ public class ExcelImportController {
 
         // Резолвим юзера в потоке запроса, а не в воркер-потоке импорта:
         // taskExecutor — простой ThreadPoolTaskExecutor без проброса SecurityContext.
-        Long currentUserId = userService.findByUsername(userDetails.getUsername())
+        Long currentUserId = currentUserService.findCurrentUser(userDetails)
                 .map(User::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategorySimpleDto;
 import ru.fisher.ToolsMarket.models.ProductType;
+import ru.fisher.ToolsMarket.util.DiscountMath;
 import ru.fisher.ToolsMarket.util.PriceFormatter;
 
 import java.math.BigDecimal;
@@ -48,13 +49,10 @@ public class ProductDto {
         if (discountedPrice != null) {
             return discountedPrice;
         }
-        if (discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal discountMultiplier = BigDecimal.ONE
-                    .subtract(discountPercentage.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP));
-            return price.multiply(discountMultiplier)
-                    .setScale(2, RoundingMode.HALF_UP);
+        if (price == null) {
+            return null;
         }
-        return price;
+        return DiscountMath.unitPriceWithDiscount(price, discountPercentage);
     }
 
     // Проверка наличия скидки

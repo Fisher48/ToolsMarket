@@ -2,6 +2,8 @@ package ru.fisher.ToolsMarket.dto.CartDTO;
 
 import lombok.*;
 
+import ru.fisher.ToolsMarket.util.DiscountMath;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -69,12 +71,17 @@ public class CartItemDto implements PricedLine {
     }
 
     /**
-     * Получить цену за единицу товара со скидкой
-     * Если поле не заполнено, вычисляет из общей суммы со скидкой
+     * Получить цену за единицу товара со скидкой.
+     * Приоритет: явно установленное поле → канон (цена − скидка на единицу) →
+     * вывод из общей суммы со скидкой (последний путь в обратную сторону) → обычная цена.
      */
     public BigDecimal getUnitPriceWithDiscount() {
         if (unitPriceWithDiscount != null) {
             return unitPriceWithDiscount;
+        }
+
+        if (unitPrice != null && DiscountMath.hasDiscount(discountPercentage)) {
+            return DiscountMath.unitPriceWithDiscount(unitPrice, discountPercentage);
         }
 
         // Если есть общая сумма со скидкой и количество, вычисляем
@@ -92,12 +99,8 @@ public class CartItemDto implements PricedLine {
             return discountAmount;
         }
 
-        if (discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0 &&
-                unitPrice != null && quantity != null) {
-            return unitPrice
-                    .multiply(discountPercentage.divide(BigDecimal.valueOf(100)))
-                    .multiply(BigDecimal.valueOf(quantity))
-                    .setScale(2, RoundingMode.HALF_UP);
+        if (unitPrice != null && quantity != null) {
+            return DiscountMath.lineDiscount(unitPrice, discountPercentage, quantity);
         }
         return BigDecimal.ZERO;
     }

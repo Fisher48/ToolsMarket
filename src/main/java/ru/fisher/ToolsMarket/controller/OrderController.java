@@ -15,7 +15,6 @@ import ru.fisher.ToolsMarket.dto.OrderDTO.OrderItemDto;
 import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.exceptions.OrderNotFoundException;
 import ru.fisher.ToolsMarket.models.*;
-import ru.fisher.ToolsMarket.service.order.OrderStateFactory;
 import ru.fisher.ToolsMarket.service.*;
 
 import java.math.BigDecimal;
@@ -30,6 +29,7 @@ public class OrderController {
     private final OrderService orderService;
     private final CartService cartService;
     private final UserService userService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/{orderId}")
     public String viewOrder(@PathVariable Long orderId,
@@ -70,7 +70,7 @@ public class OrderController {
                 }
             }
 
-            boolean canCancel = canCancelOrder(order);
+            boolean canCancel = order.canBeCancelledBy(userId);
 
             model.addAttribute("order", order);
             model.addAttribute("orderItems", orderItemDtos);
@@ -96,13 +96,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * Проверка возможности отмены заказа
-     */
-    private boolean canCancelOrder(Order order) {
-        return OrderStateFactory.of(order).cancellable();
-    }
-
     @GetMapping("/checkout")
     public String checkout(@AuthenticationPrincipal UserDetails userDetails,
                            Model model) {
@@ -111,7 +104,7 @@ public class OrderController {
             return "redirect:/auth/login";
         }
 
-        User user = userService.findByUsername(userDetails.getUsername())
+        User user = currentUserService.findCurrentUser(userDetails)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
 
         // Получаем товары из корзины с учетом скидок
@@ -196,7 +189,7 @@ public class OrderController {
 
             // Проверяем, что заказ принадлежит пользователю
             Order order = orderService.getUserOrder(orderId, userId);
-            if (!canCancelOrder(order)) {
+            if (!order.canBeCancelledBy(userId)) {
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Вы не можете отменить этот заказ");
                 return "redirect:/order/" + orderId;
@@ -246,12 +239,7 @@ public class OrderController {
     // =========== Вспомогательные методы ===========
 
     private Long getCurrentUserId(UserDetails userDetails) {
-        if (userDetails != null) {
-            return userService.findByUsername(userDetails.getUsername())
-                    .map(User::getId)
-                    .orElse(null);
-        }
-        return null;
+        return currentUserService.currentUserId(userDetails);
     }
 
 }

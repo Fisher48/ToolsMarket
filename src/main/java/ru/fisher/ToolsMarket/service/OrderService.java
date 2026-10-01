@@ -18,7 +18,6 @@ import ru.fisher.ToolsMarket.service.order.*;
 import ru.fisher.ToolsMarket.repository.*;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
 
@@ -134,15 +133,8 @@ public class OrderService {
                     discountPercentage       // Процент скидки
             );
 
-            // Если есть скидка, пересчитываем
-            if (discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal discountPerUnit = originalPrice
-                        .multiply(discountPercentage)
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-                BigDecimal itemDiscount = discountPerUnit.multiply(BigDecimal.valueOf(quantity));
-                totalDiscount = totalDiscount.add(itemDiscount);
-            }
+            // Скидку берём из уже посчитанной позиции — она едина с каноном
+            totalDiscount = totalDiscount.add(oi.getDiscountAmount());
 
             total = total.add(oi.getSubtotal());
             oi.setOrder(order);

@@ -22,6 +22,7 @@ import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryAdminDto;
 import ru.fisher.ToolsMarket.models.Category;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.ImageStorageService;
+import ru.fisher.ToolsMarket.util.SortParser;
 
 import java.time.Instant;
 import java.util.List;
@@ -49,9 +50,7 @@ public class CategoryAdminController {
             HttpServletRequest request, HttpSession session,
             Model model) {
 
-        String[] sortParams = sort.split(",");
-        Sort.Direction direction = Sort.Direction.fromString(sortParams[1]);
-        Sort sorting = Sort.by(direction, sortParams[0]);
+        Sort sorting = SortParser.parse(sort, Sort.by("id").ascending());
         Pageable pageable = PageRequest.of(page, size, sorting);
 
         Page<CategoryAdminDto> categoryPage = categoryService.search(name, title, parentId, pageable);

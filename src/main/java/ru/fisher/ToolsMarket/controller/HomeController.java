@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryDto;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.service.CategoryService;
-import ru.fisher.ToolsMarket.service.UserService;
+import ru.fisher.ToolsMarket.service.CurrentUserService;
 
 import java.security.Principal;
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.Optional;
 public class HomeController {
 
     private final CategoryService categoryService;
-    private final UserService userService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/")
     public String home(Model model, Principal principal) {
@@ -31,15 +31,14 @@ public class HomeController {
         model.addAttribute("categories", parentCategories);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Optional<User> user = userService.findByUsername(auth.getName());
+        Optional<User> user = currentUserService.findCurrentUser(auth);
         model.addAttribute("user", user);
 
         boolean isAuthenticated = principal != null;
         model.addAttribute("isAuthenticated", isAuthenticated);
 
         if (isAuthenticated) {
-            String username = principal.getName();
-            model.addAttribute("currentUser", userService.findByUsername(username).orElse(null));
+            model.addAttribute("currentUser", currentUserService.findCurrentUser(auth).orElse(null));
         }
 
         return "index";

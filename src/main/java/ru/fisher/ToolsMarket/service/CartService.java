@@ -7,9 +7,9 @@ import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
 import ru.fisher.ToolsMarket.dto.CartDTO.PricedLine;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.repository.*;
+import ru.fisher.ToolsMarket.util.DiscountMath;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -182,17 +182,13 @@ public class CartService {
                 .map(item -> {
                     Product product = item.getProduct();
                     BigDecimal discountPercentage = discountService.getDiscountPercentage(discounts, product);
-                    // Цена берётся из каталога, а не из cart_item.unitPrice: заказ
-                    // считается по product.getPrice(), и снимок в корзине давал
-                    // расхождение итогов, если цена менялась после добавления
+                    // «Снимок корзины по актуальной цене» — единый канонический расчёт:
+                    // цена из каталога (снимок cart_item.unitPrice разъезжался с итогами
+                    // заказа), скидка округляется один раз на единицу, поэтому корзина
+                    // не расходится с OrderItem.
                     BigDecimal unitPrice = product.getPrice();
                     BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
-
-                    // totalPrice * процент / 100 — деление с масштабом, иначе проценты
-                    // вида 33.33 роняют страницу корзины ArithmeticException
-                    BigDecimal discountAmount = totalPrice
-                            .multiply(discountPercentage)
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                    BigDecimal discountAmount = DiscountMath.lineDiscount(unitPrice, discountPercentage, item.getQuantity());
 
                     CartItemDto dto = new CartItemDto();
                     dto.setProductId(product.getId());
@@ -207,7 +203,7 @@ public class CartService {
                     dto.setUnitPrice(unitPrice);
                     dto.setQuantity(item.getQuantity());
                     dto.setTotalPrice(totalPrice);
-                    dto.setTotalPriceWithDiscount(totalPrice.subtract(discountAmount));
+                    dto.setTotalPriceWithDiscount(DiscountMath.lineTotalWithDiscount(unitPrice, discountPercentage, item.getQuantity()));
                     dto.setDiscountAmount(discountAmount);
                     dto.setDiscountPercentage(discountPercentage);
 

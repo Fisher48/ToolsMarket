@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -17,7 +16,6 @@ import ru.fisher.ToolsMarket.exceptions.OrderFinalizedException;
 import ru.fisher.ToolsMarket.models.Order;
 import ru.fisher.ToolsMarket.models.OrderStatus;
 import ru.fisher.ToolsMarket.models.User;
-import ru.fisher.ToolsMarket.service.order.OrderStateFactory;
 import ru.fisher.ToolsMarket.service.*;
 
 import java.math.BigDecimal;
@@ -32,6 +30,7 @@ public class UserController {
 
     private final UserService userService;
     private final OrderService orderService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping
     public String profilePage(Model model, Authentication authentication) {
@@ -41,8 +40,7 @@ public class UserController {
 
         // Получаем активные заказы (не завершенные)
         List<Order> activeOrders = orders.stream()
-                .filter(order -> order.getStatus() != OrderStatus.COMPLETED &&
-                        order.getStatus() != OrderStatus.CANCELLED)
+                .filter(order -> order.getStatus().isActive())
                 .toList();
 
         // Получаем завершенные заказы (уже есть в orders, фильтруем)
@@ -134,7 +132,7 @@ public class UserController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         boolean hasDiscounts = totalDiscount.compareTo(BigDecimal.ZERO) > 0;
-        boolean canCancel = canCancelOrder(order, userId);
+        boolean canCancel = order.canBeCancelledBy(userId);
 
         model.addAttribute("order", order);
         model.addAttribute("orderItems", orderItemDtos);
@@ -153,22 +151,6 @@ public class UserController {
         }
         log.debug("Страница заказа #{} загружена: {} мс", id, System.currentTimeMillis() - start);
         return "profile/order-detail";
-    }
-
-    private boolean canCancelOrder(Order order, Long userId) {
-        boolean cancellable = OrderStateFactory.of(order).cancellable();
-
-        if (!cancellable) {
-            return false;
-        }
-
-        // Проверяем принадлежность заказа
-        if (userId != null) {
-            return order.belongsToUser(userId);
-        }
-
-        // Анонимный пользователь может отменять только созданные заказы
-        return order.getStatus() == OrderStatus.CREATED;
     }
 
     @PostMapping("/orders/{id}/cancel")
@@ -300,15 +282,6 @@ public class UserController {
     }
 
     private Long getCurrentUserId(Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated()) {
-            Object principal = authentication.getPrincipal();
-            if (principal instanceof UserDetails) {
-                String username = ((UserDetails) principal).getUsername();
-                return userService.findByUsername(username)
-                        .map(User::getId)
-                        .orElse(null);
-            }
-        }
-        return null;
+        return currentUserService.currentUserId(authentication);
     }
 }
