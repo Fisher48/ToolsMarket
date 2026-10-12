@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.fisher.ToolsMarket.dto.CartDTO.CartItemDto;
+import ru.fisher.ToolsMarket.dto.CartDTO.PricedLine;
 import ru.fisher.ToolsMarket.models.*;
 import ru.fisher.ToolsMarket.repository.*;
 
@@ -161,11 +162,13 @@ public class CartService {
         cartItemRepository.deleteByCartId(cart.getId());
     }
 
-    public BigDecimal calculateSummary(List<CartItemDto> items) {
-        return items.stream()
-                .map(item -> item.getUnitPrice()
-                        .multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    public BigDecimal calculateSummary(Iterable<? extends PricedLine> items) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (PricedLine item : items) {
+            total = total.add(item.getUnitPrice()
+                    .multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+        return total;
     }
 
     /**

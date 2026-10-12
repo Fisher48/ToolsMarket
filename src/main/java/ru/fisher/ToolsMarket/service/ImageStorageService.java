@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiFunction;
 
 @Service
 @Slf4j
@@ -36,6 +37,28 @@ public class ImageStorageService {
         log.info("Attempting to save image: {}, size: {}, type: {}",
                 file.getOriginalFilename(), file.getSize(), file.getContentType());
 
+        String imageUrl = storeFile(file, "products", productTitle, 0, this::generateFileName);
+        log.info("Image saved: {}", imageUrl);
+
+        // Создаем и возвращаем сущность ProductImage
+        return ProductImage.builder()
+                .url(imageUrl) // Полный URL
+                .alt(productTitle) // Базовое описание
+                .sortOrder(0)
+                .build();
+    }
+
+    /**
+     * Полиморфное сохранение файла: подпапка, лимит размера и политика имени
+     * передаются параметрами, поэтому один и тот же код обслуживает и товары,
+     * и категории. Политика имени задаётся функцией, а не отдельной копией метода;
+     * добавить новый вид изображения — значит передать новые данные, а не новый код.
+     *
+     * @param maxBytes 0 — без ограничения размера
+     * @return абсолютный URL сохранённого файла
+     */
+    private String storeFile(MultipartFile file, String folder, String title,
+                             long maxBytes, BiFunction<String, String, String> nameFactory) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Файл пустой");
         }
@@ -44,31 +67,22 @@ public class ImageStorageService {
             throw new IllegalArgumentException("Файл не является изображением");
         }
 
+        if (maxBytes > 0 && file.getSize() > maxBytes) {
+            throw new IllegalArgumentException("Размер изображения не должен превышать "
+                    + (maxBytes / (1024 * 1024)) + "MB");
+        }
+
         try {
-            // Создаем директорию если не существует
-            Path uploadDir = Paths.get(uploadPath, "products");
-            Files.createDirectories(uploadDir);
+            Path dir = Paths.get(uploadPath, folder);
+            Files.createDirectories(dir);
 
-            // Генерируем уникальное имя файла
-            String originalFileName = file.getOriginalFilename();
-            String fileExtension = getFileExtension(originalFileName);
-            String fileName = generateFileName(productTitle, fileExtension);
+            String fileExtension = getFileExtension(file.getOriginalFilename());
+            String fileName = nameFactory.apply(title, fileExtension);
+            Files.write(dir.resolve(fileName), file.getBytes());
 
-            // Сохраняем файл
-            Path filePath = uploadDir.resolve(fileName);
-            Files.write(filePath, file.getBytes());
-
-            log.info("Image saved: {}", filePath);
-
-            // Создаем и возвращаем сущность ProductImage
-            return ProductImage.builder()
-                    .url(baseUrl + "/images/products/" + fileName) // Полный URL
-                    .alt(productTitle) // Базовое описание
-                    .sortOrder(0)
-                    .build();
-
+            return baseUrl + "/images/" + folder + "/" + fileName;
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save image: " + e.getMessage(), e);
+            throw new RuntimeException("Не удалось сохранить изображение: " + e.getMessage(), e);
         }
     }
 
@@ -151,43 +165,12 @@ public class ImageStorageService {
         log.info("Saving category image: {}, category: {}, size: {}",
                 file.getOriginalFilename(), categoryTitle, file.getSize());
 
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("Файл пустой");
-        }
+        // Для категорий максимум 2MB
+        String imageUrl = storeFile(file, "categories", categoryTitle, 2L * 1024 * 1024,
+                this::generateCategoryFileName);
+        log.info("Category image saved: {}", imageUrl);
 
-        if (!isImage(file)) {
-            throw new IllegalArgumentException("Файл не является изображением");
-        }
-
-        // Проверяем размер для категорий (максимум 2MB)
-        if (file.getSize() > 2 * 1024 * 1024) {
-            throw new IllegalArgumentException("Размер изображения категории не должен превышать 2MB");
-        }
-
-        try {
-            // Создаем поддиректорию для категорий
-            Path categoryDir = Paths.get(uploadPath, "categories");
-            Files.createDirectories(categoryDir);
-
-            // Генерируем уникальное имя файла
-            String originalFileName = file.getOriginalFilename();
-            String fileExtension = getFileExtension(originalFileName);
-            String fileName = generateCategoryFileName(categoryTitle, fileExtension);
-
-            // Сохраняем файл
-            Path filePath = categoryDir.resolve(fileName);
-            Files.write(filePath, file.getBytes());
-
-            // Формируем URL для доступа к изображению
-            String imageUrl = baseUrl + "/images/categories/" + fileName;
-            log.info("Category image saved: {}", imageUrl);
-
-            return imageUrl;
-
-        } catch (IOException e) {
-            log.error("Failed to save category image: {}", e.getMessage(), e);
-            throw new RuntimeException("Не удалось сохранить изображение категории: " + e.getMessage(), e);
-        }
+        return imageUrl;
     }
 
     /**

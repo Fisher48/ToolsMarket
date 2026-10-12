@@ -8,10 +8,11 @@ import ru.fisher.ToolsMarket.dto.CategoryDTO.CategoryDto;
 import ru.fisher.ToolsMarket.dto.CategoryDTO.CategorySimpleDto;
 import ru.fisher.ToolsMarket.models.Category;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
@@ -62,17 +63,18 @@ public class CategoryMapperService {
         return modelMapper.map(category, CategorySimpleDto.class);
     }
 
-    // Дополнительные методы для коллекций
-    public List<CategoryDto> toDtoList(List<Category> categories) {
-        return categories.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<CategorySimpleDto> toSimpleDtoList(List<Category> categories) {
-        return categories.stream()
-                .map(this::toSimpleDto)
-                .collect(Collectors.toList());
+    /**
+     * Полиморфный маппер коллекций: тип источника {@code S} и тип результата {@code T}
+     * не зафиксированы, а само преобразование передаётся функцией. Раньше под каждую
+     * пару типов был отдельный метод; теперь одна реализация покрывает любые пары,
+     * поэтому способов ошибиться стало меньше.
+     */
+    public static <S, T> List<T> mapAll(Iterable<S> source, Function<S, T> mapper) {
+        List<T> result = new ArrayList<>();
+        for (S item : source) {
+            result.add(mapper.apply(item));
+        }
+        return result;
     }
 
     public CategoryAdminDto convertToAdminDto(Category category, CategoryDto dto) {
