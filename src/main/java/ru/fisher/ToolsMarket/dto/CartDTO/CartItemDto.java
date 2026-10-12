@@ -9,7 +9,7 @@ import java.math.RoundingMode;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartItemDto {
+public class CartItemDto implements PricedLine {
     private Long productId;
     private String productName;
     private String productSku;

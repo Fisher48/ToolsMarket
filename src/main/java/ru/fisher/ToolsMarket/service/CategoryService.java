@@ -79,7 +79,7 @@ public class CategoryService {
 
         try {
             List<Category> categories = categoryRepository.findByParentIsNullOrderBySortOrderAsc();
-            return categoryMapperService.toDtoList(categories);
+            return CategoryMapperService.mapAll(categories, categoryMapperService::toDto);
 
         } finally {
             long duration = System.nanoTime() - start;
