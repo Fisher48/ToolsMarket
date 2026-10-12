@@ -459,7 +459,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <a th:href="@{'/product/' + ${item.productTitle}}" class="product-link" th:text="${item.productName}"></a>
+                                    <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}" class="product-link" th:text="${item.productName}"></a>
                                     <div class="product-sku" th:text="${item.productSku}"></div>
                                 </td>
                                 <td class="text-center" th:text="${item.quantity} + ' шт.'"></td>

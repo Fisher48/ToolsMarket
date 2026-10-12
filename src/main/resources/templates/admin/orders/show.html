@@ -275,7 +275,7 @@
                                 <!-- Изображение товара -->
                                 <div class="col-12 col-md-2 mb-2 mb-md-0">
                                     <div class="product-img-container">
-                                        <a th:href="@{'/product/' + ${item.productTitle}}"
+                                        <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}"
                                            target="_blank"
                                            class="d-block w-100 h-100">
                                             <th:block th:if="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
@@ -294,7 +294,7 @@
                                 <div class="col-12 col-md-4">
                                     <!-- Название товара -->
                                     <h6 class="mb-1">
-                                        <a th:href="@{'/product/' + ${item.productTitle}}"
+                                        <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}"
                                            class="text-decoration-none text-dark hover-primary"
                                            target="_blank"
                                            th:if="${item.productId != null and item.productTitle != null}"
@@ -335,7 +335,7 @@
                                            th:if="${item.productId != null}">
                                             <i class="bi bi-pencil-square me-1"></i> Редактировать
                                         </a>
-                                        <a th:href="@{'/product/' + ${item.productTitle} + '?admin=true'}"
+                                        <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)} + '?admin=true'}"
                                            class="badge bg-light text-dark border text-decoration-none"
                                            target="_blank"
                                            th:if="${item.productId != null and item.productTitle != null}">

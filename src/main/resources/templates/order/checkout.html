@@ -420,7 +420,7 @@
                             <!-- Изображение товара -->
                             <div class="col-md-2 col-3">
                                 <div class="product-image-container">
-                                    <a th:href="@{'/product/' + ${item.productTitle}}">
+                                    <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}">
                                         <th:block th:if="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
                                             <img th:src="@{${item.productImageUrl}}"
                                                  th:alt="${item.productImageAlt != null ? item.productImageAlt : item.productName}"
@@ -442,7 +442,7 @@
 
                             <!-- Название и артикул -->
                             <div class="col-md-4 col-9">
-                                <a th:href="@{'/product/' + ${item.productTitle}}"
+                                <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}"
                                    class="cart-item-name-link">
                                     <div class="cart-item-name-link"
                                          th:text="${item.productName}">Название товара</div>

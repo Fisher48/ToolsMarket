@@ -19,6 +19,14 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     Optional<Product> findBySku(String sku);
 
+    /**
+     * Поиск по префиксу title. Нужен, когда клиент обрезал URL на первом non-ASCII
+     * байте и пришёл на /product/&lt;slug&gt;- без кириллического SKU. Подчёркивания в
+     * LIKE — одиночный wildcard, поэтому точный префикс отбирается в Java.
+     */
+    @Query("SELECT p.title FROM Product p WHERE p.title LIKE :prefix || '%'")
+    List<String> findTitlesByPrefix(@Param("prefix") String prefix);
+
     @Query("SELECT p.title as title, p.createdAt as createdAt, p.updatedAt as updatedAt FROM Product p")
     List<Object[]> findAllForSitemap();
 

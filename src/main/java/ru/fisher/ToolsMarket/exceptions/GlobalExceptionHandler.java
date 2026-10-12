@@ -234,8 +234,19 @@ public class GlobalExceptionHandler {
 
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
         String reason = ex.getReason() != null ? ex.getReason() : defaultMessage(status);
+        String ip = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+        String referer = request.getHeader("Referer");
 
-        log.warn("{} {}: {}", status.value(), request.getRequestURI(), reason);
+        if (status == HttpStatus.NOT_FOUND) {
+            // 404 — бот-шум (краулеры, сканеры), а не ошибка приложения.
+            // Уровень INFO, чтобы не засорять WARN; IP/UA/Referer — чтобы видеть источник.
+            log.info("404 {}: {} | ip={} ua={} ref={}",
+                    request.getRequestURI(), reason, ip, userAgent, referer);
+        } else {
+            log.warn("{} {}: {} | ip={} ua={} ref={}",
+                    status.value(), request.getRequestURI(), reason, ip, userAgent, referer);
+        }
 
         ResponseKind kind = responseKind(request);
 

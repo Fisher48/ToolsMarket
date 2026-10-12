@@ -6,7 +6,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -24,6 +26,7 @@ import ru.fisher.ToolsMarket.service.CartService;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.ProductService;
 import ru.fisher.ToolsMarket.service.UserService;
+import ru.fisher.ToolsMarket.util.PathSegmentEncoder;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -41,13 +44,16 @@ public class CatalogController {
     private final CategoryService categoryService;
     private final UserService userService;
     private final CartService cartService;
+    private final PathSegmentEncoder pathSegmentEncoder;
 
     public CatalogController(ProductService productService, CategoryService categoryService,
-                             UserService userService, CartService cartService) {
+                             UserService userService, CartService cartService,
+                             PathSegmentEncoder pathSegmentEncoder) {
         this.productService = productService;
         this.categoryService = categoryService;
         this.userService = userService;
         this.cartService = cartService;
+        this.pathSegmentEncoder = pathSegmentEncoder;
     }
 
     @ModelAttribute
@@ -76,20 +82,32 @@ public class CatalogController {
      * Страница товара
      */
     @GetMapping("/product/{title}")
-    public String product(@PathVariable String title,
+    public Object product(@PathVariable String title,
                           @AuthenticationPrincipal UserDetails userDetails,
                           Model model) {
-
-        // --- Увеличиваем счетчик просмотров ---
-        productService.incrementProductViews(title);
 
         User user = null;
         if (userDetails != null) {
             user = userService.findByUsername(userDetails.getUsername()).orElse(null);
         }
 
-        ProductDto product = productService.findByTitleWithDiscounts(title, user)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден"));
+        ProductDto product = productService.findByTitleWithDiscounts(title, user).orElse(null);
+
+        if (product == null) {
+            // Клиент обрезал URL на границе ASCII/не-ASCII (кириллический SKU отброшен).
+            // По префиксу ровно один товар — редиректим на канонический URL.
+            String canonical = productService.findCanonicalTitleForTruncatedUrl(title);
+            if (canonical != null) {
+                return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                        .header(HttpHeaders.LOCATION,
+                                "/product/" + pathSegmentEncoder.encode(canonical))
+                        .build();
+            }
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Товар не найден");
+        }
+
+        // --- Увеличиваем счетчик просмотров ---
+        productService.incrementProductViews(title);
 
         // Проверка товара в корзине
         boolean isInCart = false;
