@@ -242,7 +242,7 @@
                                     <!-- Изображение товара -->
                                     <div class="col-md-2 col-3">
                                         <div class="product-image-container">
-                                            <a th:href="@{'/product/' + ${item.productTitle}}">
+                                            <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}">
                                                 <th:block th:if="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
                                                     <img th:src="@{${item.productImageUrl}}"
                                                          th:alt="${item.productImageAlt != null ? item.productImageAlt : item.productName}"
@@ -265,7 +265,7 @@
                                     <!-- Информация о товаре -->
                                     <div class="col-md-4 col-9">
                                         <h6 class="card-title mb-1">
-                                            <a th:href="@{'/product/' + ${item.productTitle}}"
+                                            <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}"
                                                class="text-decoration-none text-dark hover-primary fw-bold">
                                                 <span th:text="${item.productName}"></span>
                                             </a>

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import ru.fisher.ToolsMarket.service.CategoryService;
 import ru.fisher.ToolsMarket.service.ProductService;
+import ru.fisher.ToolsMarket.util.PathSegmentEncoder;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -27,6 +28,7 @@ public class SitemapController {
 
     private final ProductService productService;
     private final CategoryService categoryService;
+    private final PathSegmentEncoder pathSegmentEncoder;
 
     @Value("${app.base.url}")
     private String baseUrl;
@@ -126,8 +128,7 @@ public class SitemapController {
     }
 
     private String encode(String value) {
-        if (value == null) return "";
-        return value;
+        return pathSegmentEncoder.encode(value);
     }
 
     private String escapeXml(String input) {

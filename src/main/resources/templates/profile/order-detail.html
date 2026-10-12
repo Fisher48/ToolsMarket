@@ -359,7 +359,7 @@
                             <tr th:each="item : ${orderItems}">
                                 <!-- Изображение товара -->
                                 <td>
-                                    <a th:href="@{'/product/' + ${item.productTitle}}" class="d-block">
+                                    <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}" class="d-block">
                                         <th:block th:if="${item.productImageUrl != null and !item.productImageUrl.isEmpty()}">
                                             <img th:src="@{${item.productImageUrl}}"
                                                  th:alt="${item.productImageAlt != null ? item.productImageAlt : item.productName}"
@@ -377,7 +377,7 @@
                                 <td>
                                     <div>
                                         <h6 class="mb-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                            <a th:href="@{'/product/' + ${item.productTitle}}"
+                                            <a th:href="@{'/product/' + ${@pathSegmentEncoder.encode(item.productTitle)}}"
                                                class="text-decoration-none text-dark product-link">
                                                 <span th:text="${item.productName}"></span>
                                                 <i class="bi bi-box-arrow-up-right ms-1 small text-muted"></i>

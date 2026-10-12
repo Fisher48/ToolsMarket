@@ -17,6 +17,7 @@ import ru.fisher.ToolsMarket.models.ProductType;
 import ru.fisher.ToolsMarket.models.User;
 import ru.fisher.ToolsMarket.repository.CategoryRepository;
 import ru.fisher.ToolsMarket.repository.ProductRepository;
+import ru.fisher.ToolsMarket.util.PathSegmentEncoder;
 import ru.fisher.ToolsMarket.util.SearchQueryBuilder;
 
 import java.math.BigDecimal;
@@ -34,6 +35,7 @@ public class ProductService {
     private final AttributeService attributeService;
     private final UserService userService;
     private final DiscountService discountService;
+    private final PathSegmentEncoder pathSegmentEncoder;
 
     @Transactional(readOnly = true)
     public List<Product> findAllEntities() {
@@ -285,6 +287,21 @@ public class ProductService {
     public Optional<ProductDto> findByTitleWithDiscounts(String title, User user) {
         return productRepository.findByTitleWithAttributes(title)
                 .map(product -> productMapperService.toDto(product, user));
+    }
+
+    /**
+     * Клиент обрезал URL на границе ASCII/не-ASCII и пришёл на /product/&lt;slug&gt;-.
+     * Ищем по префиксу и возвращаем канонический title только при единственном
+     * совпадении; при нуле или нескольких — null, и контроллер отдаёт обычный 404.
+     */
+    public String findCanonicalTitleForTruncatedUrl(String title) {
+        if (title == null || !title.endsWith("-")) {
+            return null;
+        }
+        List<String> exact = productRepository.findTitlesByPrefix(title).stream()
+                .filter(t -> t.startsWith(title))
+                .toList();
+        return exact.size() == 1 ? exact.get(0) : null;
     }
 
     public List<Object[]> findAllForSitemap() {
