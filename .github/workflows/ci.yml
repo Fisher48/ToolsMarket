@@ -17,21 +17,25 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # ubuntu-24.04, а не ubuntu-latest: с 19 октября 2026 latest уезжает на
+    # Ubuntu 26, и смена JDK/Docker в образе может уронить Testcontainers.
+    # runner.os в ключе кэша остаётся 'Linux', поэтому старые записи ~/.m2
+    # продолжают использоваться.
+    runs-on: ubuntu-24.04
     # Testcontainers поднимает postgres:16-alpine, первый прогон дольше обычного
     timeout-minutes: 25
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Cache Maven dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2
           key: ${{ runner.os }}-mvn-${{ hashFiles('**/pom.xml') }}
