@@ -74,7 +74,13 @@ jobs:
           # scp в них получает Permission denied и весь деплой падает. sudo на
           # сервере нет (его убрали из этого workflow), поэтому права выравнивает
           # сам docker — так любая новая папка под nginx/ больше не чинит вручную.
-          ssh $SERVER "mkdir -p ~/toolsmarket/nginx/conf.d && docker run --rm -v ~/toolsmarket/nginx:/t alpine sh -c 'chown -R \$(id -u):\$(id -g) /t'"
+          #
+          # ВАЖНО про кавычки: uid:gid обязан подставить удалённый shell, поэтому
+          # аргументы идут в ВНЕШНИХ одинарных кавычках и без sh -c. Вариант с
+          # sh -c и '$(id -u)' раскрывал подстановку внутри контейнера, где id -u = 0,
+          # и chown отдавал весь nginx под root — деплой падал уже на nginx.conf.
+          # test после chown уронит деплой явно, если права не выставились.
+          ssh $SERVER 'mkdir -p ~/toolsmarket/nginx/conf.d; U=$(id -u); G=$(id -g); docker run --rm -v ~/toolsmarket/nginx:/t alpine chown -R "$U:$G" /t; test "$(stat -c %u ~/toolsmarket/nginx)" = "$U" || { echo "chown не выставил права — деплой прерван"; exit 1; }; ls -la ~/toolsmarket/nginx'
 
           scp docker-compose.yml $SERVER:~/toolsmarket/docker-compose.yml
           
