@@ -114,16 +114,18 @@ jobs:
           
             # Валидируем конфиг nginx ДО остановки сервисов: при ошибке
             # скрипт упадёт на set -e и сайт продолжит работать на старой версии.
-            # Проверяющий контейнер обязан быть в compose-сети, иначе
-            # nginx -t не найдёт upstream'ы (tools-market-app, grafana,
-            # prometheus) и упадёт на host not found in upstream.
+            # nginx резолвит proxy_pass на этапе парсинга, поэтому upstream'ы
+            # подставляем через --add-host: проверка не зависит ни от docker-сети,
+            # ни от запущенных контейнеров. Без этого она падала бы на
+            # host not found in upstream, а вариант через docker compose run —
+            # ещё и требовал бы живой app, то есть после упавшего деплоя был бы
+            # тупик. Новый upstream в конфиге добавляй сюда же.
             echo 'Проверяем конфигурацию nginx...'
-            NET=$(docker network ls -q --filter 'name=app-network' | head -n 1)
-            if [ -z "$NET" ]; then
-              echo '❌ Не найдена docker-сеть app-network — проверь, что docker compose уже запускался'
-              exit 1
-            fi
-            docker run --rm --network "$NET" \
+            docker run --rm \
+              --add-host tools-market-app:127.0.0.1 \
+              --add-host grafana:127.0.0.1 \
+              --add-host prometheus:127.0.0.1 \
+              --add-host alertmanager:127.0.0.1 \
               -v ~/toolsmarket/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
               -v ~/toolsmarket/nginx/conf.d:/etc/nginx/conf.d:ro \
               -v ~/toolsmarket/nginx/letsencrypt:/etc/letsencrypt:ro \
