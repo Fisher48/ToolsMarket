@@ -19,6 +19,7 @@ import ru.fisher.ToolsMarket.util.PathSegmentEncoder;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -55,6 +56,11 @@ public class SitemapController {
         log.debug("Sitemap cache evicted");
     }
 
+    // Программа следует за структурой выхода — sitemap.xml:
+    // 1. Когда запись секции отсутствует? Выборка из БД пуста — секция пуста.
+    // 2. Какова голова записи <url>? Константы секции (priority/changefreq)
+    //    и путь из title строки (url(...)).
+    // 3. Из чего хвост? Следующие строки той же выборки.
     @Cacheable(value = "sitemap", cacheManager = "cacheManager")
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     @ResponseBody
@@ -63,44 +69,26 @@ public class SitemapController {
         int urlCount = 0;
 
         StringBuilder xml = new StringBuilder(1024 * 1024); // буфер ~1 MB
+
+        // шапка
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
         // 1. Главная
-        xml.append(url(baseUrl, "/", "1.0", "daily", Instant.now()));
+        xml.append(homeUrl());
         urlCount++;
 
-        // Категории: row[0]=title, row[1]=createdAt
-        for (Object[] row : categoryService.findAllForSitemap()) {
-            String title = (String) row[0];
-            Instant createdAt = (Instant) row[1];
+        // 2. Категории
+        List<Object[]> categories = categoryService.findAllForSitemap();
+        xml.append(categoryUrls(categories));
+        urlCount += categories.size();
 
-            xml.append(url(
-                    baseUrl,
-                    "/category/" + encode(title),
-                    "0.8",
-                    "weekly",
-                    createdAt
-            ));
-            urlCount++;
-        }
+        // 3. Товары
+        List<Object[]> products = productService.findAllForSitemap();
+        xml.append(productUrls(products));
+        urlCount += products.size();
 
-        // Товары: row[0]=title, row[1]=createdAt, row[2]=updatedAt
-        for (Object[] row : productService.findAllForSitemap()) {
-            String title = (String) row[0];
-            Instant createdAt = (Instant) row[1];
-            Instant updatedAt = (Instant) row[2];
-
-            xml.append(url(
-                    baseUrl,
-                    "/product/" + encode(title),
-                    "0.9",
-                    "weekly",
-                    updatedAt != null ? updatedAt : createdAt
-            ));
-            urlCount++;
-        }
-
+        // футер
         xml.append("</urlset>\n");
 
         long duration = System.currentTimeMillis() - start;
@@ -108,6 +96,47 @@ public class SitemapController {
                 duration, urlCount, xml.length() / 1024);
 
         return xml.toString();
+    }
+
+    private String homeUrl() {
+        return url(baseUrl, "/", "1.0", "daily", Instant.now());
+    }
+
+    /** Секция категорий: по записи url(...) на строку выборки. */
+    private CharSequence categoryUrls(List<Object[]> categories) {
+        StringBuilder section = new StringBuilder();
+        for (Object[] row : categories) {
+            String title = (String) row[0];
+            Instant createdAt = (Instant) row[1];
+
+            section.append(url(
+                    baseUrl,
+                    "/category/" + encode(title),
+                    "0.8",
+                    "weekly",
+                    createdAt
+            ));
+        }
+        return section;
+    }
+
+    /** Секция товаров; lastmod = updatedAt с fallback'ом на createdAt. */
+    private CharSequence productUrls(List<Object[]> products) {
+        StringBuilder section = new StringBuilder();
+        for (Object[] row : products) {
+            String title = (String) row[0];
+            Instant createdAt = (Instant) row[1];
+            Instant updatedAt = (Instant) row[2];
+
+            section.append(url(
+                    baseUrl,
+                    "/product/" + encode(title),
+                    "0.9",
+                    "weekly",
+                    updatedAt != null ? updatedAt : createdAt
+            ));
+        }
+        return section;
     }
 
     private String url(String base, String path, String priority,

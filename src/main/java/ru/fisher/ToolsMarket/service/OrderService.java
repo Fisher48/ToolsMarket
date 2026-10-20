@@ -81,8 +81,14 @@ public class OrderService {
         return orderRepository.findByUserIdAndStatusWithProducts(userId, status);
     }
 
+    // Программа следует за структурой выхода — Order:
+    // 1. Когда выход тривиален? Корзина не найдена / анонимная / пустая — заказа нет.
+    // 2. Какова голова? Пустой Order без позиций (orderHeaderOf).
+    // 3. Из чего хвост? Позиции рекурсивно с головы списка корзины
+    //    (attachOrderItems); тоталы — по готовым позициям (totalOf/totalDiscountOf).
     @Transactional
     public Order createOrder(Long cartId, String note) {
+        // 1: тривиальный случай — заказа не будет
         Cart cart = cartRepository.findByIdWithProducts(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
@@ -90,13 +96,41 @@ public class OrderService {
             throw new IllegalStateException("Cannot create order from anonymous cart");
         }
 
-        Set<CartItem> cartItems = cart.getItems();
-        if (cartItems.isEmpty()) {
+        if (cart.getItems().isEmpty()) {
             throw new IllegalStateException("Cart is empty");
         }
 
         User user = cart.getUser();
-        Order order = Order.builder()
+
+        // 2: голова выхода
+        Order order = orderHeaderOf(user, note);
+
+        // Скидки пользователя — один запрос на заказ вместо запроса на позицию
+        Map<ProductType, BigDecimal> discounts = discountService.getDiscountsForUser(user);
+
+        // 3: позиции множества выстраиваем в список — у рекурсии появится «голова»
+        attachOrderItems(new ArrayList<>(cart.getItems()), 0, order, discounts);
+
+        // Тотал — сумма позиций, а не отдельный аккумулятор при обходе корзины
+        order.setTotalPrice(totalOf(order.getOrderItems()));
+
+        Order saved = orderRepository.save(order);
+
+        cart.clear();
+        cartRepository.save(cart);
+
+        log.info("Заказ создан: id={}, номер={}, цена={}, скидка={}",
+                order.getId(), order.getOrderNumber(), order.getTotalPrice(),
+                totalDiscountOf(order.getOrderItems()));
+
+        eventPublisher.publishEvent(orderCreatedEventOf(order));
+
+        return saved;
+    }
+
+    /** Голова выхода: Order без позиций. */
+    private Order orderHeaderOf(User user, String note) {
+        return Order.builder()
                 .orderNumber(orderNumberGenerator.next(user.getId()))
                 .user(user)
                 .note(note)
@@ -105,70 +139,74 @@ public class OrderService {
                 .updatedAt(Instant.now())
                 .orderItems(new HashSet<>())
                 .build();
+    }
 
-        BigDecimal total = BigDecimal.ZERO;
-        BigDecimal totalDiscount = BigDecimal.ZERO;
-
-        // Скидки пользователя — один запрос на заказ вместо запроса на позицию
-        Map<ProductType, BigDecimal> discounts = discountService.getDiscountsForUser(user);
-
-        for (CartItem ci : cartItems) {
-            Product product = ci.getProduct();
-            Integer quantity = ci.getQuantity();
-
-            // Получаем оригинальную цену (без скидки)
-            BigDecimal originalPrice = product.getPrice();
-
-            // Рассчитываем скидку для пользователя
-            BigDecimal discountPercentage = discountService.getDiscountPercentage(discounts, product);
-
-            // Создаем OrderItem с учетом скидки
-            OrderItem oi = OrderItem.createOrderItem(
-                    product,
-                    ci.getProductName(),
-                    ci.getProductSku(),
-                    quantity,
-                    originalPrice,           // Исходная цена
-                    originalPrice,           // originalUnitPrice (та же цена без скидки)
-                    discountPercentage       // Процент скидки
-            );
-
-            // Скидку берём из уже посчитанной позиции — она едина с каноном
-            totalDiscount = totalDiscount.add(oi.getDiscountAmount());
-
-            total = total.add(oi.getSubtotal());
-            oi.setOrder(order);
-            order.addOrderItem(oi);
+    /**
+     * Наращивание хвоста выхода: голова — OrderItem из lines.get(headIndex),
+     * хвост — рекурсия на headIndex + 1, базис — позиции кончились.
+     * @param discounts скидки пользователя — считаются один раз на заказ
+     */
+    private void attachOrderItems(List<CartItem> lines, int headIndex, Order order,
+                                  Map<ProductType, BigDecimal> discounts) {
+        if (headIndex == lines.size()) {
+            return;
         }
 
-        order.setTotalPrice(total);
+        CartItem ci = lines.get(headIndex);
+        Product product = ci.getProduct();
 
-        // Сохраняем информацию о скидке
-//        if (totalDiscount.compareTo(BigDecimal.ZERO) > 0) {
-//            String note = String.format("Скидка по заказу: %.2f RUB", totalDiscount);
-//            order.setNote(order.getNote() != null ?
-//                    order.getNote() + "\n" + note : note);
-//        }
+        // Получаем оригинальную цену (без скидки)
+        BigDecimal originalPrice = product.getPrice();
 
-        Order saved = orderRepository.save(order);
+        // Рассчитываем скидку для пользователя
+        BigDecimal discountPercentage =
+                discountService.getDiscountPercentage(discounts, product);
 
-        cart.clear();
-        cartRepository.save(cart);
+        OrderItem oi = OrderItem.createOrderItem(
+                product,
+                ci.getProductName(),
+                ci.getProductSku(),
+                ci.getQuantity(),
+                originalPrice,           // Исходная цена
+                originalPrice,           // originalUnitPrice (та же цена без скидки)
+                discountPercentage       // Процент скидки
+        );
 
-        log.info("Заказ создан: id={}, номер={}, цена={}, скидка={}",
-                order.getId(), order.getOrderNumber(), order.getTotalPrice(), totalDiscount);
+        oi.setOrder(order);
+        order.addOrderItem(oi);
 
-        eventPublisher.publishEvent(new OrderCreatedEvent(
+        // Хвост: переходим к остатку списка
+        attachOrderItems(lines, headIndex + 1, order, discounts);
+    }
+
+    /** Стоимость заказа — сумма subtotal по позициям. */
+    private BigDecimal totalOf(Set<OrderItem> items) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (OrderItem item : items) {
+            total = total.add(item.getSubtotal());
+        }
+        return total;
+    }
+
+    /** Сумма скидок по позициям заказа. */
+    private BigDecimal totalDiscountOf(Set<OrderItem> items) {
+        BigDecimal totalDiscount = BigDecimal.ZERO;
+        for (OrderItem item : items) {
+            totalDiscount = totalDiscount.add(item.getDiscountAmount());
+        }
+        return totalDiscount;
+    }
+
+    /** Данные письма о заказе собираются из готового заказа. */
+    private OrderCreatedEvent orderCreatedEventOf(Order order) {
+        return new OrderCreatedEvent(
                 order.getId(),
                 order.getOrderNumber(),
-                order.getOrderItems().stream()
-                        .map(OrderItemDto::fromEntity).toList(),
+                order.getOrderItems().stream().map(OrderItemDto::fromEntity).toList(),
                 order.getTotalPrice(),
                 order.getUser().getEmail(),
                 order.getNote()
-        ));
-
-        return saved;
+        );
     }
 
     @Transactional
