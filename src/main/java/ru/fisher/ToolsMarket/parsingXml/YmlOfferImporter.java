@@ -259,6 +259,29 @@ public class YmlOfferImporter {
         return base + "\n\n" + extraTrimmed;
     }
 
+    // У процедуры двойной выход — изменённый Product и запись отчёта
+    // ProductChangeSummary, согласующиеся общим диффом:
+    // 1. Когда поле диффа тривиально? Значение фида совпало — нет
+    //    ни мутации товара, ни флага.
+    // 2. Какова голова поля диффа? Мутация поля товара + его флаг.
+    // 3. Из чего хвост? Следующие поля диффа; в конце summary собирается
+    //    из готового диффа (productChangeSummaryOf).
+
+    /** Флаги диффа одного товара — из них собирается ProductChangeSummary. */
+    private static class OfferDiff {
+        boolean isNew;
+        boolean nameChanged;
+        boolean priceChanged;
+        boolean descriptionChanged;
+        boolean imagesChanged;
+        boolean attributesChanged;
+
+        boolean anyChanged() {
+            return nameChanged || priceChanged || descriptionChanged
+                    || imagesChanged || attributesChanged;
+        }
+    }
+
     private void createOrUpdateProduct(String sku, String name, String description, BigDecimal price,
                                        Category category, Map<String, String> params,
                                        Map<String, String> paramUnits,
@@ -292,58 +315,48 @@ public class YmlOfferImporter {
             isNew = true;
             log.info("НОВЫЙ: SKU={}, name={}", sku, name);
         }
-
         // Захватываем значения ДО мутации — нужны для отчёта "было → стало"
         String oldName = isNew ? null : product.getName();
         BigDecimal oldPrice = isNew ? null : product.getPrice();
         int oldImageCount = (!isNew && product.getImages() != null) ? product.getImages().size() : 0;
 
-        // Проверяем, изменилось ли что-то
-        boolean changed = false;
-        boolean nameChanged = false;
-        boolean priceChanged = false;
-        boolean descriptionChanged = false;
+        // URL существующих картинок (сравнение множеств — не по порядку)
+        Set<String> oldImageUrls = new HashSet<>();
+        if (product.getImages() != null) {
+            for (ProductImage img : product.getImages()) {
+                oldImageUrls.add(img.getUrl());
+            }
+        }
+
+        OfferDiff diff = new OfferDiff();
+        diff.isNew = isNew;
 
         if (!Objects.equals(product.getName(), name)) {
             log.info("  ИМЯ: {} → {}", product.getName(), name);
             product.setName(name);
-            changed = true;
-            nameChanged = true;
+            diff.nameChanged = true;
         }
+
         if (product.getPrice().compareTo(price) != 0) {
             log.info("  ЦЕНА: {} → {}", product.getPrice(), price);
             product.setPrice(price);
-            changed = true;
-            priceChanged = true;
+            diff.priceChanged = true;
         }
+
         if (!Objects.equals(product.getDescription(), description)) {
             product.setDescription(description);
-            changed = true;
-            descriptionChanged = true;
+            diff.descriptionChanged = true;
         }
 
-        // Проверяем картинки
         int newImageCount = pictures.size();
-
-        Set<String> oldUrls = new HashSet<>();
-        if (product.getImages() != null) {
-            for (ProductImage img : product.getImages()) {
-                oldUrls.add(img.getUrl());
-            }
-        }
-        Set<String> newUrls = new HashSet<>(pictures);
-
-        boolean imagesChanged = oldImageCount != newImageCount || !oldUrls.equals(newUrls);
+        boolean imagesChanged = oldImageCount != newImageCount || !oldImageUrls.equals(new HashSet<>(pictures));
         if (imagesChanged) {
             log.info("  КАРТИНКИ: SKU={} | было={} → стало={}", sku, oldImageCount, newImageCount);
-            changed = true;
+            diff.imagesChanged = true;
         }
-
         handleImages(product, pictures, ctx);
-        boolean attributesChanged = handleAttributes(product, category, params, paramUnits, ctx, dryRun);
-        if (attributesChanged) {
-            changed = true;
-        }
+
+        diff.attributesChanged = handleAttributes(product, category, params, paramUnits, ctx, dryRun);
 
         product.setUpdatedAt(Instant.now());
 
@@ -357,33 +370,47 @@ public class YmlOfferImporter {
 
         ctx.getProductsBySku().put(sku, product);
 
-        if (isNew) {
+        if (diff.isNew) {
             ctx.getNewSkus().add(sku);
         }
+
+        boolean changed = diff.anyChanged();
 
         // Добавляем в список на сохранение. "Кто изменил" проставляем только
         // когда есть реальные изменения (или товар новый), чтобы idempotent-импорт
         // не затирал автора последних правок при полном совпадении данных фида.
-        if (changed || isNew) {
+        if (changed || diff.isNew) {
             product.setUpdatedByUserId(ctx.getCurrentUserId());
-            ctx.getProductsToSave().add(product);
 
-            ctx.getChanges().add(ProductChangeSummary.builder()
-                    .sku(sku)
-                    .changeType(isNew ? ProductChangeSummary.ChangeType.NEW : ProductChangeSummary.ChangeType.UPDATED)
-                    .oldName(oldName)
-                    .newName(product.getName())
-                    .nameChanged(nameChanged)
-                    .oldPrice(oldPrice)
-                    .newPrice(product.getPrice())
-                    .priceChanged(priceChanged)
-                    .oldImageCount(oldImageCount)
-                    .newImageCount(newImageCount)
-                    .imagesChanged(imagesChanged)
-                    .descriptionChanged(descriptionChanged)
-                    .attributesChanged(attributesChanged)
-                    .build());
+            // Отчёт собирается из готового диффа
+            ctx.getProductsToSave().add(product);
+            ctx.getChanges().add(productChangeSummaryOf(sku, product, oldName, oldPrice,
+                    oldImageCount, newImageCount, diff));
         }
+    }
+
+    /** Половина двойного выхода: ProductChangeSummary из готового диффа. */
+    private ProductChangeSummary productChangeSummaryOf(String sku, Product product,
+                                                        String oldName, BigDecimal oldPrice,
+                                                        int oldImageCount, int newImageCount,
+                                                        OfferDiff diff) {
+        return ProductChangeSummary.builder()
+                .sku(sku)
+                .changeType(diff.isNew
+                        ? ProductChangeSummary.ChangeType.NEW
+                        : ProductChangeSummary.ChangeType.UPDATED)
+                .oldName(oldName)
+                .newName(product.getName())
+                .nameChanged(diff.nameChanged)
+                .oldPrice(oldPrice)
+                .newPrice(product.getPrice())
+                .priceChanged(diff.priceChanged)
+                .oldImageCount(oldImageCount)
+                .newImageCount(newImageCount)
+                .imagesChanged(diff.imagesChanged)
+                .descriptionChanged(diff.descriptionChanged)
+                .attributesChanged(diff.attributesChanged)
+                .build();
     }
 
     private void handleImages(Product product, List<String> pictures, ImportContext ctx) {
