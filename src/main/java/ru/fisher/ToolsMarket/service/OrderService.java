@@ -84,8 +84,9 @@ public class OrderService {
     // Программа следует за структурой выхода — Order:
     // 1. Когда выход тривиален? Корзина не найдена / анонимная / пустая — заказа нет.
     // 2. Какова голова? Пустой Order без позиций (orderHeaderOf).
-    // 3. Из чего хвост? Позиции рекурсивно с головы списка корзины
-    //    (attachOrderItems); тоталы — по готовым позициям (totalOf/totalDiscountOf).
+    // 3. Из чего хвост? Список позиций, который возвращает orderItemsOf
+    //    (голова — orderItemOf позиция, хвост — рекурсия по остатку корзины);
+    //    тоталы — по готовым позициям (totalOf/totalDiscountOf).
     @Transactional
     public Order createOrder(Long cartId, String note) {
         // 1: тривиальный случай — заказа не будет
@@ -109,7 +110,13 @@ public class OrderService {
         Map<ProductType, BigDecimal> discounts = discountService.getDiscountsForUser(user);
 
         // 3: позиции множества выстраиваем в список — у рекурсии появится «голова»
-        attachOrderItems(new ArrayList<>(cart.getItems()), 0, order, discounts);
+        List<OrderItem> items = orderItemsOf(new ArrayList<>(cart.getItems()), 0, discounts);
+
+        // Готовые позиции привязываем к заказу (двусторонняя связь order/OrderItem)
+        for (OrderItem item : items) {
+            item.setOrder(order);
+            order.addOrderItem(item);
+        }
 
         // Тотал — сумма позиций, а не отдельный аккумулятор при обходе корзины
         order.setTotalPrice(totalOf(order.getOrderItems()));
@@ -142,17 +149,27 @@ public class OrderService {
     }
 
     /**
-     * Наращивание хвоста выхода: голова — OrderItem из lines.get(headIndex),
-     * хвост — рекурсия на headIndex + 1, базис — позиции кончились.
+     * Строит список позиций заказа по списку корзины: позиция с headIndex
+     * (голова) плюс всё, что вернет рекурсия на остатке (хвост).
+     * Позиции кончились — возвращается пустой список, это база рекурсии.
      * @param discounts скидки пользователя — считаются один раз на заказ
      */
-    private void attachOrderItems(List<CartItem> lines, int headIndex, Order order,
-                                  Map<ProductType, BigDecimal> discounts) {
+    private List<OrderItem> orderItemsOf(List<CartItem> lines, int headIndex,
+                                         Map<ProductType, BigDecimal> discounts) {
         if (headIndex == lines.size()) {
-            return;
+            return List.of();
         }
 
-        CartItem ci = lines.get(headIndex);
+        List<OrderItem> tail = orderItemsOf(lines, headIndex + 1, discounts);
+
+        List<OrderItem> result = new ArrayList<>(tail.size() + 1);
+        result.add(orderItemOf(lines.get(headIndex), discounts));
+        result.addAll(tail);
+        return result;
+    }
+
+    /** Позиция заказа из одной строки корзины, с учётом скидки пользователя. */
+    private OrderItem orderItemOf(CartItem ci, Map<ProductType, BigDecimal> discounts) {
         Product product = ci.getProduct();
 
         // Получаем оригинальную цену (без скидки)
@@ -162,7 +179,7 @@ public class OrderService {
         BigDecimal discountPercentage =
                 discountService.getDiscountPercentage(discounts, product);
 
-        OrderItem oi = OrderItem.createOrderItem(
+        return OrderItem.createOrderItem(
                 product,
                 ci.getProductName(),
                 ci.getProductSku(),
@@ -171,12 +188,6 @@ public class OrderService {
                 originalPrice,           // originalUnitPrice (та же цена без скидки)
                 discountPercentage       // Процент скидки
         );
-
-        oi.setOrder(order);
-        order.addOrderItem(oi);
-
-        // Хвост: переходим к остатку списка
-        attachOrderItems(lines, headIndex + 1, order, discounts);
     }
 
     /** Стоимость заказа — сумма subtotal по позициям. */
